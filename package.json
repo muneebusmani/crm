@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build:frontend": "pnpm --filter frontend build",
+    "start:frontend": "pnpm --filter frontend start",
+    "dev:backend": "pnpm --filter backend dev",
+    "build:backend": "pnpm --filter backend build",
+    "start:backend": "pnpm --filter backend start:prod"
+  }
+}
