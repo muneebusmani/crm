@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "dev": "next dev --turbopack",
+    "start": "next start",
+    "build": "next build --turbopack"
   },
   "dependencies": {
     "@trpc/client": "^11.5.0",
