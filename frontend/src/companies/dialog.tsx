@@ -108,7 +108,7 @@ export function CompanyDialog({ open, onOpenChange }: CompanyDialogProps) {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e: { target: { value: any } }) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter company name"
                 required
               />

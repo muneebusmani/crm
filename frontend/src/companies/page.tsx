@@ -112,6 +112,7 @@ export function CompaniesPage() {
   );
 
   return (
+    <>
     <div className="p-6 space-y-6">
       <div className="space-y-1">
         <div className="flex items-center text-sm text-muted-foreground">
@@ -267,5 +268,6 @@ export function CompaniesPage() {
       {/* Company Dialog */}
       <CompanyDialog open={showDialog} onOpenChange={setShowDialog} />
     </div>
+    </>
   );
 }
