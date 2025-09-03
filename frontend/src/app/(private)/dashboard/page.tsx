@@ -161,7 +161,7 @@ const StatCard: React.FC<StatCardProps> = ({
           </Box>
           <Avatar
             sx={{
-              bgcolor: alpha(color, 0.1),
+              bgcolor: color,
               width: 56,
               height: 56,
             }}
