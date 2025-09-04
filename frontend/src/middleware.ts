@@ -12,7 +12,7 @@ export function middleware(req: NextRequest) {
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     // Already logged in? Redirect away from login/register
     if (token) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return NextResponse.redirect(new URL("/", req.url));
     }
     return NextResponse.next();
   }

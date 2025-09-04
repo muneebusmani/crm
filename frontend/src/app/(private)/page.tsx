@@ -602,7 +602,12 @@ const HomePage = () => {
                             </Typography>
                           }
                           secondary={
-                            <Box display="flex" alignItems="center" mt={0.5}>
+                            <Box
+                              display="flex"
+                              alignItems="center"
+                              mt={0.5}
+                              component={"span"}
+                            >
                               <CalendarToday
                                 sx={{
                                   fontSize: 14,
