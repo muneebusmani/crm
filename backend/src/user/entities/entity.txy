@@ -1,0 +1,173 @@
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
+import { AdminRole } from './admin-role.entity';
+import { User } from './user.entity';
+
+@Entity()
+@Unique(['userId'])
+export class Admin {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  userId: number;
+
+  @Column({ nullable: true })
+  roleId: number;
+
+  @Column()
+  role: string;
+
+  @OneToOne(
+    () => User,
+    (user) => user.admin,
+  )
+
+  @OneToOne(
+    () => User,
+    (user) => user.admin,
+  )
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @ManyToOne(
+    () => AdminRole,
+    (adminRole) => adminRole.admins,
+    { nullable: true },
+  )
+  @JoinColumn({ name: 'roleId' })
+  adminRole: AdminRole;
+}
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Admin } from './admin.entity';
+
+@Entity()
+export class AdminRole {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ unique: true })
+  name: string;
+
+  @OneToMany(
+    () => Admin,
+    (admin) => admin.adminRole,
+  )
+  admins: Admin[];
+}
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+} from 'typeorm';
+import { DealerTier } from './dealer-tier.entity';
+import { User } from './user.entity';
+
+@Entity()
+@Unique(['userId'])
+export class Dealer {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  userId: number;
+
+  @Column({ nullable: true })
+  tierId: number;
+
+  @Column()
+  name: string;
+
+  @Column()
+  owner: string;
+
+  @Column()
+  location: string;
+
+  @Column()
+  logo: string;
+
+  @Column()
+  website: string;
+
+  @Column()
+  contactEmail: string;
+
+  @OneToOne(
+    () => User,
+    (user) => user.dealer,
+  )
+  @OneToOne(
+    () => User,
+    (user) => user.dealer,
+  )
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @ManyToOne(
+    () => DealerTier,
+    (dealerTier) => dealerTier.dealers,
+    { nullable: true },
+  )
+  @JoinColumn({ name: 'tierId' })
+  tier: DealerTier;
+}
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Dealer } from './dealer.entity';
+
+@Entity()
+export class DealerTier {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ unique: true })
+  name: string;
+
+  @OneToMany(
+    () => Dealer,
+    (dealer) => dealer.tier,
+  )
+  dealers: Dealer[];
+}
+export { Admin } from './admin.entity';
+export { AdminRole } from './admin-role.entity';
+export { Dealer } from './dealer.entity';
+export { DealerTier } from './dealer-tier.entity';
+export { User } from './user.entity';
+/** biome-ignore-all lint/suspicious/noExplicitAny: <idk> */
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  username: string;
+
+  @OneToOne('Admin', 'user')
+  admin: any;
+
+  @OneToOne('Dealer', 'user')
+  dealer: any;
+}
