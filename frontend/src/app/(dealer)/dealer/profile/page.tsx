@@ -1,7 +1,7 @@
 "use client"
 
 // app/components/ProfilePage.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -15,14 +15,56 @@ import {
   Grid,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  IconButton,
 } from '@mui/material';
-import { LocationOn, Phone, Email, Person, Web, Settings } from '@mui/icons-material';
+import { LocationOn, Phone, Email, Person, Web, Settings, Close } from '@mui/icons-material';
 
 // Import theme
 import { useTheme } from '@mui/material/styles';
 
 const ProfilePage: React.FC = () => {
   const theme = useTheme();
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+
+  // State for editable fields
+  const [profileData, setProfileData] = useState({
+    fullName: 'Anna Adame',
+    mobile: '+1 987 6543',
+    email: 'daveadame@verizon.com',
+    location: 'California, United States',
+    joiningDate: '24 Nov 2021',
+    about: 'Hi I\'m Anna Adame, It will be as simple as Occidental; in fact, it will be Occidental. To an English person, it will seem like simplified English, as a skeptical Cambridge friend of mine told me what Occidental is European languages are members of the same family.',
+    designation: 'Lead Designer / Developer',
+    website: 'www.verizon.com',
+  });
+
+  const handleOpenEditDialog = () => {
+    setOpenEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would typically send the updated data to your API
+    console.log('Updated profile:', profileData);
+    setOpenEditDialog(false);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -87,6 +129,7 @@ const ProfilePage: React.FC = () => {
             variant="contained"
             color="primary"
             startIcon={<Settings />}
+            onClick={handleOpenEditDialog}
             sx={{ ml: 2 }}
           >
             Edit Profile
@@ -144,23 +187,23 @@ const ProfilePage: React.FC = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">Full Name:</Typography>
-                  <Typography variant="body2" color="textSecondary">Anna Adame</Typography>
+                  <Typography variant="body2" color="textSecondary">{profileData.fullName}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">Mobile:</Typography>
-                  <Typography variant="body2" color="textSecondary">+(1) 987 6543</Typography>
+                  <Typography variant="body2" color="textSecondary">{profileData.mobile}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">E-mail:</Typography>
-                  <Typography variant="body2" color="textSecondary">daveadame@verizon.com</Typography>
+                  <Typography variant="body2" color="textSecondary">{profileData.email}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">Location:</Typography>
-                  <Typography variant="body2" color="textSecondary">California, United States</Typography>
+                  <Typography variant="body2" color="textSecondary">{profileData.location}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">Joining Date:</Typography>
-                  <Typography variant="body2" color="textSecondary">24 Nov 2021</Typography>
+                  <Typography variant="body2" color="textSecondary">{profileData.joiningDate}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -173,10 +216,7 @@ const ProfilePage: React.FC = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>About</Typography>
               <Typography variant="body1" paragraph>
-                Hi I'm Anna Adame, It will be as simple as Occidental; in fact, it will be Occidental. To an English person, it will seem like simplified English, as a skeptical Cambridge friend of mine told me what Occidental is European languages are members of the same family.
-              </Typography>
-              <Typography variant="body1" paragraph>
-                You always want to make sure that your fonts work well together and try to limit the number of fonts you use to three or less. Experiment and play around with the fonts that you already have in the software you're working with reputable font websites. This may be the most commonly encountered tip I received from the designers I spoke with. They highly encourage that you use different fonts in one design, but do not over-exaggerate and go overboard.
+                {profileData.about}
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 4, mt: 3 }}>
@@ -184,15 +224,15 @@ const ProfilePage: React.FC = () => {
                   <Person sx={{ color: theme.palette.text.secondary }} />
                   <Box>
                     <Typography variant="body2" color="textSecondary">Designation:</Typography>
-                    <Typography variant="body1">Lead Designer / Developer</Typography>
+                    <Typography variant="body1">{profileData.designation}</Typography>
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Web sx={{ color: theme.palette.text.secondary }} />
                   <Box>
                     <Typography variant="body2" color="textSecondary">Website:</Typography>
-                    <Typography variant="body1" color="primary.main" component="a" href="https://www.verizon.com">
-                      www.verizon.com
+                    <Typography variant="body1" color="primary.main" component="a" href={`https://${profileData.website}`}>
+                      {profileData.website}
                     </Typography>
                   </Box>
                 </Box>
@@ -230,6 +270,117 @@ const ProfilePage: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Edit Profile Dialog */}
+      <Dialog
+        open={openEditDialog}
+        onClose={handleCloseEditDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">Edit Profile</Typography>
+            <IconButton onClick={handleCloseEditDialog}>
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  name="fullName"
+                  value={profileData.fullName}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Mobile"
+                  name="mobile"
+                  value={profileData.mobile}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  value={profileData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Location"
+                  name="location"
+                  value={profileData.location}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Joining Date"
+                  name="joiningDate"
+                  value={profileData.joiningDate}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="About"
+                  name="about"
+                  value={profileData.about}
+                  onChange={handleInputChange}
+                  multiline
+                  rows={4}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Designation"
+                  name="designation"
+                  value={profileData.designation}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Website"
+                  name="website"
+                  value={profileData.website}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditDialog}>Cancel</Button>
+          <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
