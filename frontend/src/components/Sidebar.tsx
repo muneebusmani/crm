@@ -409,7 +409,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
 
         {/* Main content area */}
-        <Box sx={{ p: 3, pt: isMobile ? 8 : 3 }}>{children}</Box>
+        <Box sx={{ px: 3, pb: 3, pt: isMobile ? 8 : 1 }}>{children}</Box>
       </Box>
     </Box>
   );
