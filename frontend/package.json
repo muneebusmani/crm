@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "vercel-build": "pnpm run prepare && next build --turbopack",
+    "vercel-build": "next build --turbopack",
     "lint": "biome check",
     "format": "biome format --write",
     "dev": "next dev --turbopack",
