@@ -33,9 +33,33 @@ jobs:
         run: pnpm install --filter frontend
 
 
+      - name: Debug directory structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Contents of root:"
+          ls -la
+          echo "Contents of frontend:"
+          ls -la frontend/
+          echo "Looking for package.json:"
+          find . -name "package.json" -type f
 
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=frontend
+
+
+      - name: Debug directory structure (2)
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Contents of root:"
+          ls -la
+          echo "Contents of frontend:"
+          ls -la frontend/
+          echo "Looking for package.json:"
+          find . -name "package.json" -type f
+
+
 
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=frontend
