@@ -8,7 +8,10 @@
       ]
     },
     "dev": {
-      "cache": true
+      "cache": false
+    },
+    "start": {
+      "cache": false
     }
   }
 }
