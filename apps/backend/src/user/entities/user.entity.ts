@@ -4,26 +4,26 @@ import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('user')
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column()
-  password: string;
+  password!: string;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  username: string;
+  username!: string;
 
   @Column({
     type: 'enum',
     enum: UserType,
     default: UserType.DEALER,
   })
-  type: UserType;
+  type!: UserType;
 
   @OneToOne('Admin', 'user')
   // biome-ignore lint/suspicious/noExplicitAny: <fixing circular dependency>

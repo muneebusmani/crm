@@ -1,3 +1,4 @@
+import type { Dealer } from "@crm/types";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   Box,
@@ -18,7 +19,6 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
-import type { Dealer } from "../types/dealer";
 
 interface AddDealerDialogProps {
   open: boolean;

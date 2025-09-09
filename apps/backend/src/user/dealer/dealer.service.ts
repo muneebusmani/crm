@@ -1,4 +1,8 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: <idk> */
+import type {
+  CreateDealerDto,
+  UpdateDealerDto,
+  UpdateUserDto,
+} from '@crm/types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -6,8 +10,6 @@ import { Repository } from 'typeorm';
 import { Dealer } from '../entities/dealer.entity';
 import { DealerTier } from '../entities/dealer-tier.entity';
 import { User } from '../entities/user.entity';
-import { CreateDealerDto } from './dto/create-dealer.dto';
-import { UpdateDealerDto } from './dto/update-dealer.dto';
 
 @Injectable()
 export class DealerService {
@@ -98,7 +100,7 @@ export class DealerService {
     }
 
     // Update user fields
-    const updateUser: any = {};
+    const updateUser = {} as UpdateUserDto;
     if (dto.name !== undefined) updateUser.name = dto.name;
     if (dto.email !== undefined) updateUser.email = dto.email;
     if (dto.username !== undefined) updateUser.username = dto.username;
@@ -112,7 +114,7 @@ export class DealerService {
     }
 
     // Update dealer fields
-    const updateDealer: any = {};
+    const updateDealer = {} as UpdateDealerDto;
     if (dto.name !== undefined) updateDealer.name = dto.name;
     if (dto.owner !== undefined) updateDealer.owner = dto.owner;
     if (dto.location !== undefined) updateDealer.location = dto.location;

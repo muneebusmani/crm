@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+// import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -12,13 +12,15 @@ async function bootstrap() {
   const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
   app.setGlobalPrefix('api/v1');
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  // app.useGlobalPipes(
+  //   new ValidationPipe({
+  //     whitelist: true,
+  //     forbidNonWhitelisted: true,
+  //     transform: true,
+  //   }),
+  // );
+  // app.useGlobalPipes(new ZodValidationPipe());
+
   app.useGlobalGuards(new JwtAuthGuard(app.get(ConfigService)));
 
   app.use(cookieParser());

@@ -1,3 +1,4 @@
+import type { CreateAdminDto, UpdateAdminDto } from '@crm/types';
 import {
   Body,
   Controller,
@@ -9,8 +10,6 @@ import {
   Put,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
 
 @Controller('admins')
 export class AdminController {

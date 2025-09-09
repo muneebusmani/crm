@@ -1,5 +1,6 @@
 "use client";
 
+import type { Highlight, Notification, QuickAction, Task } from "@crm/types";
 import {
   Add,
   ArrowForward,
@@ -32,37 +33,6 @@ import {
   useTheme,
 } from "@mui/material";
 import { useState } from "react";
-
-interface QuickAction {
-  title: string;
-  icon: React.ReactNode;
-  color: "primary" | "secondary" | "success" | "warning" | "error" | "info";
-  action: () => void;
-}
-
-interface Highlight {
-  title: string;
-  value: string;
-  change?: string;
-  changeType?: "positive" | "negative";
-  icon: React.ReactNode;
-  color: "primary" | "secondary" | "success" | "warning" | "error" | "info";
-}
-
-interface Notification {
-  id: number;
-  title: string;
-  description: string;
-  type: "warning" | "info" | "success";
-  time: string;
-}
-
-interface Task {
-  id: number;
-  title: string;
-  dueDate: string;
-  priority: "high" | "medium" | "low";
-}
 
 const HomePage = () => {
   const theme = useTheme();

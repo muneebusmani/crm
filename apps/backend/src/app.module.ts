@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { LeadsModule } from './leads/leads.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
-import { LeadsModule } from './leads/leads.module';
 
 @Module({
   imports: [
@@ -35,6 +37,12 @@ import { LeadsModule } from './leads/leads.module';
     LeadsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_PIPE,
+      useClass: ZodValidationPipe,
+    },
+  ],
 })
 export class AppModule {}

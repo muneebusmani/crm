@@ -1700,8 +1700,8 @@ import {
 import Image from "next/image";
 import type React from "react";
 import { type ChangeEvent, useEffect, useState } from "react";
-import type { Dealer } from "../types/dealer";
 import AddDealerDialog from "./AddDealerDialog";
+import type { Dealer } from "@crm/types";
 
 const Dealers = () => {
   const theme = useTheme();

@@ -1,3 +1,4 @@
+import type { CreateDealerDto, UpdateDealerDto } from '@crm/types';
 import {
   Body,
   Controller,
@@ -9,8 +10,6 @@ import {
   Put,
 } from '@nestjs/common';
 import { DealerService } from './dealer.service';
-import { CreateDealerDto } from './dto/create-dealer.dto';
-import { UpdateDealerDto } from './dto/update-dealer.dto';
 
 @Controller('dealers')
 export class DealerController {

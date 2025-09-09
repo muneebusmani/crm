@@ -22,10 +22,12 @@
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "recharts": "^3.1.2"
+    "recharts": "^3.1.2",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
+    "@crm/types": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

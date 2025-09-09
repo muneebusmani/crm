@@ -1,11 +1,10 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <idk> */
+import type { CreateAdminDto, UpdateAdminDto, UpdateUserDto } from '@crm/types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Admin, AdminRole, User } from '../entities';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -91,7 +90,7 @@ export class AdminService {
     }
 
     // Update user fields
-    const updateUser: any = {};
+    const updateUser = {} as UpdateUserDto;
     if (dto.name !== undefined) updateUser.name = dto.name;
     if (dto.email !== undefined) updateUser.email = dto.email;
     if (dto.username !== undefined) updateUser.username = dto.username;
