@@ -14,48 +14,44 @@ import { User } from './user.entity';
 @Unique(['userId'])
 export class Dealer {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  userId: number;
+  userId!: number;
 
   @Column({ nullable: true })
-  tierId: number;
+  tierId!: number;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column()
-  owner: string;
+  owner!: string;
 
   @Column()
-  location: string;
+  location!: string;
 
   @Column()
-  logo: string;
+  logo!: string;
 
   @Column()
-  website: string;
+  website!: string;
 
   @Column()
-  contactEmail: string;
+  contactEmail!: string;
 
-  @OneToOne(
-    () => User,
-    (user) => user.dealer,
-  )
   @OneToOne(
     () => User,
     (user) => user.dealer,
   )
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user!: User;
 
   @ManyToOne(
     () => DealerTier,
     (dealerTier) => dealerTier.dealers,
     { nullable: true },
   )
-  @JoinColumn({ name: 'tierId' })
-  tier: DealerTier;
+  @JoinColumn({ name: 'tierName' })
+  tier!: DealerTier;
 }

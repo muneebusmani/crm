@@ -30,10 +30,6 @@ export class Admin {
     (user) => user.admin,
   )
 
-  @OneToOne(
-    () => User,
-    (user) => user.admin,
-  )
   @JoinColumn({ name: 'userId' })
   user: User;
 

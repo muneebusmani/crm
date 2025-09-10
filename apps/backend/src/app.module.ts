@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { LeadsModule } from './leads/leads.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { DealerModule } from './user/dealer/dealer.module';
     AdminModule,
     DealerModule,
     LeadsModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [
