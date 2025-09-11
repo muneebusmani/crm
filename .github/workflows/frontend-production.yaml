@@ -28,10 +28,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --filter frontend
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps
       - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps
       - name: Deploy Project Artifacts to Vercel
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm)
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps)
           echo "Deployed to $DEPLOYMENT_URL"
