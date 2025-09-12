@@ -23,24 +23,23 @@
 //   TableHead,
 //   TableRow,
 //   Typography,
+//   useTheme,
 // } from "@mui/material";
-// import Image from "next/image";
 // import type React from "react";
 // import { useState } from "react";
 //
-// // Define types
 // interface Lead {
 //   id: number;
 //   name: string;
-//   company: string;
-//   score: number;
 //   phone: string;
 //   location: string;
 //   tags: string[];
-//   createDate: string;
+//   recievedAt: string;
+//   email?: string;
 // }
 //
 // const LeadsTable: React.FC = () => {
+//   const theme = useTheme();
 //   const [searchTerm, setSearchTerm] = useState("");
 //   const [page, setPage] = useState(1);
 //   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -50,82 +49,66 @@
 //     {
 //       id: 1,
 //       name: "Tonya Noble",
-//       company: "Micro Design",
-//       score: 193,
 //       phone: "745-321-9874",
 //       location: "London, UK",
 //       tags: ["Lead", "Partner"],
-//       createDate: "23 Nov, 2021",
+//       recievedAt: "23 Nov, 2021",
 //     },
 //     {
 //       id: 2,
 //       name: "Thomas Taylor",
-//       company: "Digitech Galaxy",
-//       score: 754,
 //       phone: "536-480-8536",
 //       location: "Windhoek, Namibia",
 //       tags: ["Lead"],
-//       createDate: "28 Feb, 2019",
+//       recievedAt: "28 Feb, 2019",
 //     },
 //     {
 //       id: 3,
 //       name: "Charles Kubik",
-//       company: "Syntce Solutions",
-//       score: 236,
 //       phone: "231-480-8536",
 //       location: "Brasilia, Brazil",
 //       tags: ["Partner"],
-//       createDate: "25 Sep, 2021",
+//       recievedAt: "25 Sep, 2021",
 //     },
 //     {
 //       id: 4,
 //       name: "Glen Matney",
-//       company: "Moetic Fashion",
-//       score: 365,
 //       phone: "515-395-1069",
 //       location: "Berlin, Germany",
 //       tags: ["Lead", "Partner"],
-//       createDate: "19 May, 2021",
+//       recievedAt: "19 May, 2021",
 //     },
 //     {
 //       id: 5,
 //       name: "Herbert Stokes",
-//       company: "Zoetic Fashion",
-//       score: 85,
 //       phone: "414-453-5725",
 //       location: "Windhoek, Namibia",
 //       tags: ["Exiting", "Lead", "Partner"],
-//       createDate: "07 Jun, 2020",
+//       recievedAt: "07 Jun, 2020",
 //     },
 //     {
 //       id: 6,
 //       name: "Kevin Dawson",
-//       company: "Nesta Technologies",
-//       score: 78,
 //       phone: "213-741-4294",
 //       location: "Bogota, Colombia",
 //       tags: ["Exiting"],
-//       createDate: "14 Apr, 2021",
+//       recievedAt: "14 Apr, 2021",
 //     },
 //     {
 //       id: 7,
 //       name: "Michael Morris",
-//       company: "Micro Design",
-//       score: 352,
 //       phone: "856-253-9927",
 //       location: "Damascus, Syria",
 //       tags: ["Lead"],
-//       createDate: "19 May, 2021",
+//       recievedAt: "19 May, 2021",
 //     },
 //     {
 //       id: 8,
 //       name: "Nancy Martino",
-//       company: "Syntce Solutions",
-//       score: 159,
 //       phone: "786-253-9927",
 //       location: "London, UK",
 //       tags: ["Lead", "Partner"],
-//       createDate: "02 Jan, 2022",
+//       recievedAt: "02 Jan, 2022",
 //     },
 //   ];
 //
@@ -146,10 +129,8 @@
 //     );
 //   };
 //
-//   const filteredLeads = leads.filter(
-//     (lead) =>
-//       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       lead.company.toLowerCase().includes(searchTerm.toLowerCase()),
+//   const filteredLeads = leads.filter((lead) =>
+//     lead.name.toLowerCase().includes(searchTerm.toLowerCase()),
 //   );
 //
 //   const rowsPerPage = 7;
@@ -170,8 +151,8 @@
 //             justifyContent: "space-between",
 //             alignItems: "center",
 //             p: 2,
-//             backgroundColor: "#f5f7fa",
-//             borderBottom: "1px solid #e0e0e0",
+//             backgroundColor: theme.palette.grey[100],
+//             borderBottom: `1px solid ${theme.palette.divider}`,
 //           }}
 //         >
 //           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -180,11 +161,14 @@
 //               value={searchTerm}
 //               onChange={handleSearchChange}
 //               startAdornment={
-//                 <SearchIcon sx={{ color: "#999", ml: 1 }} fontSize="small" />
+//                 <SearchIcon
+//                   sx={{ color: theme.palette.text.secondary, ml: 1 }}
+//                   fontSize="small"
+//                 />
 //               }
 //               sx={{
 //                 width: 300,
-//                 border: "1px solid #ccc",
+//                 border: `1px solid ${theme.palette.divider}`,
 //                 borderRadius: 1,
 //                 px: 2,
 //                 py: 1,
@@ -198,9 +182,13 @@
 //               variant="outlined"
 //               startIcon={<FilterListIcon />}
 //               sx={{
-//                 borderColor: "#2196F3",
-//                 color: "#2196F3",
-//                 "&:hover": { backgroundColor: "#e3f2fd" },
+//                 borderColor: theme.palette.primary.main,
+//                 color: theme.palette.primary.main,
+//                 "&:hover": {
+//                   backgroundColor: theme.palette.primary.light,
+//                   borderColor: theme.palette.primary.dark,
+//                   color: theme.palette.primary.contrastText,
+//                 },
 //               }}
 //             >
 //               Filters
@@ -209,18 +197,21 @@
 //               variant="contained"
 //               startIcon={<AddIcon />}
 //               sx={{
-//                 backgroundColor: "#00b894",
-//                 color: "white",
-//                 "&:hover": { backgroundColor: "#00a37d" },
+//                 backgroundColor: theme.palette.success.main,
+//                 color: theme.palette.success.contrastText,
+//                 "&:hover": { backgroundColor: theme.palette.success.dark },
 //               }}
 //             >
 //               Add Leads
 //             </Button>
 //             <IconButton
 //               sx={{
-//                 backgroundColor: "#e3f2fd",
-//                 color: "#2196F3",
-//                 "&:hover": { backgroundColor: "#bbdefb" },
+//                 backgroundColor: theme.palette.primary.light,
+//                 color: theme.palette.primary.contrastText,
+//                 "&:hover": {
+//                   backgroundColor: theme.palette.primary.main,
+//                   color: theme.palette.primary.contrastText,
+//                 },
 //               }}
 //             >
 //               <InfoIcon />
@@ -255,16 +246,6 @@
 //                 <TableCell sortDirection="asc">
 //                   <Typography variant="subtitle2" fontWeight="bold">
 //                     Name
-//                   </Typography>
-//                 </TableCell>
-//                 <TableCell>
-//                   <Typography variant="subtitle2" fontWeight="bold">
-//                     Company
-//                   </Typography>
-//                 </TableCell>
-//                 <TableCell>
-//                   <Typography variant="subtitle2" fontWeight="bold">
-//                     Leads Score
 //                   </Typography>
 //                 </TableCell>
 //                 <TableCell>
@@ -304,19 +285,8 @@
 //                     />
 //                   </TableCell>
 //                   <TableCell>
-//                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-//                       <Image
-//                         src={`https://randomuser.me/api/portraits/women/${lead.id % 10}.jpg`}
-//                         alt={lead.name}
-//                         width={32}
-//                         height={32}
-//                         style={{ borderRadius: "50%" }}
-//                       />
-//                       <Typography>{lead.name}</Typography>
-//                     </Box>
+//                     <Typography>{lead.name}</Typography>
 //                   </TableCell>
-//                   <TableCell>{lead.company}</TableCell>
-//                   <TableCell>{lead.score}</TableCell>
 //                   <TableCell>{lead.phone}</TableCell>
 //                   <TableCell>{lead.location}</TableCell>
 //                   <TableCell>
@@ -325,8 +295,8 @@
 //                         <Box
 //                           key={tag}
 //                           sx={{
-//                             backgroundColor: "#e3f2fd",
-//                             color: "#2196F3",
+//                             backgroundColor: theme.palette.primary.light,
+//                             color: theme.palette.primary.contrastText,
 //                             fontSize: "0.75rem",
 //                             px: 1,
 //                             py: 0.5,
@@ -339,7 +309,7 @@
 //                       ))}
 //                     </Box>
 //                   </TableCell>
-//                   <TableCell>{lead.createDate}</TableCell>
+//                   <TableCell>{lead.recievedAt}</TableCell>
 //                   <TableCell>
 //                     <Box sx={{ display: "flex", gap: 1 }}>
 //                       <IconButton size="small">
@@ -371,7 +341,7 @@
 //             display: "flex",
 //             justifyContent: "flex-end",
 //             p: 2,
-//             borderTop: "1px solid #e0e0e0",
+//             borderTop: `1px solid ${theme.palette.divider}`,
 //           }}
 //         >
 //           <Pagination
@@ -392,18 +362,18 @@
 // };
 //
 // export default LeadsTable;
-//
 "use client";
-
 import AddIcon from "@mui/icons-material/Add";
 import CallIcon from "@mui/icons-material/Call";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import EmailIcon from "@mui/icons-material/Email";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import InfoIcon from "@mui/icons-material/Info";
 import MessageIcon from "@mui/icons-material/Message";
 import SearchIcon from "@mui/icons-material/Search";
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -411,6 +381,7 @@ import {
   InputBase,
   Pagination,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -420,20 +391,22 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import Image from "next/image";
 import type React from "react";
 import { useState } from "react";
+import LeadCallDialog from "./LeadCallDialog";
+import LeadEditDialog from "./LeadEditDialog";
+import LeadEmailDialog from "./LeadEmailDialog";
+import LeadInfoDialog from "./LeadInfoDialog";
+import LeadMessageDialog from "./LeadMessageDialog";
 
-// Define types
 interface Lead {
   id: number;
   name: string;
-  company: string;
-  score: number;
   phone: string;
   location: string;
   tags: string[];
   createDate: string;
+  email?: string;
 }
 
 const LeadsTable: React.FC = () => {
@@ -442,87 +415,94 @@ const LeadsTable: React.FC = () => {
   const [page, setPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
 
-  // Sample data
+  // Dialog states
+  const [openCallDialog, setOpenCallDialog] = useState(false);
+  const [openMessageDialog, setOpenMessageDialog] = useState(false);
+  const [openEmailDialog, setOpenEmailDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openInfoDialog, setOpenInfoDialog] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error" | "warning" | "info",
+  });
+
+  // Sample data with email added
   const leads: Lead[] = [
     {
       id: 1,
       name: "Tonya Noble",
-      company: "Micro Design",
-      score: 193,
       phone: "745-321-9874",
       location: "London, UK",
       tags: ["Lead", "Partner"],
       createDate: "23 Nov, 2021",
+      email: "tonya.noble@example.com",
     },
     {
       id: 2,
       name: "Thomas Taylor",
-      company: "Digitech Galaxy",
-      score: 754,
       phone: "536-480-8536",
       location: "Windhoek, Namibia",
       tags: ["Lead"],
       createDate: "28 Feb, 2019",
+      email: "thomas.taylor@example.com",
     },
     {
       id: 3,
       name: "Charles Kubik",
-      company: "Syntce Solutions",
-      score: 236,
       phone: "231-480-8536",
       location: "Brasilia, Brazil",
       tags: ["Partner"],
       createDate: "25 Sep, 2021",
+      email: "charles.kubik@example.com",
     },
     {
       id: 4,
       name: "Glen Matney",
-      company: "Moetic Fashion",
-      score: 365,
       phone: "515-395-1069",
       location: "Berlin, Germany",
       tags: ["Lead", "Partner"],
       createDate: "19 May, 2021",
+      email: "glen.matney@example.com",
     },
     {
       id: 5,
       name: "Herbert Stokes",
-      company: "Zoetic Fashion",
-      score: 85,
       phone: "414-453-5725",
       location: "Windhoek, Namibia",
       tags: ["Exiting", "Lead", "Partner"],
       createDate: "07 Jun, 2020",
+      email: "herbert.stokes@example.com",
     },
     {
       id: 6,
       name: "Kevin Dawson",
-      company: "Nesta Technologies",
-      score: 78,
       phone: "213-741-4294",
       location: "Bogota, Colombia",
       tags: ["Exiting"],
       createDate: "14 Apr, 2021",
+      email: "kevin.dawson@example.com",
     },
     {
       id: 7,
       name: "Michael Morris",
-      company: "Micro Design",
-      score: 352,
       phone: "856-253-9927",
       location: "Damascus, Syria",
       tags: ["Lead"],
       createDate: "19 May, 2021",
+      email: "michael.morris@example.com",
     },
     {
       id: 8,
       name: "Nancy Martino",
-      company: "Syntce Solutions",
-      score: 159,
       phone: "786-253-9927",
       location: "London, UK",
       tags: ["Lead", "Partner"],
       createDate: "02 Jan, 2022",
+      email: "nancy.martino@example.com",
     },
   ];
 
@@ -543,10 +523,85 @@ const LeadsTable: React.FC = () => {
     );
   };
 
-  const filteredLeads = leads.filter(
-    (lead) =>
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.company.toLowerCase().includes(searchTerm.toLowerCase()),
+  const handleActionClick = (action: string, lead: Lead) => {
+    setSelectedLead(lead);
+    switch (action) {
+      case "call":
+        setOpenCallDialog(true);
+        break;
+      case "message":
+        setOpenMessageDialog(true);
+        break;
+      case "email":
+        setOpenEmailDialog(true);
+        break;
+      case "edit":
+        setOpenEditDialog(true);
+        break;
+      case "info":
+        setOpenInfoDialog(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleCallInitiated = (phoneNumber: string) => {
+    setSnackbar({
+      open: true,
+      message: `Call initiated to ${phoneNumber}`,
+      severity: "success",
+    });
+  };
+
+  const handleMessageSent = (messageData: {
+    recipient: string;
+    message: string;
+    channel: string;
+  }) => {
+    setSnackbar({
+      open: true,
+      message: `Message sent to ${messageData.recipient} via ${messageData.channel}`,
+      severity: "success",
+    });
+  };
+
+  const handleEmailSent = (emailData: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string[];
+    attachments: File[];
+  }) => {
+    setSnackbar({
+      open: true,
+      message: `Email sent to ${emailData.to} with subject: "${emailData.subject}"`,
+      severity: "success",
+    });
+  };
+
+  const handleLeadSave = (updatedLead: Lead) => {
+    setSnackbar({
+      open: true,
+      message: `Lead "${updatedLead.name}" updated successfully`,
+      severity: "success",
+    });
+  };
+
+  const handleLeadDelete = (leadId: number) => {
+    setSnackbar({
+      open: true,
+      message: `Lead #${leadId} deleted successfully`,
+      severity: "success",
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  const filteredLeads = leads.filter((lead) =>
+    lead.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const rowsPerPage = 7;
@@ -592,7 +647,6 @@ const LeadsTable: React.FC = () => {
               }}
             />
           </Box>
-
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
               variant="outlined"
@@ -634,7 +688,6 @@ const LeadsTable: React.FC = () => {
             </IconButton>
           </Box>
         </Box>
-
         {/* Table */}
         <TableContainer>
           <Table stickyHeader aria-label="leads table">
@@ -662,16 +715,6 @@ const LeadsTable: React.FC = () => {
                 <TableCell sortDirection="asc">
                   <Typography variant="subtitle2" fontWeight="bold">
                     Name
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Company
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Leads Score
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -711,19 +754,8 @@ const LeadsTable: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Image
-                        src={`https://randomuser.me/api/portraits/women/${lead.id % 10}.jpg`}
-                        alt={lead.name}
-                        width={32}
-                        height={32}
-                        style={{ borderRadius: "50%" }}
-                      />
-                      <Typography>{lead.name}</Typography>
-                    </Box>
+                    <Typography>{lead.name}</Typography>
                   </TableCell>
-                  <TableCell>{lead.company}</TableCell>
-                  <TableCell>{lead.score}</TableCell>
                   <TableCell>{lead.phone}</TableCell>
                   <TableCell>{lead.location}</TableCell>
                   <TableCell>
@@ -749,19 +781,47 @@ const LeadsTable: React.FC = () => {
                   <TableCell>{lead.createDate}</TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", gap: 1 }}>
-                      <IconButton size="small">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleActionClick("call", lead)}
+                        title="Call"
+                      >
                         <CallIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleActionClick("message", lead)}
+                        title="Send Message"
+                      >
                         <MessageIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleActionClick("email", lead)}
+                        title="Send Email"
+                      >
+                        <EmailIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleActionClick("info", lead)}
+                        title="View Info"
+                      >
                         <InfoIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleActionClick("edit", lead)}
+                        title="Edit"
+                      >
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleActionClick("edit", lead)} // In real app, this might be a delete confirmation
+                        title="Delete"
+                      >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
@@ -771,7 +831,6 @@ const LeadsTable: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-
         {/* Pagination */}
         <Box
           sx={{
@@ -794,6 +853,62 @@ const LeadsTable: React.FC = () => {
           />
         </Box>
       </Paper>
+
+      {/* Dialog Components */}
+      {selectedLead && (
+        <>
+          <LeadCallDialog
+            open={openCallDialog}
+            onClose={() => setOpenCallDialog(false)}
+            lead={selectedLead}
+            onCallInitiated={handleCallInitiated}
+          />
+
+          <LeadMessageDialog
+            open={openMessageDialog}
+            onClose={() => setOpenMessageDialog(false)}
+            lead={selectedLead}
+            onMessageSent={handleMessageSent}
+          />
+
+          <LeadEmailDialog
+            open={openEmailDialog}
+            onClose={() => setOpenEmailDialog(false)}
+            lead={selectedLead}
+            onEmailSent={handleEmailSent}
+          />
+
+          <LeadEditDialog
+            open={openEditDialog}
+            onClose={() => setOpenEditDialog(false)}
+            lead={selectedLead}
+            onSave={handleLeadSave}
+            onDelete={handleLeadDelete}
+          />
+
+          <LeadInfoDialog
+            open={openInfoDialog}
+            onClose={() => setOpenInfoDialog(false)}
+            lead={selectedLead}
+          />
+        </>
+      )}
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
