@@ -26,13 +26,13 @@ export const CreateLeadSchema = z.object({
   fuelType: z.string().trim().optional(),
   part_supplied: z.string().trim().optional(),
 
-  supply_only: z.boolean().optional(),
-  consider_both: z.boolean().optional(),
+  supply_only: z.string().trim().optional(),
+  consider_both:  z.string().trim().optional(),
 
   reconditioned_condition: z.string().trim().optional(),
   used_condition: z.string().trim().optional(),
   new_condition: z.string().trim().optional(),
-  consider_all_condition: z.boolean().optional(),
+  consider_all_condition:  z.string().trim().optional(),
 
   postcode: z.string()
     .trim()
@@ -40,7 +40,7 @@ export const CreateLeadSchema = z.object({
     .optional(),
 
   vehicle_drive: z.string().trim().optional(),
-  collection_required: z.boolean().optional(),
+  collection_required: z.string().trim(),
 
   email: z.string()
     .email({ message: "Invalid email address" })
