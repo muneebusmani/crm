@@ -21,3 +21,4 @@ __exportStar(require("./schemas/auth.schema"), exports);
 __exportStar(require("./schemas/admin.schema"), exports);
 __exportStar(require("./schemas/dealer.schema"), exports);
 __exportStar(require("./schemas/user.schema"), exports);
+__exportStar(require("./schemas/lead.schema"), exports);

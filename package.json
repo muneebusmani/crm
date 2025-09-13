@@ -10,6 +10,7 @@
     "format": "turbo run format"
   },
   "devDependencies": {
+    "cross-env": "^10.0.0",
     "turbo": "^2.5.6"
   },
   "dependencies": {
