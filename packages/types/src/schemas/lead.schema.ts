@@ -1,34 +1,64 @@
-import z from "zod";
+import { z } from "zod";
 
 // ================
 // Lead DTOs
 // ================
 
 export const CreateLeadSchema = z.object({
-  vehicle_model: z.string().optional(),
-  vehicle_reg: z.string().optional(),
-  vehicle_brand: z.string().optional(),
-  vehicle_title: z.string().optional(),
-  vehicle_vrm: z.string().optional(),
-  vehicle_series: z.string().optional(),
-  vehicle_part: z.string().optional(),
-  engin_capacity: z.string().optional(),
-  fuelType: z.string().optional(),
-  part_supplied: z.string().optional(),
+  vehicle_model: z.string()
+    .trim()
+    .min(1, { message: "Vehicle model is required" })
+    .max(100, { message: "Vehicle model cannot exceed 100 characters" })
+    .optional(),
+
+  vehicle_reg: z.string()
+    .trim()
+    .min(1, { message: "Vehicle registration is required" })
+    .max(20, { message: "Vehicle registration cannot exceed 20 characters" })
+    .optional(),
+
+  vehicle_brand: z.string().trim().optional(),
+  vehicle_title: z.string().trim().optional(),
+  vehicle_vrm: z.string().trim().optional(),
+  vehicle_series: z.string().trim().optional(),
+  vehicle_part: z.string().trim().optional(),
+  engin_capacity: z.string().trim().optional(),
+  fuelType: z.string().trim().optional(),
+  part_supplied: z.string().trim().optional(),
+
   supply_only: z.boolean().optional(),
   consider_both: z.boolean().optional(),
-  reconditioned_condition: z.string().optional(),
-  used_condition: z.string().optional(),
-  new_condition: z.string().optional(),
+
+  reconditioned_condition: z.string().trim().optional(),
+  used_condition: z.string().trim().optional(),
+  new_condition: z.string().trim().optional(),
   consider_all_condition: z.boolean().optional(),
-  postcode: z.string().optional(),
-  vehicle_drive: z.string().optional(),
+
+  postcode: z.string()
+    .trim()
+    .regex(/^[A-Za-z0-9 ]+$/, { message: "Invalid postcode format" })
+    .optional(),
+
+  vehicle_drive: z.string().trim().optional(),
   collection_required: z.boolean().optional(),
-  email: z.string().email({ message: "Invalid email address" }).optional(),
-  name: z.string().optional(),
-  number: z.string().optional(),
-  description: z.string().optional(),
-  engine_code: z.string().optional(),
+
+  email: z.string()
+    .email({ message: "Invalid email address" })
+    .optional(),
+
+  name: z.string()
+    .trim()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(50, { message: "Name cannot exceed 50 characters" })
+    .optional(),
+
+  number: z.string()
+    .trim()
+    .regex(/^\+?[0-9]{7,15}$/, { message: "Invalid phone number" })
+    .optional(),
+
+  description: z.string().trim().optional(),
+  engine_code: z.string().trim().optional(),
 });
 
 export type CreateLeadDto = z.infer<typeof CreateLeadSchema>;

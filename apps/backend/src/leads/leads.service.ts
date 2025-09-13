@@ -2,10 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
-import { CreateLeadDto } from './dto/create-lead.dto';
-import { UpdateLeadDto } from './dto/update-lead.dto';
+
 import { AppLogger } from '../common/logger.service';
 import { CustomError } from '../common/custom-error';
+import { CreateLeadSchema, CreateLeadDto, UpdateLeadSchema, UpdateLeadDto } from '@crm/types'; 
+
 @Injectable()
 export class LeadsService {
   constructor(
