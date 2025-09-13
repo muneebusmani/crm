@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
-import { Roboto } from "next/font/google";
-import GlobalLayout from "@/components/GlobalLayout";
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-roboto",
-});
+import GlobalLayout, { roboto } from "@/components/GlobalLayout";
 
 export const metadata: Metadata = {
   title: "Create Next App",
