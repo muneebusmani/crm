@@ -6,19 +6,28 @@ import { Lead } from './entities/lead.entity';
 import { AppLogger } from '../common/logger.service';
 import { CustomError } from '../common/custom-error';
 import { CreateLeadSchema, CreateLeadDto, UpdateLeadSchema, UpdateLeadDto } from '@crm/types'; 
-
+import { ActivityLogger } from 'src/common/activity-log.subscriber';
 @Injectable()
 export class LeadsService {
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepo: Repository<Lead>,
     private readonly logger: AppLogger,
+    private readonly activityLogger: ActivityLogger,
   ) {}
 
   async create(createLeadDto: CreateLeadDto): Promise<Lead> {
     try {
       const lead = this.leadRepo.create(createLeadDto);
-      return await this.leadRepo.save(lead);
+      const result = await this.leadRepo.save(lead)
+      await this.activityLogger.log(
+        0,
+        'CREATE_LEAD',
+        'Lead',
+        lead.id.toString(),
+        `Created lead ${lead.name} (${lead.vehicle_model})`,
+      );
+      return result;
     } catch (error: unknown) {
       this.logger.error('Failed to create lead', error instanceof Error ? error.stack : '', 'LeadsService');
       throw new CustomError('Unable to create lead');

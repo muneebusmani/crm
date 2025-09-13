@@ -10,6 +10,8 @@ import { LeadsModule } from './leads/leads.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
 import { UserModule } from './user/user.module';
+import { ActivityLogModule } from './activity-log/activity-log.module';
+import { ActivityLogSubscriber } from './common/activity-log.subscriber';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { UserModule } from './user/user.module';
     AdminModule,
     DealerModule,
     UserModule,
+    ActivityLogModule
   ],
   controllers: [AppController],
   providers: [
