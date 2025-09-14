@@ -1,15 +1,14 @@
+import { ApiResponse, CreateLeadDto, CreateLeadSchema, UpdateLeadDto, UpdateLeadSchema } from '@crm/types';
 import {
+  ConnectedSocket, 
   MessageBody,
   SubscribeMessage,
-  WebSocketGateway,
-  ConnectedSocket
+  WebSocketGateway
 } from '@nestjs/websockets';
-import { LeadsService } from './leads.service';
-import { CreateLeadSchema, CreateLeadDto, UpdateLeadSchema, UpdateLeadDto } from '@crm/types'; 
-import { ApiResponse } from '@crm/types';
 import { Socket } from 'socket.io';
-import { CustomError } from '../common/custom-error';
 import { ZodError, z } from 'zod';
+import { CustomError } from '../common/custom-error';
+import { LeadsService } from './leads.service';
 
 @WebSocketGateway()
 export class LeadsGateway {
@@ -29,9 +28,11 @@ export class LeadsGateway {
   }
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: <Validation Method>
 private validate<TSchema extends { safeParse: (v: unknown) => any }>(
   schema: TSchema,
   payload: unknown,
+// biome-ignore lint/suspicious/noExplicitAny: <Validation Return>
 ): { ok: true; data: any } | { ok: false; error: string } {
   const result = schema.safeParse(payload);
   if (result.success) return { ok: true, data: result.data };
