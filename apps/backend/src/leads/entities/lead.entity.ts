@@ -1,94 +1,94 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
-@Entity("leads")
+@Entity('leads')
 export class Lead {
   @PrimaryGeneratedColumn()
-  id!: number;
+  id!: number
 
   @Column({ nullable: true })
-  vehicle_model!: string;
+  vehicle_model!: string
 
   @Column({ nullable: true })
-  vehicle_reg!: string;
+  vehicle_reg!: string
 
   @Column({ nullable: true })
-  vehicle_brand!: string;
+  vehicle_brand!: string
 
   @Column({ nullable: true })
-  vehicle_title!: string;
+  vehicle_title!: string
 
   @Column({ nullable: true })
-  vehicle_vrm!: string;
+  vehicle_vrm!: string
 
   @Column({ nullable: true })
-  vehicle_series!: string;
+  vehicle_series!: string
 
   @Column({ nullable: true })
-  vehicle_part!: string;
+  vehicle_part!: string
 
   @Column({ nullable: true })
-  engin_capacity!: string;
+  engin_capacity!: string
 
   @Column({ nullable: true })
-  fuelType!: string;
+  fuelType!: string
 
   @Column({ nullable: true })
-  part_supplied!: string;
+  part_supplied!: string
 
   @Column({ nullable: true })
-  supply_only!: string;
+  supply_only!: string
 
   @Column({ nullable: true })
-  consider_both!: string;
+  consider_both!: string
 
   @Column({ nullable: true })
-  reconditioned_condition!: string;
+  reconditioned_condition!: string
 
   @Column({ nullable: true })
-  used_condition!: string;
+  used_condition!: string
 
   @Column({ nullable: true })
-  new_condition!: string;
+  new_condition!: string
 
   @Column({ nullable: true })
-  consider_all_condition!: string;
+  consider_all_condition!: string
 
   @Column({ nullable: true })
-  postcode!: string;
+  postcode!: string
 
   @Column({ nullable: true })
-  vehicle_drive!: string;
+  vehicle_drive!: string
 
   @Column({ nullable: true })
-  collection_required!: boolean;
+  collection_required!: boolean
 
   @Column({ nullable: true })
-  email!: string;
+  email!: string
 
   @Column({ nullable: true })
-  name!: string;
+  name!: string
 
   @Column({ nullable: true })
-  customer_phone!: string;
+  customer_phone!: string
 
-  @Column({ nullable: true, type: "text" })
-  description!: string;
-
-  @Column({ nullable: true })
-  engine_code!: string;
+  @Column({ nullable: true, type: 'text' })
+  description!: string
 
   @Column({ nullable: true })
-  source!: string;
+  engine_code!: string
 
   @Column({ nullable: true })
-  status!: string;
+  source!: string
 
   @Column({ nullable: true })
-  assigned_to!: string;
+  status!: string
 
-  @Column({ nullable: true, type: "timestamp" })
-  follow_up_date!: Date;
+  @Column({ nullable: true })
+  assigned_to!: string
 
-  @Column({ nullable: true, type: "text" })
-  notes!: string;
+  @Column({ nullable: true, type: 'timestamp' })
+  follow_up_date!: Date
+
+  @Column({ nullable: true, type: 'text' })
+  notes!: string
 }

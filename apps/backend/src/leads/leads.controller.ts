@@ -1,11 +1,9 @@
-import { Controller, Post, Body, Get, Param, Put, Delete } from '@nestjs/common';
-import { LeadsService } from './leads.service';
-import { CreateLeadDto, UpdateLeadDto } from '@crm/types';
-import { ApiResponse } from '@crm/types';
-import { LeadsGateway } from './leads.gateway';
-import { CustomError } from '../common/custom-error';
+import { type ApiResponse, type CreateLeadDto, CreateLeadSchema, type UpdateLeadDto, UpdateLeadSchema } from '@crm/types';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ZodError, z } from 'zod';
-import { CreateLeadSchema, UpdateLeadSchema } from '@crm/types';
+import { CustomError } from '../common/custom-error';
+import type { LeadsGateway } from './leads.gateway';
+import type { LeadsService } from './leads.service';
 
 @Controller('leads')
 export class LeadsController {
@@ -16,7 +14,7 @@ export class LeadsController {
 
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
     try {
-      return { success: true, data };
+      return { data, success: true };
     } catch (error) {
       const message =
         error instanceof CustomError
@@ -24,7 +22,7 @@ export class LeadsController {
           : error instanceof ZodError
           ? error.issues.map(e => e.message).join(', ')
           : 'Internal server error';
-      return { success: false, error: message };
+      return { error: message, success: false };
     }
   }
 
@@ -33,7 +31,7 @@ export class LeadsController {
     payload: unknown,
   ): { ok: true; data: any } | { ok: false; error: string } {
     const result = schema.safeParse(payload);
-    if (result.success) return { ok: true, data: result.data };
+    if (result.success) return { data: result.data, ok: true };
 
     const errMsg = result.error.issues
       .map(e => {
@@ -42,7 +40,7 @@ export class LeadsController {
       })
       .join('; ');
 
-    return { ok: false, error: errMsg };
+    return { error: errMsg, ok: false };
   }
 
   @Post()
@@ -75,7 +73,7 @@ export class LeadsController {
   async update(@Body() payload: unknown): Promise<ApiResponse<any>> {
     const UpdateWithId = UpdateLeadSchema.extend({ id: z.number() });
     const v = this.validate(UpdateWithId, payload);
-    if (!v.ok) return { success: false, error: v.error };
+    if (!v.ok) return { error: v.error, success: false };
 
     const dto: UpdateLeadDto & { id: number } = v.data;
     const { id, ...updateFields } = dto;

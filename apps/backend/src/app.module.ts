@@ -1,17 +1,15 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_PIPE } from '@nestjs/core';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { LeadsModule } from './leads/leads.module';
-import { AdminModule } from './user/admin/admin.module';
-import { DealerModule } from './user/dealer/dealer.module';
-import { UserModule } from './user/user.module';
-import { ActivityLogModule } from './activity-log/activity-log.module';
-import { ActivityLogSubscriber } from './common/activity-log.subscriber';
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { APP_PIPE } from '@nestjs/core'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { ZodValidationPipe } from 'nestjs-zod'
+import { ActivityLogModule } from './activity-log/activity-log.module'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { AuthModule } from './auth/auth.module'
+import { LeadsModule } from './leads/leads.module'
+import { AdminModule } from './user/admin/admin.module'
+import { DealerModule } from './user/dealer/dealer.module'
 
 @Module({
   imports: [
@@ -29,7 +27,7 @@ import { ActivityLogSubscriber } from './common/activity-log.subscriber';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [`${__dirname}/**/*.entity{.ts,.js}`],
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
@@ -38,8 +36,7 @@ import { ActivityLogSubscriber } from './common/activity-log.subscriber';
     AuthModule,
     AdminModule,
     DealerModule,
-    UserModule,
-    ActivityLogModule
+    ActivityLogModule,
   ],
   controllers: [AppController],
   providers: [
