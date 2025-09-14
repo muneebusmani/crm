@@ -11,8 +11,8 @@ import { MailerService } from './mailer.service';
       transport: {
         service: 'gmail',
         auth: {
-          user: "alamhamza873@gmail.com",
-          pass: "airv cmet gvpr lwjt",
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASS,
         },
       },
       defaults: {
