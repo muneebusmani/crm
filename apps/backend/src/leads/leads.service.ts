@@ -2,10 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
-
 import { AppLogger } from '../common/logger.service';
 import { CustomError } from '../common/custom-error';
-import { CreateLeadSchema, CreateLeadDto, UpdateLeadSchema, UpdateLeadDto } from '@crm/types'; 
+import {type CreateLeadDto, type UpdateLeadDto } from '@crm/types';
 import { ActivityLogger } from 'src/common/activity-log.subscriber';
 @Injectable()
 export class LeadsService {
@@ -16,23 +15,30 @@ export class LeadsService {
     private readonly activityLogger: ActivityLogger,
   ) {}
 
-  async create(createLeadDto: CreateLeadDto): Promise<Lead> {
-    try {
-      const lead = this.leadRepo.create(createLeadDto);
-      const result = await this.leadRepo.save(lead)
-      await this.activityLogger.log(
-        0,
-        'CREATE_LEAD',
-        'Lead',
-        lead.id.toString(),
-        `Created lead ${lead.name} (${lead.vehicle_model})`,
-      );
-      return result;
-    } catch (error: unknown) {
-      this.logger.error('Failed to create lead', error instanceof Error ? error.stack : '', 'LeadsService');
-      throw new CustomError('Unable to create lead');
-    }
+ async create(createLeadDto: CreateLeadDto): Promise<Lead> {
+  try {
+    const lead = this.leadRepo.create(createLeadDto);
+    const result = await this.leadRepo.save(lead);
+
+    await this.activityLogger.log(
+      0,
+      'CREATE_LEAD',
+      'Lead',
+      result.id.toString(),
+      `Created lead (${result.vehicle_model})`,
+    );
+
+    return result; // return raw entity
+  } catch (error: unknown) {
+    this.logger.error(
+      'Failed to create lead',
+      error instanceof Error ? error.stack : '',
+      'LeadsService',
+    );
+    throw new CustomError('Unable to create lead');
   }
+}
+
 
   async findAll(): Promise<Lead[]> {
     try {
@@ -55,7 +61,7 @@ export class LeadsService {
     }
   }
 
-  async update(id: number, updateLeadDto: UpdateLeadDto): Promise<Lead> {
+  async update(id: number, updateLeadDto: UpdateLeadDto) {
     try {
       const lead = await this.findOne(id); // will throw CustomError if not found
       const updated = Object.assign(lead, updateLeadDto);

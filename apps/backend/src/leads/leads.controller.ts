@@ -1,11 +1,10 @@
-import { Controller, Post, Body, Get, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, Delete, UsePipes, HttpCode, HttpStatus } from '@nestjs/common';
 import { LeadsService } from './leads.service';
-import { CreateLeadDto, UpdateLeadDto } from '@crm/types';
-import { ApiResponse } from '@crm/types';
+import { type ApiResponse, type CreateLeadDto, CreateLeadSchema, Lead, type UpdateLeadDto, UpdateLeadSchema } from '@crm/types';
 import { LeadsGateway } from './leads.gateway';
 import { CustomError } from '../common/custom-error';
-import { ZodError, z } from 'zod';
-import { CreateLeadSchema, UpdateLeadSchema } from '@crm/types';
+import { ZodValidationPipe } from 'nestjs-zod';
+
 
 @Controller('leads')
 export class LeadsController {
@@ -21,70 +20,41 @@ export class LeadsController {
       const message =
         error instanceof CustomError
           ? error.message
-          : error instanceof ZodError
-          ? error.issues.map(e => e.message).join(', ')
           : 'Internal server error';
       return { success: false, error: message };
     }
   }
 
-  private validate<TSchema extends { safeParse: (v: unknown) => any }>(
-    schema: TSchema,
-    payload: unknown,
-  ): { ok: true; data: any } | { ok: false; error: string } {
-    const result = schema.safeParse(payload);
-    if (result.success) return { ok: true, data: result.data };
-
-    const errMsg = result.error.issues
-      .map(e => {
-        const path = e.path.length ? `${e.path.join('.')}: ` : '';
-        return `${path}${e.message}`;
-      })
-      .join('; ');
-
-    return { ok: false, error: errMsg };
-  }
-
   @Post()
-  async create(@Body() payload: unknown): Promise<ApiResponse<any>> {
-    const v = this.validate(CreateLeadSchema, payload);
-    if (!v.ok) return { success: false, error: v.error };
-
-    const dto: CreateLeadDto = v.data;
+  @HttpCode(HttpStatus.CREATED)
+  @UsePipes(new ZodValidationPipe(CreateLeadSchema))
+  async create(@Body() dto: CreateLeadDto): Promise<ApiResponse<Lead>> {
     const result = await this.leadsService.create(dto);
-
     // Emit via gateway
     this.leadsGateway.emitCreateLead(result);
-
     return this.buildResponse(result);
   }
 
   @Get()
-  async findAll(): Promise<ApiResponse<any>> {
+  async findAll(): Promise<ApiResponse<Lead[]>> {
     const result = await this.leadsService.findAll();
     return this.buildResponse(result);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<ApiResponse<any>> {
+  async findOne(@Param('id') id: number): Promise<ApiResponse<Lead>> {
     const result = await this.leadsService.findOne(id);
     return this.buildResponse(result);
   }
 
   @Put()
-  async update(@Body() payload: unknown): Promise<ApiResponse<any>> {
-    const UpdateWithId = UpdateLeadSchema.extend({ id: z.number() });
-    const v = this.validate(UpdateWithId, payload);
-    if (!v.ok) return { success: false, error: v.error };
-
-    const dto: UpdateLeadDto & { id: number } = v.data;
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(UpdateLeadSchema))
+  async update(@Body() dto: UpdateLeadDto & { id: number }): Promise<ApiResponse<Lead>> {
     const { id, ...updateFields } = dto;
-
     const result = await this.leadsService.update(id, updateFields);
-
     // Emit via gateway
     this.leadsGateway.emitUpdateLead(result);
-
     return this.buildResponse(result);
   }
 

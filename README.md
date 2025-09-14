@@ -196,7 +196,9 @@ nvm use
 ```
 
 ---
-
+## New Types or Chnaging Schema
+pnpm --filter @crm/types run build
+----
 ## Running the Project
 
 All scripts now run **concurrently for frontend and backend** using Turbo.
