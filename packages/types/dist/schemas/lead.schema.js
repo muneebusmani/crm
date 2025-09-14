@@ -24,18 +24,18 @@ exports.CreateLeadSchema = zod_1.z.object({
     engin_capacity: zod_1.z.string().trim().optional(),
     fuelType: zod_1.z.string().trim().optional(),
     part_supplied: zod_1.z.string().trim().optional(),
-    supply_only: zod_1.z.boolean().optional(),
-    consider_both: zod_1.z.boolean().optional(),
+    supply_only: zod_1.z.string().trim().optional(),
+    consider_both: zod_1.z.string().trim().optional(),
     reconditioned_condition: zod_1.z.string().trim().optional(),
     used_condition: zod_1.z.string().trim().optional(),
     new_condition: zod_1.z.string().trim().optional(),
-    consider_all_condition: zod_1.z.boolean().optional(),
+    consider_all_condition: zod_1.z.string().trim().optional(),
     postcode: zod_1.z.string()
         .trim()
         .regex(/^[A-Za-z0-9 ]+$/, { message: "Invalid postcode format" })
         .optional(),
     vehicle_drive: zod_1.z.string().trim().optional(),
-    collection_required: zod_1.z.boolean().optional(),
+    collection_required: zod_1.z.string().trim(),
     email: zod_1.z.string()
         .email({ message: "Invalid email address" })
         .optional(),

@@ -12,13 +12,70 @@ export class Lead {
   vehicle_reg!: string;
 
   @Column({ nullable: true })
-  customer_name!: string;
+  vehicle_brand!: string;
 
   @Column({ nullable: true })
-  customer_email!: string;
+  vehicle_title!: string;
+
+  @Column({ nullable: true })
+  vehicle_vrm!: string;
+
+  @Column({ nullable: true })
+  vehicle_series!: string;
+
+  @Column({ nullable: true })
+  vehicle_part!: string;
+
+  @Column({ nullable: true })
+  engin_capacity!: string;
+
+  @Column({ nullable: true })
+  fuelType!: string;
+
+  @Column({ nullable: true })
+  part_supplied!: string;
+
+  @Column({ nullable: true })
+  supply_only!: string;
+
+  @Column({ nullable: true })
+  consider_both!: string;
+
+  @Column({ nullable: true })
+  reconditioned_condition!: string;
+
+  @Column({ nullable: true })
+  used_condition!: string;
+
+  @Column({ nullable: true })
+  new_condition!: string;
+
+  @Column({ nullable: true })
+  consider_all_condition!: string;
+
+  @Column({ nullable: true })
+  postcode!: string;
+
+  @Column({ nullable: true })
+  vehicle_drive!: string;
+
+  @Column({ nullable: true })
+  collection_required!: boolean;
+
+  @Column({ nullable: true })
+  email!: string;
+
+  @Column({ nullable: true })
+  name!: string;
 
   @Column({ nullable: true })
   customer_phone!: string;
+
+  @Column({ nullable: true, type: "text" })
+  description!: string;
+
+  @Column({ nullable: true })
+  engine_code!: string;
 
   @Column({ nullable: true })
   source!: string;
