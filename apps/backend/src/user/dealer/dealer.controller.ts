@@ -1,4 +1,4 @@
-import type { CreateDealerDto, UpdateDealerDto } from '@crm/types';
+import { type CreateDealerDto, type UpdateDealerDto, type CreateQuotationDto, CreateQuotationSchema, ApiResponse, Quotation } from '@crm/types';
 import {
   Body,
   Controller,
@@ -8,13 +8,27 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  UsePipes
 } from '@nestjs/common';
 import { DealerService } from './dealer.service';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { CustomError } from 'src/common/custom-error';
+
 
 @Controller('dealers')
 export class DealerController {
   constructor(private readonly dealerService: DealerService) {}
-
+   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
+      try {
+        return { success: true, data };
+      } catch (error) {
+        const message =
+          error instanceof CustomError
+            ? error.message
+            : 'Internal server error';
+        return { success: false, error: message };
+      }
+    }
   @Post()
   create(@Body() dto: CreateDealerDto) {
     return this.dealerService.createDealer(dto);
@@ -38,5 +52,12 @@ export class DealerController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.dealerService.deleteDealer(id);
+  }
+
+  @Post("quotations")
+  @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
+  async createQuotation(@Body() dto:CreateQuotationDto) : Promise<ApiResponse<Quotation>> {
+   const result =  await this.dealerService.createQuotation(dto)
+    return this.buildResponse(result);
   }
 }

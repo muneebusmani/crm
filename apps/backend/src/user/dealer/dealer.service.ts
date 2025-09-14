@@ -2,14 +2,21 @@ import type {
   CreateDealerDto,
   UpdateDealerDto,
   UpdateUserDto,
+  CreateQuotationDto,
+  UpdateQuotationDto 
 } from '@crm/types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { Dealer } from '../entities/dealer.entity';
 import { DealerTier } from '../entities/dealer-tier.entity';
 import { User } from '../entities/user.entity';
+import { Quotation } from '../../user/entities/quotation.entity';
+import { Dealer } from '../../user/entities/dealer.entity';  // 👈 direct import is fine, but relation must be wrapped
+
+import { CustomError } from 'src/common/custom-error';
+import { MailerService } from '@nestjs-modules/mailer';
+import { join } from 'path';
 
 @Injectable()
 export class DealerService {
@@ -20,6 +27,10 @@ export class DealerService {
     private dealerRepository: Repository<Dealer>,
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
+    @InjectRepository(Quotation)
+    private readonly quotationRepository: Repository<Quotation>,
+    private readonly mailService: MailerService,   
+    
   ) {}
 
   async createDealer(dto: CreateDealerDto) {
@@ -151,4 +162,35 @@ export class DealerService {
     // Then delete user
     return await this.userRepository.delete(id);
   }
+
+  async createQuotation(dto: CreateQuotationDto){
+    try{
+        const dealer = await this.dealerRepository.findOne({ where: { id: dto.dealerId } });
+        if (!dealer) {
+          throw new Error('Dealer not found');
+        }
+        const quotation = this.quotationRepository.create({
+          ...dto,
+          dealer,
+        });
+        const result =  await this.quotationRepository.save(quotation);
+        this.mailService.sendMail({
+          to: "alamhamza873@gmail.com", // 👈 you must have dealer.email field
+          subject: 'New Quotation Created',
+          template: 'quotation', // file: templates/quotation.hbs
+          context: {
+            dealershipName: dealer.name,
+            engineCodeName : result.engineCodeName,
+            quotationId: result.id,
+            quotationPrice: result.quotationPrice,
+            message : result.message
+          },
+        });
+        return result;
+      } 
+      catch (error: unknown) {
+        throw new CustomError('Unable to create lead');
+      }
+    }
+    
 }
