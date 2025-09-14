@@ -6,11 +6,7 @@
     "enabled": true,
     "actions": {
       "source": {
-        "recommended": true,
-        "useSortedKeys": "on",
-        "organizeImports": "on",
-        "useSortedAttributes": "on",
-        "useSortedProperties": "on"
+        "recommended": true
       }
     }
   },
@@ -39,6 +35,9 @@
       "quoteStyle": "single",
       "attributePosition": "auto",
       "bracketSpacing": true
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
     }
   },
   "html": { "formatter": { "selfCloseVoidElements": "always" } }
