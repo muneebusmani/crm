@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import type { ActivityLogService } from 'src/activity-log/activity-log.service'
+import { ActivityLogService } from 'src/activity-log/activity-log.service'
 
 @Injectable()
 export class ActivityLogger {
