@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
+import { getCookie } from "@/lib/cookie";
 
 const drawerWidth = 280;
 
@@ -46,13 +47,12 @@ interface NavigationItem {
   }>;
 }
 
-const navigationItems: NavigationItem[] = [
-  { text: "Home", icon: <HomeIcon />, path: "/" },
-  { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
+const adminNavigationItems: NavigationItem[] = [
+  { text: "Dashboard", icon: <DashboardIcon />, path: "/admin" },
   {
-    text: "Analytics",
+    text: "Leads",
     icon: <AnalyticsIcon />,
-    path: "/analytics",
+    path: "/leads",
     subItems: [
       { text: "Overview", path: "/analytics/overview" },
       { text: "Reports", path: "/analytics/reports" },
@@ -60,13 +60,30 @@ const navigationItems: NavigationItem[] = [
     ],
   },
   { text: "Products", icon: <ShoppingCartIcon />, path: "/products" },
-  { text: "Users", icon: <PersonIcon />, path: "/users" },
+  { text: "Dealers", icon: <PersonIcon />, path: "/admin/dealer" },
   {
     text: "Notifications",
     icon: <NotificationsIcon />,
     path: "/notifications",
   },
 ];
+
+const dealerNavigationItems: NavigationItem[] = [
+  { text: "Home", icon: <HomeIcon />, path: "/dealer" },
+  { text: "Products", icon: <ShoppingCartIcon />, path: "/products" },
+  { text: "Leads", icon: <AnalyticsIcon />, path: "/leads" },
+  {
+    text: "Notifications",
+    icon: <NotificationsIcon />,
+    path: "/notifications",
+  },
+];
+
+// Then inside your Sidebar component function:
+
+const user_type = getCookie("user_type"); // Read from cookie
+const navigationItems =
+  user_type === "dealer" ? dealerNavigationItems : adminNavigationItems;
 
 const bottomNavigationItems: NavigationItem[] = [
   { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
