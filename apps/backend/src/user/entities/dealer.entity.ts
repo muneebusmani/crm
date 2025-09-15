@@ -3,12 +3,15 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import { DealerTier } from './dealer-tier.entity';
 import { User } from './user.entity';
+
+
 
 @Entity('dealer')
 @Unique(['userId'])
@@ -54,4 +57,7 @@ export class Dealer {
   )
   @JoinColumn({ name: 'tierName' })
   tier!: DealerTier;
+
+  @OneToMany('Quotation', 'dealer')
+  quotations!: any[];
 }

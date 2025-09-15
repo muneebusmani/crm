@@ -1,11 +1,12 @@
 import type { CreateLeadDto, UpdateLeadDto } from '@crm/types'
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import type { ActivityLogger } from 'src/common/activity-log.subscriber'
 import type { Repository } from 'typeorm'
 import { CustomError } from '../common/custom-error'
 import type { AppLogger } from '../common/logger.service'
 import { Lead } from './entities/lead.entity'
+
 @Injectable()
 export class LeadsService {
   constructor(
@@ -19,14 +20,16 @@ export class LeadsService {
     try {
       const lead = this.leadRepo.create(createLeadDto)
       const result = await this.leadRepo.save(lead)
+
       await this.activityLogger.log(
         0,
         'CREATE_LEAD',
         'Lead',
-        lead.id.toString(),
-        `Created lead ${lead.name} (${lead.vehicle_model})`,
+        result.id.toString(),
+        `Created lead (${result.vehicle_model})`,
       )
-      return result
+
+      return result // return raw entity
     } catch (error: unknown) {
       this.logger.error(
         'Failed to create lead',
@@ -66,7 +69,7 @@ export class LeadsService {
     }
   }
 
-  async update(id: number, updateLeadDto: UpdateLeadDto): Promise<Lead> {
+  async update(id: number, updateLeadDto: UpdateLeadDto) {
     try {
       const lead = await this.findOne(id) // will throw CustomError if not found
       const updated = Object.assign(lead, updateLeadDto)
@@ -85,8 +88,9 @@ export class LeadsService {
   async remove(id: number): Promise<void> {
     try {
       const result = await this.leadRepo.delete(id)
-      if (result.affected === 0)
+      if (result.affected === 0) {
         throw new CustomError(`Lead with ID ${id} not found`, 404)
+      }
     } catch (error: unknown) {
       this.logger.error(
         `Failed to delete lead ${id}`,

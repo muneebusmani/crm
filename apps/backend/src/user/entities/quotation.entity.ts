@@ -1,0 +1,28 @@
+
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+
+
+@Entity('quotations')
+export class Quotation {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  engineCodeName!: string;
+
+  @Column()
+  dealershipName!: string;
+
+  @Column('decimal', { precision: 10, scale: 2 })
+  quotationPrice!: number;
+
+  @Column()
+  subject!: string;
+
+  @Column('text')
+  message!: string;
+
+ @ManyToOne('Dealer', 'quotations')
+ @JoinColumn({ name: 'dealerId' })
+  dealer: any;
+}

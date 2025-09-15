@@ -60,16 +60,13 @@ export class Lead {
   vehicle_drive!: string
 
   @Column({ nullable: true })
-  collection_required!: boolean
+  collection_required!: string
 
   @Column({ nullable: true })
   email!: string
 
   @Column({ nullable: true })
   name!: string
-
-  @Column({ nullable: true })
-  customer_phone!: string
 
   @Column({ nullable: true, type: 'text' })
   description!: string
