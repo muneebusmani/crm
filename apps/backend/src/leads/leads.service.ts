@@ -1,10 +1,10 @@
 import type { CreateLeadDto, UpdateLeadDto } from '@crm/types'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import type { ActivityLogger } from 'src/common/activity-log.subscriber'
-import type { Repository } from 'typeorm'
+import { ActivityLogger } from 'src/common/activity-log.subscriber'
+import { Repository } from 'typeorm'
 import { CustomError } from '../common/custom-error'
-import type { AppLogger } from '../common/logger.service'
+import { AppLogger } from '../common/logger.service'
 import { Lead } from './entities/lead.entity'
 
 @Injectable()

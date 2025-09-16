@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module'
 import { LeadsModule } from './leads/leads.module'
 import { AdminModule } from './user/admin/admin.module'
 import { DealerModule } from './user/dealer/dealer.module'
+import { AnalyticsModule } from './analytics/analytics.module'
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { DealerModule } from './user/dealer/dealer.module'
     AdminModule,
     DealerModule,
     ActivityLogModule,
+    AnalyticsModule
   ],
   controllers: [AppController],
   providers: [

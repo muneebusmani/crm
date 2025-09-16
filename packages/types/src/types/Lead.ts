@@ -20,7 +20,7 @@ export interface Lead {
   consider_all_condition?: string;
   postcode?: string;
   vehicle_drive?: string;
-  collection_required?: boolean;
+  collection_required?: string;
   email?: string;
   name?: string;
   description?: string;

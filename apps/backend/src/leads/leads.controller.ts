@@ -20,8 +20,8 @@ import {
 } from '@nestjs/common'
 import { ZodValidationPipe } from 'nestjs-zod'
 import { CustomError } from '../common/custom-error'
-import type { LeadsGateway } from './leads.gateway'
-import type { LeadsService } from './leads.service'
+import { LeadsGateway } from './leads.gateway'
+import { LeadsService } from './leads.service'
 
 @Controller('leads')
 export class LeadsController {
