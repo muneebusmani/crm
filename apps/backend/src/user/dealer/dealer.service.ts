@@ -1,9 +1,10 @@
-import type {
-  CreateDealerDto,
-  UpdateDealerDto,
-  UpdateUserDto,
-  CreateQuotationDto,
-  UpdateQuotationDto 
+import {
+  type CreateDealerDto,
+  type UpdateDealerDto,
+  type UpdateUserDto,
+  type CreateQuotationDto,
+  type UpdateQuotationDto,
+  UserType
 } from '@crm/types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,6 +18,8 @@ import { Dealer } from '../../user/entities/dealer.entity';  // 👈 direct impo
 import { CustomError } from 'src/common/custom-error';
 import { MailerService } from '@nestjs-modules/mailer';
 import { join } from 'path';
+import * as crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DealerService {
@@ -29,9 +32,11 @@ export class DealerService {
     private dealerTierRepository: Repository<DealerTier>,
     @InjectRepository(Quotation)
     private readonly quotationRepository: Repository<Quotation>,
-    private readonly mailService: MailerService,   
-    
-  ) {}
+    private readonly mailService: MailerService,
+    private readonly configService: ConfigService,   // 👈 inject here
+
+
+  ) { }
 
   async createDealer(dto: CreateDealerDto) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -163,34 +168,84 @@ export class DealerService {
     return await this.userRepository.delete(id);
   }
 
-  async createQuotation(dto: CreateQuotationDto){
-    try{
-        const dealer = await this.dealerRepository.findOne({ where: { id: dto.dealerId } });
-        if (!dealer) {
-          throw new Error('Dealer not found');
-        }
-        const quotation = this.quotationRepository.create({
-          ...dto,
-          dealer,
-        });
-        const result =  await this.quotationRepository.save(quotation);
-        this.mailService.sendMail({
-          to: "alamhamza873@gmail.com", // 👈 you must have dealer.email field
-          subject: 'New Quotation Created',
-          template: 'quotation', // file: templates/quotation.hbs
-          context: {
-            dealershipName: dealer.name,
-            engineCodeName : result.engineCodeName,
-            quotationId: result.id,
-            quotationPrice: result.quotationPrice,
-            message : result.message
-          },
-        });
-        return result;
-      } 
-      catch (error: unknown) {
-        throw new CustomError('Unable to create lead');
+  async createQuotation(dto: CreateQuotationDto) {
+    try {
+      const dealer = await this.dealerRepository.findOne({ where: { id: dto.dealerId } });
+      if (!dealer) {
+        throw new Error('Dealer not found');
       }
+      const quotation = this.quotationRepository.create({
+        ...dto,
+        dealer,
+      });
+      const result = await this.quotationRepository.save(quotation);
+      this.mailService.sendMail({
+        to: "alamhamza873@gmail.com", // 👈 you must have dealer.email field
+        subject: 'New Quotation Created',
+        template: 'quotation', // file: templates/quotation.hbs
+        context: {
+          dealershipName: dealer.name,
+          engineCodeName: result.engineCodeName,
+          quotationId: result.id,
+          quotationPrice: result.quotationPrice,
+          message: result.message
+        },
+      });
+      return result;
     }
-    
+    catch (error: unknown) {
+      throw new CustomError('Unable to create lead');
+    }
+  }
+
+  async forgotPassword(email: string) {
+    const dealer = await this.userRepository.findOne({ where: { email : email,  type: UserType.DEALER } });
+    if (!dealer) throw new  NotFoundException("Dealer not found"); // don't reveal
+    try {
+      const token = crypto.randomBytes(32).toString('hex');
+      dealer.resetPasswordToken = token;
+      dealer.resetPasswordExpires = new Date(Date.now() + 3600 * 1000); // 1h expiry
+      await this.userRepository.save(dealer);
+
+      const resetLink = `${this.configService.get('FRONTEND_URL')}/reset-password/${token}`;
+       this.mailService.sendMail({
+        to: "alamhamza873@gmail.com",
+        subject: 'Reset your password',
+        template: 'forgot-password', // templates/forgot-password.hbs
+        context: {
+          dealershipName: dealer.name,
+          resetLink,
+        },
+      });
+      return dealer;
+    }
+    catch (error: unknown) {
+      throw new CustomError('Unable to forgot password');
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      const dealer = await this.userRepository.findOne({
+        where: {
+          resetPasswordToken: token,
+          type: UserType.DEALER, // ✅ ensure it's a dealer
+        },
+      });
+
+
+      if (!dealer || !dealer.resetPasswordExpires || dealer.resetPasswordExpires < new Date()) {
+        throw new Error('Invalid or expired token');
+      }
+
+      dealer.password = await bcrypt.hash(newPassword, 10);
+      dealer.resetPasswordToken = null;
+      dealer.resetPasswordExpires = null;
+      return await this.userRepository.save(dealer);
+    }
+    catch (error: unknown) {
+      throw new CustomError('Unable to reset password');
+    }
+  }
+
 }

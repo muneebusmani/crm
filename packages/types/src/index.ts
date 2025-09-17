@@ -3,6 +3,7 @@ export * from './types/Lead';
 export * from './types/Api';
 export * from './types/Dealer';
 export * from './types/Quotation';
+export * from './types/UserStatus';
 export * from './schemas/auth.schema';
 export * from './schemas/admin.schema';
 export * from './schemas/dealer.schema';

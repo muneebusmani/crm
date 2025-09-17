@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <idk> */
-import type { CreateAdminDto, UpdateAdminDto, UpdateUserDto } from '@crm/types';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserStatus, UserType, type CreateAdminDto, type UpdateAdminDto, type UpdateUserDto } from '@crm/types';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Admin, AdminRole, User } from '../entities';
+import { CustomError } from 'src/common/custom-error';
 
 @Injectable()
 export class AdminService {
@@ -15,7 +16,7 @@ export class AdminService {
     private adminRepository: Repository<Admin>,
     @InjectRepository(AdminRole)
     private adminRoleRepository: Repository<AdminRole>,
-  ) {}
+  ) { }
 
   async createAdmin(dto: CreateAdminDto) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -119,6 +120,8 @@ export class AdminService {
     });
   }
 
+
+
   async deleteAdmin(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -135,4 +138,45 @@ export class AdminService {
     // Then delete user
     return await this.userRepository.delete(id);
   }
+
+  private async findDealer(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(`User ${userId} not found`);
+
+    if (user.type !== UserType.DEALER) {
+      throw new BadRequestException(`User ${userId} is not a dealer`);
+    }
+    return user;
+  }
+
+  async DealerStatus(userId: number) {
+    const user = await this.findDealer(userId);
+    try {
+      if (user.status === UserStatus.ACTIVE) {
+        console.log(UserStatus.IN_ACTIVE);
+        user.status = UserStatus.IN_ACTIVE;
+      } else {
+        user.status = UserStatus.ACTIVE;
+      }
+      return await this.userRepository.save(user);
+    } catch (error: unknown) {
+      throw new CustomError('Unable to update dealer status')
+    }
+  }
+
+  async suspendDealer(userId: number) {
+    try {
+      const user = await this.findDealer(userId);
+      user.status =
+        user.status === UserStatus.SUSPENDED
+          ? UserStatus.ACTIVE
+          : UserStatus.SUSPENDED;
+
+      return await this.userRepository.save(user);
+    } catch (error: unknown) {
+      throw new CustomError('Unable to suspend leads')
+    }
+  }
+
+
 }

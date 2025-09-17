@@ -1,4 +1,4 @@
-import { type CreateDealerDto, type UpdateDealerDto, type CreateQuotationDto, CreateQuotationSchema, ApiResponse, Quotation } from '@crm/types';
+import { type CreateDealerDto, type UpdateDealerDto, type CreateQuotationDto, CreateQuotationSchema, ApiResponse, Quotation, User } from '@crm/types';
 import {
   Body,
   Controller,
@@ -17,18 +17,18 @@ import { CustomError } from 'src/common/custom-error';
 
 @Controller('dealers')
 export class DealerController {
-  constructor(private readonly dealerService: DealerService) {}
-   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
-      try {
-        return { success: true, data };
-      } catch (error) {
-        const message =
-          error instanceof CustomError
-            ? error.message
-            : 'Internal server error';
-        return { success: false, error: message };
-      }
+  constructor(private readonly dealerService: DealerService) { }
+  private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
+    try {
+      return { success: true, data };
+    } catch (error) {
+      const message =
+        error instanceof CustomError
+          ? error.message
+          : 'Internal server error';
+      return { success: false, error: message };
     }
+  }
   @Post()
   create(@Body() dto: CreateDealerDto) {
     return this.dealerService.createDealer(dto);
@@ -56,8 +56,23 @@ export class DealerController {
 
   @Post("quotations")
   @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
-  async createQuotation(@Body() dto:CreateQuotationDto) : Promise<ApiResponse<Quotation>> {
-   const result =  await this.dealerService.createQuotation(dto)
+  async createQuotation(@Body() dto: CreateQuotationDto): Promise<ApiResponse<Quotation>> {
+    const result = await this.dealerService.createQuotation(dto)
     return this.buildResponse(result);
   }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string): Promise<ApiResponse<User>> {
+    const result =  await this.dealerService.forgotPassword(email);
+    return this.buildResponse(result);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body('token') token: string,@Body('newPassword') newPassword: string) 
+  : Promise<ApiResponse<User>>   {
+     const result = await this.dealerService.resetPassword(token, newPassword);
+      return this.buildResponse(result);
+  }
+
+
 }
