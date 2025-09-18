@@ -1,4 +1,4 @@
-import { UserType } from '@crm/types';
+import { UserType, UserStatus } from '@crm/types';
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('user')
@@ -25,6 +25,13 @@ export class User {
   })
   type!: UserType;
 
+    @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status!: UserStatus;
+
   @OneToOne('Admin', 'user')
   // biome-ignore lint/suspicious/noExplicitAny: <fixing circular dependency>
   admin: any;
@@ -32,4 +39,11 @@ export class User {
   @OneToOne('Dealer', 'user')
   // biome-ignore lint/suspicious/noExplicitAny: <fixing circular dependency>
   dealer: any;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  resetPasswordToken!: string | null;
+
+
+  @Column({ type: 'timestamptz', nullable: true })
+  resetPasswordExpires!: Date | null;
 }
