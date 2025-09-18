@@ -926,7 +926,7 @@ import {
   Info as InfoIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
-// import { io, Socket } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import {
   Alert,
   Box,
@@ -994,7 +994,7 @@ const LeadsTable: React.FC = () => {
 
   // Set up socket connection and event listeners
   useEffect(() => {
-    // const socket = socketService.connect();
+    const socket = socketService.connect();
 
     socketService.onLeadCreated((newLead: Lead) => {
       setLeads((prev) => [...prev, newLead]);
@@ -1016,14 +1016,19 @@ const LeadsTable: React.FC = () => {
       });
     });
 
-    socketService.onLeadDeleted((data: Partial<Lead>) => {
-      setLeads((prev) => prev.filter((lead) => lead.id !== data.id));
+   // Service
+   socketService.onLeadDeleted((id) => {
+      setLeads((prev) =>
+        prev.filter((lead) => String(lead.id) !== String(id))
+      );
       setSnackbar({
         open: true,
         message: "Lead deleted successfully",
         severity: "success",
       });
     });
+
+
     const removeLeadCallback = (_: Lead) => {
       return;
     };
