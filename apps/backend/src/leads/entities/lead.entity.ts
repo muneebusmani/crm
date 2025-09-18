@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm'
 
 @Entity('leads')
 export class Lead {
@@ -89,10 +95,10 @@ export class Lead {
   @Column({ nullable: true, type: 'text' })
   notes!: string
 
-   // ✅ Auto timestamps for analytics
+  // ✅ Auto timestamps for analytics
   @CreateDateColumn({ type: 'timestamp' })
-  createdAt!: Date;
+  createdAt!: Date
 
   @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt!: Date;
+  updatedAt!: Date
 }
