@@ -1,5 +1,5 @@
 import { UserType, UserStatus } from '@crm/types';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('user')
 export class User {
@@ -46,4 +46,7 @@ export class User {
 
   @Column({ type: 'timestamptz', nullable: true })
   resetPasswordExpires!: Date | null;
+
+  @OneToMany('DealerLead', 'dealer')
+  dealerLeads!: any[];
 }

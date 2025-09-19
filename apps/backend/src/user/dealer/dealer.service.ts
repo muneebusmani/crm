@@ -20,6 +20,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { join } from 'path';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { Lead } from 'src/leads/entities/lead.entity';
+import { DealerLead } from '../entities/dealer-lead.entity';
 
 @Injectable()
 export class DealerService {
@@ -28,10 +30,19 @@ export class DealerService {
     private userRepository: Repository<User>,
     @InjectRepository(Dealer)
     private dealerRepository: Repository<Dealer>,
+
+    @InjectRepository(Lead)
+    private leadRepository: Repository<Lead>,
+
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
+    
     @InjectRepository(Quotation)
     private readonly quotationRepository: Repository<Quotation>,
+
+    @InjectRepository(DealerLead)
+    private readonly dealerLeadRepository: Repository<DealerLead>,
+    
     private readonly mailService: MailerService,
     private readonly configService: ConfigService,   // 👈 inject here
 
@@ -247,5 +258,53 @@ export class DealerService {
       throw new CustomError('Unable to reset password');
     }
   }
+
+ async getLeadById(leadId: number, dealerId: number) {
+  try {
+    const lead = await this.leadRepository.findOneBy({ id: leadId });
+    if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+    // Call pivot helper function
+    await this.ensureDealerLead(leadId, dealerId);
+
+    return lead;
+  } catch (error: unknown) {
+    if (error instanceof CustomError) throw error;
+    console.log(error);
+    throw new CustomError('Unable to fetch lead');
+  }
+}
+
+/**
+ * Ensure dealer_leads pivot entry exists for dealer+lead.
+ * If not, create it with status=open.
+ */
+private async ensureDealerLead(leadId: number, dealerId: number) {
+  // check if already exists
+  const existing = await this.dealerLeadRepository.findOne({
+    where: { dealer: { id: dealerId }, lead: { id: leadId } },
+    relations: ['dealer', 'lead'],
+  });
+
+  if (existing) return existing; // already linked
+
+  // fetch dealer + lead (only ids needed)
+  const dealer = await this.userRepository.findOneBy({ id: dealerId });
+  if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+
+  const lead = await this.leadRepository.findOneBy({ id: leadId });
+  if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+  // create new pivot entry
+  const dealerLead = this.dealerLeadRepository.create({
+    dealer,
+    lead,
+    status: 'open',
+  });
+
+  return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+}
+
+
 
 }

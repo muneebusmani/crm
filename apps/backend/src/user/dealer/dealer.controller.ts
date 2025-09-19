@@ -8,11 +8,16 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
+  UseGuards,
   UsePipes
 } from '@nestjs/common';
 import { DealerService } from './dealer.service';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { CustomError } from 'src/common/custom-error';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
+import { Lead } from 'src/leads/entities/lead.entity';
 
 
 @Controller('dealers')
@@ -65,6 +70,14 @@ export class DealerController {
   async forgotPassword(@Body('email') email: string): Promise<ApiResponse<User>> {
     const result =  await this.dealerService.forgotPassword(email);
     return this.buildResponse(result);
+  }
+
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('/leads/:id')
+  async findLeadById(@Param('id') id: number,  @Req() req): Promise<ApiResponse<Lead>> {
+    const dealerId = req.user.id; // dealer is the logged-in user
+    const result = await this.dealerService.getLeadById(id, dealerId);
+    return this.buildResponse(result)
   }
 
   @Post('reset-password')
