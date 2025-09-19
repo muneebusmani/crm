@@ -9,7 +9,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT ?? 3001;
   const host = process.env.HOST ?? '0.0.0.0';
-  const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+  const frontend_url =process.env.FRONTEND_URL;
+  const frontendUrl = frontend_url ?? 'http://localhost:3000';
 
   app.setGlobalPrefix('api/v1');
   // app.useGlobalPipes(
@@ -25,11 +26,13 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: frontendUrl,
+    origin: frontend_url,
+     methods: "GET,POST,DELETE,PUT",
     credentials: true,
   });
 
   await app.listen(port, host);
+    console.log(frontend_url);
   console.log(`Listening on ${host}:${port}`);
 }
 bootstrap();

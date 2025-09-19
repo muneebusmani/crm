@@ -2,7 +2,13 @@
 import { WebSocketGateway } from '@nestjs/websockets'
 import type { Socket } from 'socket.io'
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: 'http://localhost:3000', // your frontend URL
+    methods: ['GET', 'POST', 'DELETE', 'PUT'],
+    credentials: true,
+  },
+})
 export class LeadsGateway {
   private clients: Socket[] = []
 
@@ -25,6 +31,6 @@ export class LeadsGateway {
   }
 
   emitRemoveLead(id: number) {
-    this.clients.forEach((client) => client.emit('removedLeadResponse', { id }))
+    this.clients.forEach((client) => client.emit('removedLeadResponse',  id ))
   }
 }
