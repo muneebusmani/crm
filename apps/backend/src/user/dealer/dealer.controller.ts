@@ -62,7 +62,8 @@ export class DealerController {
   @UseGuards(JwtAuthGuard, DealerGuard)
   @Post("quotations")
   @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
-  async createQuotation(@Body() dto: CreateQuotationDto): Promise<ApiResponse<Quotation>> {
+  async createQuotation(@Body() dto: CreateQuotationDto, @Req() req): Promise<ApiResponse<Quotation>> {
+    dto.dealerId = req.user.id;  // cast to 'any' if TS complains
     const result = await this.dealerService.createQuotation(dto)
     return this.buildResponse(result);
   }

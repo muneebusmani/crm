@@ -1,11 +1,11 @@
 import {
+  LeadStatus,
   type CreateDealerDto,
   type UpdateDealerDto,
   type UpdateUserDto,
   type CreateQuotationDto,
   type UpdateQuotationDto,
-  UserType
-} from '@crm/types';
+   UserType} from '@crm/types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -181,14 +181,23 @@ export class DealerService {
 
   async createQuotation(dto: CreateQuotationDto) {
     try {
-      const dealer = await this.dealerRepository.findOne({ where: { id: dto.dealerId } });
+      
+      const dealer = await this.userRepository.findOne({ where: { id: dto.dealerId } });
       if (!dealer) {
         throw new Error('Dealer not found');
       }
+      const lead = await this.leadRepository.findOne({ where: { id: dto.leadId } });
+      if (!lead) {
+        throw new Error('Lead not found');
+      }
+    
+      
       const quotation = this.quotationRepository.create({
         ...dto,
         dealer,
+        lead
       });
+      
       const result = await this.quotationRepository.save(quotation);
       this.mailService.sendMail({
         to: "alamhamza873@gmail.com", // 👈 you must have dealer.email field
@@ -202,10 +211,11 @@ export class DealerService {
           message: result.message
         },
       });
+       await this.ensureDealerLead(dto.leadId, dto.dealerId!, LeadStatus.OPEN);
       return result;
     }
     catch (error: unknown) {
-      throw new CustomError('Unable to create lead');
+      throw new CustomError('Unable to create lead'+error);
     }
   }
 
@@ -265,7 +275,7 @@ export class DealerService {
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
     // Call pivot helper function
-    await this.ensureDealerLead(leadId, dealerId);
+    await this.ensureDealerLead(leadId, dealerId, LeadStatus.OPEN);
 
     return lead;
   } catch (error: unknown) {
@@ -279,12 +289,14 @@ export class DealerService {
  * Ensure dealer_leads pivot entry exists for dealer+lead.
  * If not, create it with status=open.
  */
-private async ensureDealerLead(leadId: number, dealerId: number) {
+private async ensureDealerLead(leadId: number, dealerId: number, status: string) {
   // check if already exists
+ 
   const existing = await this.dealerLeadRepository.findOne({
-    where: { dealer: { id: dealerId }, lead: { id: leadId } },
+    where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status},
     relations: ['dealer', 'lead'],
   });
+
 
   if (existing) return existing; // already linked
 
@@ -299,7 +311,7 @@ private async ensureDealerLead(leadId: number, dealerId: number) {
   const dealerLead = this.dealerLeadRepository.create({
     dealer,
     lead,
-    status: 'open',
+    status: status,
   });
 
   return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED

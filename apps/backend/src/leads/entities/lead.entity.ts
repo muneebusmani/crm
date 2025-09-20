@@ -100,6 +100,10 @@ export class Lead {
   @OneToMany('DealerLead', 'lead')
   dealerLeads!: any[];
 
+  
+  @OneToMany('Quotation', 'lead')
+  quotations!: any[];
+
   // ✅ Auto timestamps for analytics
   @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date

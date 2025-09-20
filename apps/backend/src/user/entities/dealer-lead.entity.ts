@@ -1,7 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
 
 @Entity('dealer_leads')
-@Unique(['dealer', 'lead']) // prevent duplicate dealer-lead pair
 export class DealerLead {
   @PrimaryGeneratedColumn()
   id!: number;

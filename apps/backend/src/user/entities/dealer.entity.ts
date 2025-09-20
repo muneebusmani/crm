@@ -60,5 +60,4 @@ export class Dealer {
 
   @OneToMany('Quotation', 'dealer')
   quotations!: any[];
-
 }

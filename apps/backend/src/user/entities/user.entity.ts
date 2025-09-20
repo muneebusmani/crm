@@ -49,4 +49,7 @@ export class User {
 
   @OneToMany('DealerLead', 'dealer')
   dealerLeads!: any[];
+
+  @OneToMany('Quotation', 'dealer') // 'Quotation' is the target, 'dealer' is property in Quotation
+  quotations!: any[];
 }
