@@ -59,6 +59,7 @@ export class DealerController {
     return this.dealerService.deleteDealer(id);
   }
 
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Post("quotations")
   @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
   async createQuotation(@Body() dto: CreateQuotationDto): Promise<ApiResponse<Quotation>> {
