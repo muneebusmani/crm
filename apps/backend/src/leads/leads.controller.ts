@@ -16,12 +16,16 @@ import {
   Param,
   Post,
   Put,
+  Req,
+  UseGuards,
   UsePipes,
 } from '@nestjs/common'
 import { ZodValidationPipe } from 'nestjs-zod'
 import { CustomError } from '../common/custom-error'
 import { LeadsGateway } from './leads.gateway'
 import { LeadsService } from './leads.service'
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard'
+import { DealerGuard } from 'src/auth/guards/dealer.guard'
 
 @Controller('leads')
 export class LeadsController {
@@ -49,15 +53,19 @@ export class LeadsController {
     return this.buildResponse(result)
   }
 
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Get()
-  async findAll(): Promise<ApiResponse<Lead[]>> {
-    const result = await this.leadsService.findAll()
+  async findAllForDealer(@Req() req): Promise<ApiResponse<Lead[]>> {
+    const dealerId = req.user.id; // dealer is the logged-in user
+    const result = await this.leadsService.findAllForDealer(dealerId);
     return this.buildResponse(result)
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<ApiResponse<Lead>> {
-    const result = await this.leadsService.findOne(id)
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  async getLeadById(@Param('id') id: number, @Req() req): Promise<ApiResponse<Lead>> {
+    const dealerId = req.user.id; 
+    const result = await this.leadsService.getLeadById(id, dealerId);
     return this.buildResponse(result)
   }
 

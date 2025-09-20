@@ -40,9 +40,16 @@ export class LeadsService {
     }
   }
 
-  async findAll(): Promise<Lead[]> {
+  async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {
-      return await this.leadRepo.find()
+      return await this.leadRepo.find({
+        relations: ['dealerLeads', 'dealerLeads.dealer'],
+        where: {
+          dealerLeads: {
+            dealer: { id: dealerId },
+          },
+        },
+      });
     } catch (error: unknown) {
       this.logger.error(
         'Failed to fetch leads',
@@ -50,6 +57,30 @@ export class LeadsService {
         'LeadsService',
       )
       throw new CustomError('Unable to fetch leads')
+    }
+  }
+
+   async getLeadById(id: number, dealerId: number): Promise<Lead> {
+    try {
+      const lead = await this.leadRepo.findOne({
+        relations: ['dealerLeads', 'dealerLeads.dealer', 'dealerLeads.lead'],
+        where: {
+          dealerLeads: {
+            dealer: { id: dealerId},
+            lead :  {id : id}
+          },
+        },
+      });
+      if (!lead) throw new CustomError(`Lead with ID ${id} not found`, 404)
+      return lead
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to fetch lead ${id}`,
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      )
+      if (error instanceof CustomError) throw error
+      throw new CustomError('Unable to fetch lead')
     }
   }
 
