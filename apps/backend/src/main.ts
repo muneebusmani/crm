@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { JwtAuthGuard } from './auth/guards/jwt.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -41,7 +43,10 @@ async function bootstrap() {
      methods: "GET,POST,DELETE,PUT",
     credentials: true,
   });
-
+  app.use(
+    '/uploads',
+    express.static(join(__dirname, '..', 'uploads')) // points to backend/uploads
+  );
   await app.listen(port, host);
     console.log(frontend_url);
   console.log(`Listening on ${host}:${port}`);

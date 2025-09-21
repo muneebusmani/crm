@@ -6,7 +6,6 @@ export function middleware(req: NextRequest) {
   const id = req.cookies.get("id")?.value;
   const userTypeCookie = req.cookies.get("user_type")?.value;
   const userType = userTypeCookie ? `/${userTypeCookie}` : null;
-  console.log(userTypeCookie);
   const { pathname } = req.nextUrl;
 
   const publicRoutes = ["/login", "/register", "/forgot-password"];

@@ -12,6 +12,7 @@ export async function loginAction(formData: FormData) {
       email: formData.get("email"),
       password: formData.get("password"),
     });
+
     const { data } = await res.data; // no need to await here
 
     const userType = data?.data.type as UserType;

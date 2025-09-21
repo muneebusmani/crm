@@ -38,6 +38,7 @@ export class DealerController {
       return { success: false, error: message };
     }
   }
+  @Post()
    @UseInterceptors(FileInterceptor('logoFile'))
   async create(
     @Body() dto: Omit<CreateDealerDto, 'logo'>, // exclude logo string
@@ -57,9 +58,15 @@ export class DealerController {
     return this.dealerService.getDealerById(id);
   }
 
+  
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDealerDto) {
-    return this.dealerService.updateDealer(id, dto);
+  @UseInterceptors(FileInterceptor('logoFile'))
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDealerDto,
+    @UploadedFile() file?: Multer.File,
+  ) {
+    return this.dealerService.updateDealer(id, dto, file);
   }
 
   @Delete(':id')

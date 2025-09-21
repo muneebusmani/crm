@@ -1702,6 +1702,8 @@ import type React from "react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import AddDealerDialog from "./AddDealerDialog";
 import type { Dealer } from "@crm/types";
+import { json } from "stream/consumers";
+import { api } from "@/lib/api";
 
 const Dealers = () => {
   const theme = useTheme();
@@ -1785,22 +1787,18 @@ const Dealers = () => {
     formData.append("password", data.password);
     formData.append("owner", data.owner);
     formData.append("location", data.location);
-    formData.append("logo", data.logo); // optional: preview URL
+    if (data.logo) formData.append("logo", data.logo);
     if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
     formData.append("website", data.website);
     formData.append("contactEmail", data.contactEmail);
     if (data.tierId) formData.append("tierId", data.tierId.toString());
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/dealers`,
-      {
-        method: "POST",
-        body: formData, // <-- send as FormData
-      }
-    );
+   const { data: newDealer } = await api.post("/dealers", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-    if (!response.ok) throw new Error("Failed to add dealer");
-    const newDealer = await response.json();
     setDealers([...dealers, newDealer]);
     setOpen(false);
     setSelectedDealer(newDealer);
@@ -1852,7 +1850,7 @@ const handleEditSave = async (data: {
     if (data.username) formData.append("username", data.username);
     if (data.owner) formData.append("owner", data.owner);
     if (data.location) formData.append("location", data.location);
-    if (data.logo) formData.append("logo", data.logo); // optional preview URL
+    if (data.logo) formData.append("logo", data.logo);
     if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
     if (data.website) formData.append("website", data.website);
     if (data.contactEmail) formData.append("contactEmail", data.contactEmail);
@@ -2395,7 +2393,7 @@ const handleEditSave = async (data: {
                               }}
                             >
                               <Image
-                                src=''
+                                src={dealer.logo ?? ''}
                                 alt={dealer.name}
                                 width={24}
                                 height={24}
