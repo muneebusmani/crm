@@ -53,8 +53,17 @@ export class LeadsController {
     return this.buildResponse(result)
   }
 
-  @UseGuards(JwtAuthGuard, DealerGuard)
+  
+  @UseGuards(JwtAuthGuard)
   @Get()
+  async find(@Req() req): Promise<ApiResponse<Lead[]>> {
+    const dealerId = req.user.id; // dealer is the logged-in user
+    const result = await this.leadsService.findAll();
+    return this.buildResponse(result)
+  }
+
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get("dealer")
   async findAllForDealer(@Req() req): Promise<ApiResponse<Lead[]>> {
     const dealerId = req.user.id; // dealer is the logged-in user
     const result = await this.leadsService.findAllForDealer(dealerId);

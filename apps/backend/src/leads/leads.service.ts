@@ -40,6 +40,21 @@ export class LeadsService {
     }
   }
 
+   async findAll(): Promise<Lead[]> {
+    try {
+      return await this.leadRepo.find({
+        relations: ['dealerLeads', 'dealerLeads.dealer'],
+      });
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to fetch leads',
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      )
+      throw new CustomError('Unable to fetch leads')
+    }
+  }
+
   async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {
       return await this.leadRepo.find({

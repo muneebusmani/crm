@@ -9,15 +9,19 @@ import {
   Post,
   Put,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   UsePipes
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DealerService } from './dealer.service';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { CustomError } from 'src/common/custom-error';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { DealerGuard } from 'src/auth/guards/dealer.guard';
 import { Lead } from 'src/leads/entities/lead.entity';
+import type { Multer } from 'multer';
 
 
 @Controller('dealers')
@@ -34,10 +38,14 @@ export class DealerController {
       return { success: false, error: message };
     }
   }
-  @Post()
-  create(@Body() dto: CreateDealerDto) {
-    return this.dealerService.createDealer(dto);
+   @UseInterceptors(FileInterceptor('logoFile'))
+  async create(
+    @Body() dto: Omit<CreateDealerDto, 'logo'>, // exclude logo string
+    @UploadedFile() file: Multer.File, // ✅ Multer file type
+  ) {
+    return this.dealerService.createDealer(dto, file);
   }
+
 
   @Get()
   findAll() {

@@ -13,7 +13,6 @@ export async function loginAction(formData: FormData) {
       password: formData.get("password"),
     });
     const { data } = await res.data; // no need to await here
-    console.log(res.data);
 
     const userType = data?.data.type as UserType;
     const token = data?.accessToken as string;
@@ -35,7 +34,7 @@ export async function loginAction(formData: FormData) {
       path: "/",
       sameSite: "strict" as const,
     };
-
+    
     cookieStore.set("token", token, commonOptions);
     cookieStore.set("user_type", userType, commonOptions);
     cookieStore.set("id", data?.data.id.toString() as string, commonOptions);

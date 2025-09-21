@@ -17,11 +17,14 @@ import { Dealer } from '../../user/entities/dealer.entity';  // 👈 direct impo
 
 import { CustomError } from 'src/common/custom-error';
 import { MailerService } from '@nestjs-modules/mailer';
-import { join } from 'path';
+import path, { join } from 'path';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { DealerLead } from '../entities/dealer-lead.entity';
+import type { Multer } from 'multer';
+import * as fs from 'fs';
+
 
 @Injectable()
 export class DealerService {
@@ -49,32 +52,37 @@ export class DealerService {
 
   ) { }
 
-  async createDealer(dto: CreateDealerDto) {
+ async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create user first
+    // Save user
     const user = this.userRepository.create({
       name: dto.name,
       email: dto.email,
       username: dto.username,
       password: hashedPassword,
     });
-
     const savedUser = await this.userRepository.save(user);
 
-    // Create dealer record
+    // Handle logo file
+    let logoUrl = '';
+    if (logoFile) {
+      const uploadPath = path.join(__dirname, '../../Uploads', logoFile.originalname);
+      fs.writeFileSync(uploadPath, logoFile.buffer);
+      logoUrl = process.env.BACKEND_URL+`/uploads/${logoFile.originalname}`;
+    }
+
+    // Save dealer
     let dealerTier: DealerTier | null = null;
     if (dto.tierId) {
-      dealerTier = await this.dealerTierRepository.findOne({
-        where: { id: dto.tierId },
-      });
+      dealerTier = await this.dealerTierRepository.findOne({ where: { id: dto.tierId } });
     }
 
     const dealer = this.dealerRepository.create({
       name: dto.name,
       owner: dto.owner,
       location: dto.location,
-      logo: dto.logo,
+      logo: logoUrl, // store full URL
       website: dto.website,
       contactEmail: dto.contactEmail,
       tierId: dto.tierId,
@@ -84,8 +92,7 @@ export class DealerService {
 
     await this.dealerRepository.save(dealer);
 
-    // Return user with dealer relationship
-    return await this.userRepository.findOne({
+    return this.userRepository.findOne({
       where: { id: savedUser.id },
       relations: ['dealer', 'dealer.tier'],
     });
@@ -145,7 +152,7 @@ export class DealerService {
     if (dto.name !== undefined) updateDealer.name = dto.name;
     if (dto.owner !== undefined) updateDealer.owner = dto.owner;
     if (dto.location !== undefined) updateDealer.location = dto.location;
-    if (dto.logo !== undefined) updateDealer.logo = dto.logo;
+    // if (dto.logo !== undefined) updateDealer.logo = dto.logo;
     if (dto.website !== undefined) updateDealer.website = dto.website;
     if (dto.contactEmail !== undefined)
       updateDealer.contactEmail = dto.contactEmail;

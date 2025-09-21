@@ -1,6 +1,9 @@
-import type { Dealer } from "@crm/types";
+// AddDealerDialog.tsx
+import React, { useEffect, useState } from "react";
+import LogoUpload from "./LogoUpload";
 import CloseIcon from "@mui/icons-material/Close";
 import {
+  Avatar,
   Box,
   Button,
   Dialog,
@@ -17,8 +20,10 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import type React from "react";
-import { useEffect, useState } from "react";
+import { Dealer } from "@crm/types";
+
+// Your Dealer type
+
 
 interface AddDealerDialogProps {
   open: boolean;
@@ -31,12 +36,27 @@ interface AddDealerDialogProps {
     owner: string;
     location: string;
     logo: string;
+    logoFile: File | null; // real file
     website: string;
     contactEmail: string;
     tierId?: number;
   }) => void;
   initialData?: Dealer;
   isEditing?: boolean;
+}
+
+interface DealerFormData {
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+  owner: string;
+  location: string;
+  logo: string;        // preview URL
+  logoFile: File | null;
+  website: string;
+  contactEmail: string;
+  tierId: number;
 }
 
 const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
@@ -48,19 +68,21 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
 }) => {
   const theme = useTheme();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<DealerFormData>({
     name: "",
     email: "",
     username: "",
     password: "",
     owner: "",
     location: "",
-    logo: "",
+    logo: "",       // preview URL
+    logoFile: null, // actual file
     website: "",
     contactEmail: "",
     tierId: 1,
   });
 
+  // Populate form if editing
   useEffect(() => {
     if (initialData && isEditing) {
       setFormData({
@@ -70,7 +92,8 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         password: "",
         owner: initialData.owner,
         location: initialData.location,
-        logo: initialData.logo,
+        logo: initialData.logo || "",
+        logoFile: null, // fallback
         website: initialData.website,
         contactEmail: initialData.contactEmail,
         tierId: initialData.tierId || 1,
@@ -84,6 +107,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         owner: "",
         location: "",
         logo: "",
+        logoFile: null,
         website: "",
         contactEmail: "",
         tierId: 1,
@@ -92,7 +116,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
   }, [initialData, isEditing]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -142,29 +166,17 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ padding: theme.spacing(3) }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: theme.spacing(3),
-          }}
-        >
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              borderRadius: "50%",
-              backgroundColor: theme.palette.primary.main,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: theme.palette.common.white,
-              fontSize: 40,
-              fontWeight: 600,
-            }}
-          >
-            🚗
-          </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", marginBottom: 3 }}>
+          <LogoUpload
+            value={formData.logo}
+            onChange={(file, previewUrl) =>
+              setFormData((prev) => ({
+                ...prev,
+                logo: previewUrl || "",
+                logoFile: file,
+              }))
+            }
+          />
         </Box>
 
         <form onSubmit={handleSubmit}>
@@ -173,7 +185,6 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
             <Typography variant="subtitle1" gutterBottom>
               Dealer Information
             </Typography>
-
             <TextField
               fullWidth
               label="Dealer Name"
@@ -182,22 +193,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               onChange={handleChange}
               required
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
-
             <TextField
               fullWidth
               label="Owner Name"
@@ -206,22 +202,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               onChange={handleChange}
               required
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
-
             <TextField
               fullWidth
               label="Location"
@@ -229,45 +210,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               value={formData.location}
               onChange={handleChange}
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
-
-            <TextField
-              fullWidth
-              label="Logo URL"
-              name="logo"
-              value={formData.logo}
-              onChange={handleChange}
-              margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
-            />
-
             <TextField
               fullWidth
               label="Website"
@@ -275,20 +218,6 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               value={formData.website}
               onChange={handleChange}
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
           </Box>
 
@@ -297,7 +226,6 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
             <Typography variant="subtitle1" gutterBottom>
               Account Information
             </Typography>
-
             <TextField
               fullWidth
               label="Email"
@@ -307,22 +235,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               onChange={handleChange}
               required
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
-
             <TextField
               fullWidth
               label="Username"
@@ -331,40 +244,8 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               onChange={handleChange}
               required
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
-
-            <FormControl
-              fullWidth
-              variant="outlined"
-              margin="normal"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
-            >
+            <FormControl fullWidth variant="outlined" margin="normal">
               <InputLabel htmlFor="password">Password</InputLabel>
               <OutlinedInput
                 id="password"
@@ -374,17 +255,14 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
                 onChange={handleChange}
                 required={!isEditing}
                 label="Password"
-                autoComplete="new-password"
               />
             </FormControl>
-
             <FormControl fullWidth margin="normal">
               <InputLabel>Tier</InputLabel>
               <Select
                 name="tierId"
                 value={formData.tierId}
                 onChange={handleSelectChange}
-                label="Tier"
               >
                 <MenuItem value={1}>Tier 1</MenuItem>
                 <MenuItem value={2}>Tier 2</MenuItem>
@@ -398,7 +276,6 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
             <Typography variant="subtitle1" gutterBottom>
               Contact Information
             </Typography>
-
             <TextField
               fullWidth
               label="Contact Email"
@@ -408,46 +285,16 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
               onChange={handleChange}
               required
               margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.divider,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
             />
           </Box>
         </form>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          padding: theme.spacing(2),
-          justifyContent: "flex-end",
-          borderTop: `1px solid ${theme.palette.divider}`,
-        }}
-      >
+      <DialogActions sx={{ padding: theme.spacing(2), justifyContent: "flex-end" }}>
         <Button onClick={onClose} variant="outlined">
           Close
         </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          color="primary"
-          sx={{
-            backgroundColor: theme.palette.primary.main,
-            "&:hover": {
-              backgroundColor: theme.palette.primary.dark,
-            },
-          }}
-        >
+        <Button onClick={handleSubmit} variant="contained" color="primary">
           {isEditing ? "Update Dealer" : "Add Dealer"}
         </Button>
       </DialogActions>

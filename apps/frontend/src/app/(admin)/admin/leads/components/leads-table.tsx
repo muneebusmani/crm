@@ -976,21 +976,23 @@ const LeadsTable: React.FC = () => {
   });
 
   // Fetch leads from API
-  const fetchLeads = async () => {
-    try {
-      const leadsData = await leadsApi.getAll();
-      setLeads(leadsData);
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message:
-          error instanceof Error ? error.message : "Failed to fetch leads",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchLeads = async () => {
+  setLoading(true); // start loading
+  try {
+    const leadsData = await leadsApi.getAll();
+    setLeads(leadsData);
+  } catch (error) {
+    setSnackbar({
+      open: true,
+      message:
+        error instanceof Error ? error.message : "Failed to fetch leads",
+      severity: "error",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Set up socket connection and event listeners
   useEffect(() => {

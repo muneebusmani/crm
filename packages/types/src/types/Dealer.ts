@@ -1,3 +1,4 @@
+import { File } from "zod/v4/core/schemas.cjs";
 
 export interface Dealer {
   id: number;
@@ -7,6 +8,7 @@ export interface Dealer {
   owner: string;
   location: string;
   logo: string;
+  logoFile: File | null;
   website: string;
   contactEmail: string;
   tierId?: number;
