@@ -45,27 +45,28 @@ async findAll(
 ): Promise<Lead[]> {
   try {
     const leads = await this.leadRepo.find({
+      where: { is_deleted: false },
       relations: ["dealerLeads", "dealerLeads.dealer"],
     });
 
     return leads.map((lead) => {
-      const dealerLead = lead.dealerLeads.find(
-        (dl) => dl.dealer.id === dealerId,
-      );
+      const dealerLead = lead.dealerLeads
+        .filter((dl) => dl.dealer.id === dealerId)
+        .slice(-1)[0];
 
       return {
         ...lead,
-        status: dealerLead ? dealerLead.status : lead.status, // overwrite status
+        status: dealerLead ? dealerLead.status : lead.status,
       };
     });
-  } catch (error: unknown) {
-    this.logger.error(
-      "Failed to fetch leads",
-      error instanceof Error ? error.stack : "",
-      "LeadsService",
-    );
-    throw new CustomError("Unable to fetch leads");
-  }
+    } catch (error: unknown) {
+      this.logger.error(
+        "Failed to fetch leads",
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
+      );
+      throw new CustomError("Unable to fetch leads");
+    }
 }
 
 
@@ -148,16 +149,18 @@ async findAll(
 
   async remove(id: number): Promise<void> {
     try {
-      const result = await this.leadRepo.delete(id)
-      if (result.affected === 0) {
-        throw new CustomError(`Lead with ID ${id} not found`, 404)
+      const lead = await this.leadRepo.findOneBy({ id });
+      if (!lead) {
+        throw new CustomError("Lead not found!", 404);
       }
-    } catch (error: unknown) {
-      this.logger.error(
-        `Failed to delete lead ${id}`,
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
-      )
+      lead.is_deleted = true;
+      this.leadRepo.save(lead); // better than lead.save()
+      } catch (error: unknown) {
+        this.logger.error(
+          `Failed to delete lead ${id}`,
+          error instanceof Error ? error.stack : '',
+          'LeadsService',
+        )
       if (error instanceof CustomError) throw error
       throw new CustomError('Unable to delete lead')
     }

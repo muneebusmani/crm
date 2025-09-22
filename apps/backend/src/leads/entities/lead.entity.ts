@@ -96,6 +96,9 @@ export class Lead {
   @Column({ nullable: true, type: 'text' })
   notes!: string
 
+  @Column({ type: 'boolean', default: false })
+  is_deleted!: boolean;
+
 
   @OneToMany('DealerLead', 'lead')
   dealerLeads!: any[];
