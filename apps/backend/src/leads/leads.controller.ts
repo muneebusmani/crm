@@ -58,7 +58,7 @@ export class LeadsController {
   @Get()
   async find(@Req() req): Promise<ApiResponse<Lead[]>> {
     const dealerId = req.user.id; // dealer is the logged-in user
-    const result = await this.leadsService.findAll();
+    const result = await this.leadsService.findAll(dealerId);
     return this.buildResponse(result)
   }
 

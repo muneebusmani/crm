@@ -244,6 +244,9 @@ importers:
       axios:
         specifier: '>=1.12.0'
         version: 1.12.2
+      js-cookie:
+        specifier: ^3.0.5
+        version: 3.0.5
       next:
         specifier: 15.5.2
         version: 15.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -9894,8 +9897,7 @@ snapshots:
       nopt: 7.2.1
     optional: true
 
-  js-cookie@3.0.5:
-    optional: true
+  js-cookie@3.0.5: {}
 
   js-stringify@1.0.2:
     optional: true

@@ -38,6 +38,22 @@ export const leadsApi = {
     return result.data!;
   },
 
+
+  getById: async (id: number): Promise<Lead> => {
+    const response = await apiFetch(`${API_BASE_URL}/dealers/leads/${id}`, {
+      method : "GET"
+    });
+   
+    if (!response.success) {
+      throw new Error(response.error || "Failed to fetch lead");
+    }
+
+    return response.data!;
+  },
+
+  
+  
+
   // Create a new lead
   create: async (leadData: CreateLeadDto): Promise<Lead> => {
 

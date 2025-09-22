@@ -40,20 +40,35 @@ export class LeadsService {
     }
   }
 
-   async findAll(): Promise<Lead[]> {
-    try {
-      return await this.leadRepo.find({
-        relations: ['dealerLeads', 'dealerLeads.dealer'],
-      });
-    } catch (error: unknown) {
-      this.logger.error(
-        'Failed to fetch leads',
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
-      )
-      throw new CustomError('Unable to fetch leads')
-    }
+async findAll(
+  dealerId: number,
+): Promise<Lead[]> {
+  try {
+    const leads = await this.leadRepo.find({
+      relations: ["dealerLeads", "dealerLeads.dealer"],
+    });
+
+    return leads.map((lead) => {
+      const dealerLead = lead.dealerLeads.find(
+        (dl) => dl.dealer.id === dealerId,
+      );
+
+      return {
+        ...lead,
+        status: dealerLead ? dealerLead.status : lead.status, // overwrite status
+      };
+    });
+  } catch (error: unknown) {
+    this.logger.error(
+      "Failed to fetch leads",
+      error instanceof Error ? error.stack : "",
+      "LeadsService",
+    );
+    throw new CustomError("Unable to fetch leads");
   }
+}
+
+
 
   async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {
