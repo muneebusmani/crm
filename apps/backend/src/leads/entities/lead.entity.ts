@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
@@ -94,6 +95,14 @@ export class Lead {
 
   @Column({ nullable: true, type: 'text' })
   notes!: string
+
+
+  @OneToMany('DealerLead', 'lead')
+  dealerLeads!: any[];
+
+  
+  @OneToMany('Quotation', 'lead')
+  quotations!: any[];
 
   // ✅ Auto timestamps for analytics
   @CreateDateColumn({ type: 'timestamp' })

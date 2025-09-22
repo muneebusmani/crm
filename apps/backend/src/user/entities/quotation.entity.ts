@@ -22,7 +22,11 @@ export class Quotation {
   @Column('text')
   message!: string;
 
- @ManyToOne('Dealer', 'quotations')
- @JoinColumn({ name: 'dealerId' })
+  @ManyToOne('User', 'quotations') // 'User' entity as string, 'quotations' is property in User
+  @JoinColumn({ name: 'dealerId' })
   dealer: any;
+
+  @ManyToOne('Lead', 'quotations')
+  @JoinColumn({ name: 'leadId' })
+  lead: any;
 }

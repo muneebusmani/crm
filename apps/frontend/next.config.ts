@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     globalNotFound: true,
   },
   images: {
+     domains: ['png.pngtree.com', 'localhost'], // add any external domains you use
     remotePatterns: [
       {
         protocol: "https",

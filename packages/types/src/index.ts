@@ -4,6 +4,8 @@ export * from './types/Api';
 export * from './types/Dealer';
 export * from './types/Quotation';
 export * from './types/UserStatus';
+export * from './types/LeadTypes';
+
 export * from './schemas/auth.schema';
 export * from './schemas/admin.schema';
 export * from './schemas/dealer.schema';

@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <idk> */
+
 import type {
   ApiResponse,
   CreateLeadDto,
@@ -6,14 +7,17 @@ import type {
   UpdateLeadDto,
 } from "@crm/types";
 
+import { apiFetch } from "../app/lib/apiClient";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
 export const leadsApi = {
   // Get all leads
   getAll: async (): Promise<Lead[]> => {
-    const response = await fetch(`${API_BASE_URL}/leads`);
-    const result: ApiResponse<Lead[]> = await response.json();
+    const result: ApiResponse<Lead[]> = await apiFetch("/leads", {
+      method: "GET",
+    });
 
     if (!result.success) {
       throw new Error(result.error || "Failed to fetch leads");
@@ -34,8 +38,25 @@ export const leadsApi = {
     return result.data!;
   },
 
+
+  getById: async (id: number): Promise<Lead> => {
+    const response = await apiFetch(`${API_BASE_URL}/dealers/leads/${id}`, {
+      method : "GET"
+    });
+   
+    if (!response.success) {
+      throw new Error(response.error || "Failed to fetch lead");
+    }
+
+    return response.data!;
+  },
+
+  
+  
+
   // Create a new lead
   create: async (leadData: CreateLeadDto): Promise<Lead> => {
+
     const response = await fetch(`${API_BASE_URL}/leads`, {
       method: "POST",
       headers: {

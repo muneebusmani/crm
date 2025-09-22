@@ -32,10 +32,6 @@ export const CreateDealerSchema = z.object({
     .trim()
     .min(1, { message: "Location is required" }),
 
-  logo: z.string()
-    .trim()
-    .min(1, { message: "Logo URL is required" }),
-
   website: z
     .url({ message: "Must be a valid URL" })
     .trim(),

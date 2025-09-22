@@ -994,6 +994,30 @@ const LeadsTable: React.FC = () => {
 };
 
 
+const fetchLeadById = async (id: number) => {
+  setLoading(true);
+  try {
+    const leadData = await leadsApi.getById(id);
+    setSelectedLead(leadData);
+    return leadData;
+  } catch (error) {
+    setSnackbar({
+      open: true,
+      message:
+        error instanceof Error ? error.message : "Failed to fetch lead info",
+      severity: "error",
+    });
+    return null;
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+
+
   // Set up socket connection and event listeners
   useEffect(() => {
     const socket = socketService.connect();
@@ -1070,7 +1094,7 @@ const LeadsTable: React.FC = () => {
     );
   };
 
-  const handleActionClick = (action: string, lead: Lead) => {
+  const handleActionClick = async (action: string, lead: Lead) => {
     setSelectedLead(lead);
     switch (action) {
       case "email":
@@ -1080,7 +1104,11 @@ const LeadsTable: React.FC = () => {
         setOpenEditDialog(true);
         break;
       case "info":
+      const detailedLead = await fetchLeadById(lead.id);
+      if (detailedLead) {
         setOpenInfoDialog(true);
+      }
+      break;
         break;
       default:
         break;

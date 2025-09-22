@@ -8,11 +8,20 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
   UsePipes
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DealerService } from './dealer.service';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { CustomError } from 'src/common/custom-error';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
+import { Lead } from 'src/leads/entities/lead.entity';
+import type { Multer } from 'multer';
 
 
 @Controller('dealers')
@@ -30,9 +39,14 @@ export class DealerController {
     }
   }
   @Post()
-  create(@Body() dto: CreateDealerDto) {
-    return this.dealerService.createDealer(dto);
+   @UseInterceptors(FileInterceptor('logoFile'))
+  async create(
+    @Body() dto: Omit<CreateDealerDto, 'logo'>, // exclude logo string
+    @UploadedFile() file: Multer.File, // ✅ Multer file type
+  ) {
+    return this.dealerService.createDealer(dto, file);
   }
+
 
   @Get()
   findAll() {
@@ -44,9 +58,15 @@ export class DealerController {
     return this.dealerService.getDealerById(id);
   }
 
+  
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDealerDto) {
-    return this.dealerService.updateDealer(id, dto);
+  @UseInterceptors(FileInterceptor('logoFile'))
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDealerDto,
+    @UploadedFile() file?: Multer.File,
+  ) {
+    return this.dealerService.updateDealer(id, dto, file);
   }
 
   @Delete(':id')
@@ -54,9 +74,11 @@ export class DealerController {
     return this.dealerService.deleteDealer(id);
   }
 
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Post("quotations")
   @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
-  async createQuotation(@Body() dto: CreateQuotationDto): Promise<ApiResponse<Quotation>> {
+  async createQuotation(@Body() dto: CreateQuotationDto, @Req() req): Promise<ApiResponse<Quotation>> {
+    dto.dealerId = req.user.id;  // cast to 'any' if TS complains
     const result = await this.dealerService.createQuotation(dto)
     return this.buildResponse(result);
   }
@@ -65,6 +87,14 @@ export class DealerController {
   async forgotPassword(@Body('email') email: string): Promise<ApiResponse<User>> {
     const result =  await this.dealerService.forgotPassword(email);
     return this.buildResponse(result);
+  }
+
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('/leads/:id')
+  async findLeadById(@Param('id') id: number,  @Req() req): Promise<ApiResponse<Lead>> {
+    const dealerId = req.user.id; // dealer is the logged-in user
+    const result = await this.dealerService.getLeadById(id, dealerId);
+    return this.buildResponse(result)
   }
 
   @Post('reset-password')

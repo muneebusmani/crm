@@ -66,8 +66,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     this.configService = configService;
   }
 
-  async validate(payload: { sub: number; email: string }) {
-    // payload.sub is the user ID
+  async validate(payload: { sub: number; email: string; role: string }) {
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
     });
@@ -76,6 +75,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new Error('User not found');
     }
 
-    return user;
+    // Attach role also from DB if you want stronger trust
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.type,
+    };
   }
+
 }
