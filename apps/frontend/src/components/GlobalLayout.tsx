@@ -13,7 +13,7 @@ const GlobalLayout = ({ children }: { children: ReactNode }): JSX.Element => {
   return (
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
+        <CssBaseline enableColorScheme />
         {children}
       </ThemeProvider>
     </AppRouterCacheProvider>

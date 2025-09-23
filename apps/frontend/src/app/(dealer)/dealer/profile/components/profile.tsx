@@ -34,9 +34,7 @@ const Profile = ({ id }: { id: any }) => {
       try {
         setLoading(true);
         console.log(id);
-        const response = await api.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
-        );
+        const response = await api.get(`/dealers/${id}`);
         console.log(response.data);
         if (response.status !== 200) throw new Error("Failed to fetch profile");
 
@@ -56,7 +54,7 @@ const Profile = ({ id }: { id: any }) => {
           tierId: dealer?.tier?.id,
         };
 
-        setProfileData(profile);
+        setProfileData(profile as Dealer);
       } catch (err) {
         console.error("Failed to load profile:", err);
       } finally {
@@ -168,7 +166,7 @@ const Profile = ({ id }: { id: any }) => {
         tierId: dealer?.tier?.id || profileData.tierId,
       };
 
-      setProfileData(updatedProfile);
+      setProfileData(updatedProfile as Dealer);
       setOpenEditDialog(false);
       alert("Profile updated successfully!");
     } catch (err) {

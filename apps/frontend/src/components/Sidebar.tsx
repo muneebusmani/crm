@@ -1,19 +1,19 @@
 "use client";
 
 import {
-  Analytics as AnalyticsIcon,
+  AccountBoxOutlined as AccountBoxOutlinedIcon,
   Circle as CircleIcon,
   Dashboard as DashboardIcon,
-  ExpandLess,
-  ExpandMore,
-  Help as HelpIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  GroupOutlined as GroupOutlinedIcon,
+  Groups2 as Groups2Icon,
   Home as HomeIcon,
+  Inventory2Outlined as Inventory2OutlinedIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
-  Notifications as NotificationsIcon,
+  Message as MessageIcon,
   Person as PersonIcon,
-  Settings as SettingsIcon,
-  ShoppingCart as ShoppingCartIcon,
 } from "@mui/icons-material";
 import {
   Box,
@@ -33,10 +33,30 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
-import { getCookie } from "@/lib/cookie";
 
 const drawerWidth = 280;
 
+const adminNavigationItems: NavigationItem[] = [
+  { text: "Dashboard", icon: <DashboardIcon />, path: "/admin" },
+  { text: "Leads", icon: <GroupOutlinedIcon />, path: "/dealer/leads" },
+  { text: "Dealers", icon: <PersonIcon />, path: "/admin/dealer" },
+];
+
+const dealerNavigationItems: NavigationItem[] = [
+  { text: "Home", icon: <HomeIcon />, path: "/dealer" },
+  { text: "Leads", icon: <Groups2Icon />, path: "/dealer/leads" },
+  { text: "Messages", icon: <MessageIcon />, path: "/dealer/messages" },
+  {
+    text: "Packages",
+    icon: <Inventory2OutlinedIcon />,
+    path: "/dealer/packages",
+  },
+  {
+    text: "Profile",
+    icon: <AccountBoxOutlinedIcon />,
+    path: "/dealer/profile",
+  },
+];
 interface NavigationItem {
   text: string;
   icon: React.ReactNode;
@@ -47,59 +67,27 @@ interface NavigationItem {
   }>;
 }
 
-const adminNavigationItems: NavigationItem[] = [
-  { text: "Dashboard", icon: <DashboardIcon />, path: "/admin" },
-  {
-    text: "Leads",
-    icon: <AnalyticsIcon />,
-    path: "/leads",
-    subItems: [
-      { text: "Overview", path: "/analytics/overview" },
-      { text: "Reports", path: "/analytics/reports" },
-      { text: "Insights", path: "/analytics/insights" },
-    ],
-  },
-  { text: "Products", icon: <ShoppingCartIcon />, path: "/products" },
-  { text: "Dealers", icon: <PersonIcon />, path: "/admin/dealer" },
-  {
-    text: "Notifications",
-    icon: <NotificationsIcon />,
-    path: "/notifications",
-  },
-];
-
-const dealerNavigationItems: NavigationItem[] = [
-  { text: "Home", icon: <HomeIcon />, path: "/dealer" },
-  { text: "Products", icon: <ShoppingCartIcon />, path: "/products" },
-  { text: "Leads", icon: <AnalyticsIcon />, path: "/leads" },
-  {
-    text: "Notifications",
-    icon: <NotificationsIcon />,
-    path: "/notifications",
-  },
-];
-
-// Then inside your Sidebar component function:
-
-const user_type = getCookie("user_type"); // Read from cookie
-const navigationItems =
-  user_type === "dealer" ? dealerNavigationItems : adminNavigationItems;
-
-const bottomNavigationItems: NavigationItem[] = [
-  { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
-  { text: "Help", icon: <HelpIcon />, path: "/help" },
-  { text: "Logout", icon: <LogoutIcon />, path: "/logout" },
-];
-
 interface SidebarProps {
+  userType: string | undefined;
   mobileOpen?: boolean;
   onMobileToggle?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
+  userType,
   mobileOpen = false,
   onMobileToggle,
 }) => {
+  console.log("userType ===>", userType);
+
+  const navigationItems =
+    userType === "dealer" ? dealerNavigationItems : adminNavigationItems;
+
+  const bottomNavigationItems: NavigationItem[] = [
+    // { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+    // { text: "Help", icon: <HelpIcon />, path: "/help" },
+    { text: "Logout", icon: <LogoutIcon />, path: "/logout" },
+  ];
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const pathname = usePathname();
@@ -160,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {item.icon}
               </ListItemIcon>
               <ListItemText primary={item.text} sx={{ ml: 1 }} />
-              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </ListItemButton>
           ) : (
             <Link
@@ -380,7 +368,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 };
 
 // Layout component
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC<{
+  children: React.ReactNode;
+  userType: string | undefined;
+}> = ({ children, userType }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -391,7 +382,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar mobileOpen={mobileOpen} onMobileToggle={handleDrawerToggle} />
+      <Sidebar
+        userType={userType}
+        mobileOpen={mobileOpen}
+        onMobileToggle={handleDrawerToggle}
+      />
 
       <Box
         component="main"
@@ -426,7 +421,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
 
         {/* Main content area */}
-        <Box sx={{ px: 3, pb: 3, pt: isMobile ? 8 : 1 }}>{children}</Box>
+        <Box>{children}</Box>
       </Box>
     </Box>
   );
