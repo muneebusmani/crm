@@ -110,67 +110,67 @@
 //   );
 // }
 // components/message-bubble.tsx
-import type { Message } from "@dealer/types/chat";
-import { Box, Paper, Typography, styled } from "@mui/material";
-import Image from "next/image";
+import type { Message } from '@dealer/types/chat'
+import { Box, Paper, styled, Typography } from '@mui/material'
+import Image from 'next/image'
 
 const Bubble = styled(Paper, {
-  shouldForwardProp: (prop) => prop !== "isUser",
+  shouldForwardProp: (prop) => prop !== 'isUser',
 })<{ isUser: boolean }>(({ theme, isUser }) => ({
-  maxWidth: "70%",
+  maxWidth: '70%',
   padding: theme.spacing(1.5),
   margin: theme.spacing(0.5, isUser ? 1 : 3, 0.5, isUser ? 3 : 1),
-  wordWrap: "break-word",
+  wordWrap: 'break-word',
   backgroundColor: isUser
     ? theme.palette.primary.main
     : theme.palette.grey[200],
   color: isUser ? theme.palette.common.white : theme.palette.text.primary,
-  alignSelf: isUser ? "flex-end" : "flex-start",
-  borderRadius: isUser ? "18px 18px 0 18px" : "18px 18px 18px 0",
-  boxShadow: "none",
-}));
+  alignSelf: isUser ? 'flex-end' : 'flex-start',
+  borderRadius: isUser ? '18px 18px 0 18px' : '18px 18px 18px 0',
+  boxShadow: 'none',
+}))
 
 const Timestamp = styled(Typography)(({ theme }) => ({
-  fontSize: "0.7rem",
+  fontSize: '0.7rem',
   color: theme.palette.text.secondary,
   marginTop: theme.spacing(0.5),
-  textAlign: "right",
-}));
+  textAlign: 'right',
+}))
 
 interface MessageBubbleProps {
-  message: Message;
+  message: Message
 }
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
 
   // Generate avatar URL
   const getAvatarUrl = (name: string) => {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=40&background=3f51b5&color=ffffff&type=png`;
-  };
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=40&background=3f51b5&color=ffffff&type=png`
+  }
 
   const avatarUrl =
-    message.sender === "user" ? getAvatarUrl("You") : getAvatarUrl("Ali");
+    message.sender === 'user' ? getAvatarUrl('You') : getAvatarUrl('Ali')
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
       {/* Avatar + Message */}
       <Box
         sx={{
-          display: "flex",
-          alignItems: "flex-start",
+          display: 'flex',
+          alignItems: 'flex-start',
           gap: 1,
-          flexDirection: message.sender === "user" ? "row-reverse" : "row",
+          flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
         }}
       >
         <Box
           sx={{
             width: 36,
             height: 36,
-            borderRadius: "50%",
-            overflow: "hidden",
+            borderRadius: '50%',
+            overflow: 'hidden',
             flexShrink: 0,
           }}
         >
@@ -179,10 +179,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             alt="Avatar"
             width={36}
             height={36}
-            style={{ objectFit: "cover" }}
+            style={{ objectFit: 'cover' }}
           />
         </Box>
-        <Bubble isUser={message.sender === "user"}>
+        <Bubble isUser={message.sender === 'user'}>
           <Typography variant="body1" sx={{ fontWeight: 400 }}>
             {message.text}
           </Typography>
@@ -190,5 +190,5 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         </Bubble>
       </Box>
     </Box>
-  );
+  )
 }

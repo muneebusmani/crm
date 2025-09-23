@@ -104,28 +104,29 @@
 //   );
 // }
 // components/sidebar.tsx
-import React from "react";
+
+import SearchIcon from '@mui/icons-material/Search'
 import {
   Box,
   Divider,
-  InputBase,
   IconButton,
+  InputBase,
   Typography,
   useTheme,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import SidebarChatItem from "./sidebar-chat-item";
+} from '@mui/material'
+import React from 'react'
+import SidebarChatItem from './sidebar-chat-item'
 
 interface SidebarProps {
   chats: {
-    id: string;
-    name: string;
-    lastMessage: string;
-    timestamp: string;
-    avatarUrl: string;
-  }[];
-  currentChatId: string;
-  onSelectChat: (id: string) => void;
+    id: string
+    name: string
+    lastMessage: string
+    timestamp: string
+    avatarUrl: string
+  }[]
+  currentChatId: string
+  onSelectChat: (id: string) => void
 }
 
 export default function Sidebar({
@@ -133,17 +134,17 @@ export default function Sidebar({
   currentChatId,
   onSelectChat,
 }: SidebarProps) {
-  const theme = useTheme();
+  const theme = useTheme()
 
   return (
     <Box
       sx={{
         width: 320,
-        height: "100vh",
+        height: '100vh',
         backgroundColor: theme.palette.background.paper,
         borderRight: `1px solid ${theme.palette.divider}`,
-        display: "flex",
-        flexDirection: "column",
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Header */}
@@ -162,8 +163,8 @@ export default function Sidebar({
       <Box
         sx={{
           padding: theme.spacing(1),
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           gap: 1,
           backgroundColor: theme.palette.grey[300],
           borderRadius: 1,
@@ -185,7 +186,7 @@ export default function Sidebar({
       </Box>
 
       {/* Chat List */}
-      <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', p: 1 }}>
         {chats.map((chat) => (
           <SidebarChatItem
             key={chat.id}
@@ -199,5 +200,5 @@ export default function Sidebar({
         ))}
       </Box>
     </Box>
-  );
+  )
 }
