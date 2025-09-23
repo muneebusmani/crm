@@ -29,8 +29,6 @@ const Logo = () => (
 );
 
 export default function LoginPage() {
-    console.log("Backend API URL:", process.env.NEXT_PUBLIC_API_URL);
-
   return (
     <>
       <CssBaseline />

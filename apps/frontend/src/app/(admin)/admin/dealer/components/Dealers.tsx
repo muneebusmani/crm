@@ -1702,10 +1702,10 @@ import type React from "react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import AddDealerDialog from "./AddDealerDialog";
 import type { Dealer } from "@crm/types";
-import { json } from "stream/consumers";
 import { api } from "@/lib/api";
 
 const Dealers = () => {
+  const API_URL = process.env.NEXT_PUBLIC_BASE_API_URL || "";
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [dealers, setDealers] = useState<Dealer[]>([]);
@@ -1724,12 +1724,10 @@ const Dealers = () => {
     const fetchDealers = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/dealers`,
-        );
-        if (!response.ok) throw new Error("Failed to fetch dealers");
+        const response = await api.get(`/dealers`);
+        if (response.status !== 200) throw new Error("Failed to fetch dealers");
 
-        const data = await response.json();
+        const data = await response.data;
         console.log("raw data ===>", data);
 
         // flatten structure
@@ -1767,46 +1765,49 @@ const Dealers = () => {
 
   // Handle dealer addition
   const handleAddDealer = async (data: {
-  name: string;
-  email: string;
-  username: string;
-  password: string;
-  owner: string;
-  location: string;
-  logo: string;
-  logoFile: File | null;
-  website: string;
-  contactEmail: string;
-  tierId?: number;
-}) => {
-  try {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("email", data.email);
-    formData.append("username", data.username);
-    formData.append("password", data.password);
-    formData.append("owner", data.owner);
-    formData.append("location", data.location);
-    if (data.logo) formData.append("logo", data.logo);
-    if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
-    formData.append("website", data.website);
-    formData.append("contactEmail", data.contactEmail);
-    if (data.tierId) formData.append("tierId", data.tierId.toString());
+    name: string;
+    email: string;
+    username: string;
+    password: string;
+    owner: string;
+    location: string;
+    logo: string;
+    logoFile: File | null;
+    website: string;
+    contactEmail: string;
+    tierId?: number;
+  }) => {
+    try {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("email", data.email);
+      formData.append("username", data.username);
+      formData.append("password", data.password);
+      formData.append("owner", data.owner);
+      formData.append("location", data.location);
+      if (data.logo) formData.append("logo", data.logo);
+      if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
+      formData.append("website", data.website);
+      formData.append("contactEmail", data.contactEmail);
+      if (data.tierId) formData.append("tierId", data.tierId.toString());
 
-   const { data: newDealer } = await api.post("/dealers", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+      const { data: newDealer } = await api.post(
+        "/dealers",
+        formData,
+        //   {
+        //   headers: {
+        //     "Content-Type": "multipart/form-data",
+        //   },
+        // }
+      );
 
-    setDealers([...dealers, newDealer]);
-    setOpen(false);
-    setSelectedDealer(newDealer);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Failed to add dealer");
-  }
-};
-
+      setDealers([...dealers, newDealer]);
+      setOpen(false);
+      setSelectedDealer(newDealer);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add dealer");
+    }
+  };
 
   // Handle dealer selection (only for checkbox selection)
   const handleSelectDealer = (dealer: Dealer) => {
@@ -1827,62 +1828,61 @@ const Dealers = () => {
   };
 
   // Handle edit save
-const handleEditSave = async (data: {
-  name?: string;
-  email?: string;
-  username?: string;
-  password?: string | null;
-  owner?: string;
-  location?: string;
-  logo?: string;
-  logoFile?: File | null; // include actual file
-  website?: string;
-  contactEmail?: string;
-  tierId?: number;
-}) => {
-  try {
-    if (!editData) return;
+  const handleEditSave = async (data: {
+    name?: string;
+    email?: string;
+    username?: string;
+    password?: string | null;
+    owner?: string;
+    location?: string;
+    logo?: string;
+    logoFile?: File | null; // include actual file
+    website?: string;
+    contactEmail?: string;
+    tierId?: number;
+  }) => {
+    try {
+      if (!editData) return;
 
-    const formData = new FormData();
+      const formData = new FormData();
 
-    if (data.name) formData.append("name", data.name);
-    if (data.email) formData.append("email", data.email);
-    if (data.username) formData.append("username", data.username);
-    if (data.owner) formData.append("owner", data.owner);
-    if (data.location) formData.append("location", data.location);
-    if (data.logo) formData.append("logo", data.logo);
-    if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
-    if (data.website) formData.append("website", data.website);
-    if (data.contactEmail) formData.append("contactEmail", data.contactEmail);
-    if (data.tierId) formData.append("tierId", data.tierId.toString());
+      if (data.name) formData.append("name", data.name);
+      if (data.email) formData.append("email", data.email);
+      if (data.username) formData.append("username", data.username);
+      if (data.owner) formData.append("owner", data.owner);
+      if (data.location) formData.append("location", data.location);
+      if (data.logo) formData.append("logo", data.logo);
+      if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
+      if (data.website) formData.append("website", data.website);
+      if (data.contactEmail) formData.append("contactEmail", data.contactEmail);
+      if (data.tierId) formData.append("tierId", data.tierId.toString());
 
-    // Only append password if it's not empty
-    if (data.password && data.password.trim() !== "") {
-      formData.append("password", data.password);
-    }
-
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/dealers/${editData.id}`,
-      {
-        method: "PUT",
-        body: formData, // send as FormData
+      // Only append password if it's not empty
+      if (data.password && data.password.trim() !== "") {
+        formData.append("password", data.password);
       }
-    );
 
-    if (!response.ok) throw new Error("Failed to update dealer");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/dealers/${editData.id}`,
+        {
+          method: "PUT",
+          body: formData, // send as FormData
+        },
+      );
 
-    const updatedDealer = await response.json();
+      if (!response.ok) throw new Error("Failed to update dealer");
 
-    setDealers(
-      dealers.map((d) => (d.id === updatedDealer.id ? updatedDealer : d))
-    );
-    setSelectedDealer(updatedDealer);
-    setIsEditing(false);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Failed to update dealer");
-  }
-};
+      const updatedDealer = await response.json();
 
+      setDealers(
+        dealers.map((d) => (d.id === updatedDealer.id ? updatedDealer : d)),
+      );
+      setSelectedDealer(updatedDealer);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update dealer");
+    }
+  };
 
   // Handle delete
   const handleDelete = async (id: number) => {
@@ -2393,7 +2393,7 @@ const handleEditSave = async (data: {
                               }}
                             >
                               <Image
-                                src={dealer.logo ?? ''}
+                                src={dealer.logo}
                                 alt={dealer.name}
                                 width={24}
                                 height={24}

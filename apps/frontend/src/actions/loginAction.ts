@@ -35,7 +35,7 @@ export async function loginAction(formData: FormData) {
       path: "/",
       sameSite: "strict" as const,
     };
-    
+
     cookieStore.set("token", token, commonOptions);
     cookieStore.set("user_type", userType, commonOptions);
     cookieStore.set("id", data?.data.id.toString() as string, commonOptions);
