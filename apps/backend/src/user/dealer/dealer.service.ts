@@ -25,6 +25,7 @@ import { Lead } from 'src/leads/entities/lead.entity';
 import { DealerLead } from '../entities/dealer-lead.entity';
 import type { Multer } from 'multer';
 import * as fs from 'fs';
+import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 
 
 @Injectable()
@@ -38,6 +39,8 @@ export class DealerService {
     @InjectRepository(Lead)
     private leadRepository: Repository<Lead>,
 
+
+
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
 
@@ -46,6 +49,9 @@ export class DealerService {
 
     @InjectRepository(DealerLead)
     private readonly dealerLeadRepository: Repository<DealerLead>,
+
+    @InjectRepository(LeadMessage)
+    private leadMessageRepository: Repository<LeadMessage>,
 
     private readonly mailService: MailerService,
     private readonly configService: ConfigService,   // 👈 inject here
@@ -258,6 +264,7 @@ export class DealerService {
         },
       });
       await this.ensureDealerLead(dto.leadId, delaerId!, LeadStatus.QUOTATION_SENT);
+      await this.leadMessage(lead.id, dealer.id, dto.message);
       return result;
     }
     catch (error: unknown) {
@@ -361,6 +368,33 @@ export class DealerService {
     });
 
     return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+  }
+
+
+   private async leadMessage(leadId: number, dealerId: number, content: string) {
+    // check if already exists
+
+    const existing = await this.leadMessageRepository.findOne({
+      where: { dealer: { id: dealerId }, lead: { id: leadId }},
+      relations: ['dealer', 'lead'],
+    });
+
+
+    if (existing) return existing; // already linked
+
+    // fetch dealer + lead (only ids needed)
+    const dealer = await this.userRepository.findOneBy({ id: dealerId });
+    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+
+    const lead = await this.leadRepository.findOneBy({ id: leadId });
+    if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+   const message = this.leadMessageRepository.create({
+        content: content,
+        dealer,
+        lead,
+      });
+      return await  this.leadMessageRepository.save(message);
   }
 
 

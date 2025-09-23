@@ -58,6 +58,7 @@ export class Dealer {
   @JoinColumn({ name: 'tierName' })
   tier!: DealerTier;
 
+
   @OneToMany('Quotation', 'dealer')
   quotations!: any[];
 }

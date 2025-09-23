@@ -113,4 +113,7 @@ export class Lead {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date
+
+  @OneToMany('LeadMessage', 'lead')
+  messages!: any[];
 }
