@@ -1,6 +1,7 @@
 "use server";
 
-import axios, { AxiosRequestConfig } from "axios";
+import type { ApiResponse } from "@crm/types";
+import axios, { type AxiosRequestConfig, isAxiosError } from "axios";
 import { cookies } from "next/headers";
 
 const API_BASE_URL =
@@ -9,16 +10,17 @@ const API_BASE_URL =
 /**
  * Generic API client using Axios that attaches Bearer token automatically
  */
-export async function apiFetch(
+export async function api<T>(
   path: string,
   options: AxiosRequestConfig = {},
-  skipAuth = false // use true for login/register
-) {
+  skipAuth = false, // use true for login/register
+): Promise<ApiResponse<T>> {
   const token = !skipAuth ? (await cookies()).get("token")?.value : null;
 
   const axiosConfig: AxiosRequestConfig = {
     baseURL: API_BASE_URL,
     url: path,
+    withCredentials: true,
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -30,14 +32,14 @@ export async function apiFetch(
   try {
     const response = await axios(axiosConfig);
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Axios errors have a response object
-    if (error.response) {
+    if (isAxiosError(error)) {
       throw new Error(
-        `API Error: ${error.response.status} - ${error.response.data?.message || error.message}`
+        `API Error: ${error.status} - ${error.message || error.message}`,
       );
     } else {
-      throw new Error(`API Error: ${error.message}`);
+      throw new Error(`API Error: ${JSON.stringify(error)}`);
     }
   }
 }

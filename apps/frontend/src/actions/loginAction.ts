@@ -33,9 +33,9 @@ export async function loginAction(formData: FormData) {
       secure: process.env.NODE_ENV === "production",
       maxAge: expiry,
       path: "/",
-      sameSite: "strict" as const,
+      sameSite: "lax" as const,
     };
-    
+
     cookieStore.set("token", token, commonOptions);
     cookieStore.set("user_type", userType, commonOptions);
     cookieStore.set("id", data?.data.id.toString() as string, commonOptions);
