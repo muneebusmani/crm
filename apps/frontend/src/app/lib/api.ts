@@ -20,6 +20,7 @@ export async function api<T>(
   const axiosConfig: AxiosRequestConfig = {
     baseURL: API_BASE_URL,
     url: path,
+    withCredentials: true,
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
