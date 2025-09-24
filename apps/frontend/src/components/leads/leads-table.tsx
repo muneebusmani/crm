@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { Lead } from "@crm/types";
+import type { Lead } from '@crm/types';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -9,7 +9,7 @@ import {
   FilterList as FilterListIcon,
   Info as InfoIcon,
   Search as SearchIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -29,18 +29,18 @@ import {
   TableRow,
   Typography,
   useTheme,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-import { leadsApi } from "@/services/leads.service";
-import { socketService } from "@/services/socket.service";
-import LeadEditDialog from "./lead-edit-dialog";
-import LeadEmailDialog from "./lead-email-dialog";
-import LeadInfoDialog from "./lead-info-dialog";
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { leadsApi } from '@/services/leads.service';
+import { socketService } from '@/services/socket.service';
+import LeadEditDialog from './lead-edit-dialog';
+import LeadEmailDialog from './lead-email-dialog';
+import LeadInfoDialog from './lead-info-dialog';
 
 const LeadsTable: React.FC = () => {
   const theme = useTheme();
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,8 +54,8 @@ const LeadsTable: React.FC = () => {
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: "",
-    severity: "success" as "success" | "error" | "warning" | "info",
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info',
   });
 
   // Fetch leads from API
@@ -68,8 +68,8 @@ const LeadsTable: React.FC = () => {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to fetch leads",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to fetch leads',
+        severity: 'error',
       });
     } finally {
       setLoading(false);
@@ -86,8 +86,8 @@ const LeadsTable: React.FC = () => {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to fetch lead info",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to fetch lead info',
+        severity: 'error',
       });
       return null;
     } finally {
@@ -103,8 +103,8 @@ const LeadsTable: React.FC = () => {
       setLeads((prev) => [...prev, newLead]);
       setSnackbar({
         open: true,
-        message: `New lead created: ${newLead.name || "Unknown"}`,
-        severity: "success",
+        message: `New lead created: ${newLead.name || 'Unknown'}`,
+        severity: 'success',
       });
     });
 
@@ -114,8 +114,8 @@ const LeadsTable: React.FC = () => {
       );
       setSnackbar({
         open: true,
-        message: `Lead updated: ${updatedLead.name || "Unknown"}`,
-        severity: "success",
+        message: `Lead updated: ${updatedLead.name || 'Unknown'}`,
+        severity: 'success',
       });
     });
 
@@ -124,8 +124,8 @@ const LeadsTable: React.FC = () => {
       setLeads((prev) => prev.filter((lead) => String(lead.id) !== String(id)));
       setSnackbar({
         open: true,
-        message: "Lead deleted successfully",
-        severity: "success",
+        message: 'Lead deleted successfully',
+        severity: 'success',
       });
     });
 
@@ -171,13 +171,13 @@ const LeadsTable: React.FC = () => {
   const handleActionClick = async (action: string, lead: Lead) => {
     setSelectedLead(lead);
     switch (action) {
-      case "email":
+      case 'email':
         setOpenEmailDialog(true);
         break;
-      case "edit":
+      case 'edit':
         setOpenEditDialog(true);
         break;
-      case "info": {
+      case 'info': {
         const detailedLead = await fetchLeadById(lead.id);
         if (detailedLead) {
           setOpenInfoDialog(true);
@@ -198,14 +198,14 @@ const LeadsTable: React.FC = () => {
       setSnackbar({
         open: true,
         message: `Lead "${updatedLead.name}" updated successfully`,
-        severity: "success",
+        severity: 'success',
       });
     } catch (error) {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to update lead",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to update lead',
+        severity: 'error',
       });
     }
   };
@@ -216,14 +216,14 @@ const LeadsTable: React.FC = () => {
       setSnackbar({
         open: true,
         message: `Lead #${leadId} deleted successfully`,
-        severity: "success",
+        severity: 'success',
       });
     } catch (error) {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to delete lead",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to delete lead',
+        severity: 'error',
       });
     }
   };
@@ -239,7 +239,7 @@ const LeadsTable: React.FC = () => {
     setSnackbar({
       open: true,
       message: `Email sent to ${emailData.to}`,
-      severity: "success",
+      severity: 'success',
     });
   };
 
@@ -253,29 +253,29 @@ const LeadsTable: React.FC = () => {
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {
-      case "New":
-        return "primary";
-      case "Contacted":
-        return "info";
-      case "Qualified":
-        return "warning";
-      case "Converted":
-        return "success";
-      case "Lost":
-        return "error";
+      case 'New':
+        return 'primary';
+      case 'Contacted':
+        return 'info';
+      case 'Qualified':
+        return 'warning';
+      case 'Converted':
+        return 'success';
+      case 'Lost':
+        return 'error';
       default:
-        return "default";
+        return 'default';
     }
   };
 
   const filteredLeads = leads.filter(
     (lead) =>
-      (lead.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (lead.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (lead.vehicle_model || "")
+      (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (lead.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (lead.vehicle_model || '')
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (lead.vehicle_reg || "").toLowerCase().includes(searchTerm.toLowerCase()),
+      (lead.vehicle_reg || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const rowsPerPage = 7;
@@ -291,20 +291,20 @@ const LeadsTable: React.FC = () => {
   }
 
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
-      <Paper elevation={2} sx={{ borderRadius: 2, overflow: "hidden" }}>
+    <Box sx={{ width: '100%', p: 2 }}>
+      <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
         {/* Header */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             p: 2,
             backgroundColor: theme.palette.grey[100],
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <InputBase
               placeholder="Search for..."
               value={searchTerm}
@@ -321,51 +321,51 @@ const LeadsTable: React.FC = () => {
                 borderRadius: 1,
                 px: 2,
                 py: 1,
-                "& input": { padding: "0 !important" },
+                '& input': { padding: '0 !important' },
               }}
             />
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon />}
-              sx={{
-                borderColor: theme.palette.primary.main,
-                color: theme.palette.primary.main,
-                "&:hover": {
-                  backgroundColor: theme.palette.primary.light,
-                  borderColor: theme.palette.primary.dark,
-                  color: theme.palette.primary.contrastText,
-                },
-              }}
-            >
-              Filters
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{
-                backgroundColor: theme.palette.success.main,
-                color: theme.palette.success.contrastText,
-                "&:hover": { backgroundColor: theme.palette.success.dark },
-              }}
-            >
-              Add Leads
-            </Button>
-            <IconButton
-              sx={{
-                backgroundColor: theme.palette.primary.light,
-                color: theme.palette.primary.contrastText,
-                "&:hover": {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                },
-              }}
-            >
-              <InfoIcon />
-            </IconButton>
-          </Box>
+          {/* <Box sx={{ display: 'flex', gap: 1 }}> */}
+          {/* <Button */}
+          {/*   variant="outlined" */}
+          {/*   startIcon={<FilterListIcon />} */}
+          {/*   sx={{ */}
+          {/*     borderColor: theme.palette.primary.main, */}
+          {/*     color: theme.palette.primary.main, */}
+          {/*     '&:hover': { */}
+          {/*       backgroundColor: theme.palette.primary.light, */}
+          {/*       borderColor: theme.palette.primary.dark, */}
+          {/*       color: theme.palette.primary.contrastText, */}
+          {/*     }, */}
+          {/*   }} */}
+          {/* > */}
+          {/*   Filters */}
+          {/* </Button> */}
+          {/* <Button */}
+          {/*   variant="contained" */}
+          {/*   startIcon={<AddIcon />} */}
+          {/*   sx={{ */}
+          {/*     backgroundColor: theme.palette.success.main, */}
+          {/*     color: theme.palette.success.contrastText, */}
+          {/*     "&:hover": { backgroundColor: theme.palette.success.dark }, */}
+          {/*   }} */}
+          {/* > */}
+          {/*   Add Leads */}
+          {/* </Button> */}
+          {/*   <IconButton */}
+          {/*     sx={{ */}
+          {/*       backgroundColor: theme.palette.primary.light, */}
+          {/*       color: theme.palette.primary.contrastText, */}
+          {/*       '&:hover': { */}
+          {/*         backgroundColor: theme.palette.primary.main, */}
+          {/*         color: theme.palette.primary.contrastText, */}
+          {/*       }, */}
+          {/*     }} */}
+          {/*   > */}
+          {/*     <InfoIcon /> */}
+          {/*   </IconButton> */}
+          {/* </Box> */}
         </Box>
 
         {/* Table */}
@@ -439,24 +439,24 @@ const LeadsTable: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Typography>{lead.name || "N/A"}</Typography>
+                    <Typography>{lead.name || 'N/A'}</Typography>
                   </TableCell>
-                  <TableCell>{lead.email || "N/A"}</TableCell>
-                  <TableCell>{lead.vehicle_model || "N/A"}</TableCell>
-                  <TableCell>{lead.vehicle_reg || "N/A"}</TableCell>
+                  <TableCell>{lead.email || 'N/A'}</TableCell>
+                  <TableCell>{lead.vehicle_model || 'N/A'}</TableCell>
+                  <TableCell>{lead.vehicle_reg || 'N/A'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={lead.status || "Unknown"}
+                      label={lead.status || 'Unknown'}
                       color={getStatusColor(lead.status)}
                       size="small"
                     />
                   </TableCell>
                   {/* <TableCell>{formatDate(lead.createdAt)}</TableCell> */}
                   <TableCell>
-                    <Box sx={{ display: "flex", gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
                         size="small"
-                        onClick={() => handleActionClick("email", lead)}
+                        onClick={() => handleActionClick('email', lead)}
                         title="Send Email"
                         disabled={!lead.email}
                       >
@@ -464,14 +464,14 @@ const LeadsTable: React.FC = () => {
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => handleActionClick("edit", lead)}
+                        onClick={() => handleActionClick('edit', lead)}
                         title="Edit"
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => handleActionClick("info", lead)}
+                        onClick={() => handleActionClick('info', lead)}
                         title="View Info"
                       >
                         <InfoIcon fontSize="small" />
@@ -495,8 +495,8 @@ const LeadsTable: React.FC = () => {
         {/* Pagination */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "flex-end",
+            display: 'flex',
+            justifyContent: 'flex-end',
             p: 2,
             borderTop: `1px solid ${theme.palette.divider}`,
           }}
@@ -523,7 +523,7 @@ const LeadsTable: React.FC = () => {
             onClose={() => setOpenEmailDialog(false)}
             lead={{
               id: selectedLead.id,
-              name: selectedLead.name || "",
+              name: selectedLead.name || '',
               email: selectedLead.email,
             }}
             onEmailSent={handleEmailSent}
@@ -550,12 +550,12 @@ const LeadsTable: React.FC = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>

@@ -1,5 +1,5 @@
 // import path from "node:path";
-import type { NextConfig } from 'next'
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // turbopack: {
@@ -28,8 +28,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**', // Keep this as backup
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/**', // Keep this as backup
+      },
     ],
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
