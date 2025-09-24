@@ -1,4 +1,4 @@
-import { UserStatus } from "./UserStatus";
+import { UserStatus } from './UserStatus';
 
 export enum UserType {
   ADMIN = 'admin',
@@ -10,5 +10,10 @@ export interface User {
   email: string;
   username: string;
   type: UserType;
-  status : UserStatus
-};
+  status: UserStatus;
+}
+export interface Login {
+  data: User;
+  accessToken: string;
+}
+export type Register = Login;
