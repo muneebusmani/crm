@@ -1,6 +1,6 @@
-"use client";
-import type { Dealer } from "@crm/types";
-import { Close, LocationOn, Person, Settings, Web } from "@mui/icons-material";
+'use client';
+import type { Dealer } from '@crm/types';
+import { Close, LocationOn, Person, Settings, Web } from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -16,11 +16,11 @@ import {
   IconButton,
   TextField,
   Typography,
-} from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import type React from "react";
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 
 // biome-ignore lint/suspicious/noExplicitAny: <any>
 const Profile = ({ id }: { id: any }) => {
@@ -36,7 +36,7 @@ const Profile = ({ id }: { id: any }) => {
         console.log(id);
         const response = await api.get(`/dealers/${id}`);
         console.log(response.data);
-        if (response.status !== 200) throw new Error("Failed to fetch profile");
+        if (response.status !== 200) throw new Error('Failed to fetch profile');
 
         const userData = await response.data;
 
@@ -45,18 +45,19 @@ const Profile = ({ id }: { id: any }) => {
           id: userData.id,
           email: userData.email,
           username: userData.username,
-          name: dealer?.name || "",
-          owner: dealer?.owner || "",
-          location: dealer?.location || "",
-          logo: dealer?.logo || "/static/images/avatar/default.jpg",
-          website: dealer?.website || "",
-          contactEmail: dealer?.contactEmail || "",
+          name: dealer?.name || '',
+          owner: dealer?.owner || '',
+          location: dealer?.location || '',
+          logo: dealer?.logo || '/static/images/avatar/default.jpg',
+          website: dealer?.website || '',
+          contactEmail: dealer?.contactEmail || '',
           tierId: dealer?.tier?.id,
         };
+        console.log('Logo===>', profile.logo);
 
         setProfileData(profile as Dealer);
       } catch (err) {
-        console.error("Failed to load profile:", err);
+        console.error('Failed to load profile:', err);
       } finally {
         setLoading(false);
       }
@@ -66,21 +67,21 @@ const Profile = ({ id }: { id: any }) => {
   }, [id]);
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    username: "",
-    password: "",
-    owner: "",
-    location: "",
-    logo: "",
-    website: "",
-    contactEmail: "",
+    name: '',
+    email: '',
+    username: '',
+    password: '',
+    owner: '',
+    location: '',
+    logo: '',
+    website: '',
+    contactEmail: '',
     tierId: 1,
   });
 
   if (loading) {
     return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
+      <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography>Loading your profile...</Typography>
       </Box>
     );
@@ -88,7 +89,7 @@ const Profile = ({ id }: { id: any }) => {
 
   if (!profileData) {
     return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
+      <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography color="error">Failed to load profile.</Typography>
       </Box>
     );
@@ -100,7 +101,7 @@ const Profile = ({ id }: { id: any }) => {
         name: profileData.name,
         email: profileData.email,
         username: profileData.username,
-        password: "",
+        password: '',
         owner: profileData.owner,
         location: profileData.location,
         logo: profileData.logo,
@@ -132,23 +133,23 @@ const Profile = ({ id }: { id: any }) => {
       const dataToSend = {
         ...formData,
         // Backend expects password field — send empty string if not changing
-        password: formData.password || "",
+        password: formData.password || '',
       };
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers/${profileData.id}`,
         {
-          method: "PUT",
+          method: 'PUT',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(dataToSend),
         },
       );
 
-      if (!response.ok) throw new Error("Failed to update profile");
+      if (!response.ok) throw new Error('Failed to update profile');
 
       const updatedData = await response.json();
 
@@ -168,74 +169,61 @@ const Profile = ({ id }: { id: any }) => {
 
       setProfileData(updatedProfile as Dealer);
       setOpenEditDialog(false);
-      alert("Profile updated successfully!");
+      alert('Profile updated successfully!');
     } catch (err) {
-      console.error("Update failed:", err);
-      alert("Failed to update profile. Please try again.");
+      console.error('Update failed:', err);
+      alert('Failed to update profile. Please try again.');
     }
   };
 
   // --- RENDER UI ---
+  console.log(profileData.logo);
   return (
     <Box sx={{ p: 3 }}>
       {/* HEADER */}
       <Box
         sx={{
-          position: "relative",
+          position: 'relative',
           height: 200,
-          background: "linear-gradient(135deg, #4a6fa5, #5b87d0)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          color: "white",
+          backgroundColor: theme.palette.primary.dark,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          color: theme.palette.primary.contrastText,
           px: 3,
           pb: 3,
           borderBottomLeftRadius: 16,
           borderBottomRightRadius: 16,
-          overflow: "hidden",
+          overflow: 'hidden',
           marginBottom: 4,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar
             src={profileData.logo}
             alt={profileData.owner}
             sx={{
               width: 80,
               height: 80,
-              border: "4px solid white",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+              border: '4px solid white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
             }}
           />
           <Box>
             <Typography variant="h4" fontWeight="bold">
               {profileData.name}
             </Typography>
-            <Typography variant="subtitle1" color="textSecondary">
+            <Typography variant="subtitle1">
               Owned by {profileData.owner}
             </Typography>
-            <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
               <LocationOn sx={{ fontSize: 14 }} />
-              <Typography variant="body2" color="textSecondary">
-                {profileData.location}
-              </Typography>
+              <Typography variant="body2">{profileData.location}</Typography>
             </Box>
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <Box textAlign="center">
-            <Typography variant="h6">24.3K</Typography>
-            <Typography variant="body2" color="textSecondary">
-              Followers
-            </Typography>
-          </Box>
-          <Box textAlign="center">
-            <Typography variant="h6">1.3K</Typography>
-            <Typography variant="body2" color="textSecondary">
-              Following
-            </Typography>
-          </Box>
+        <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <Button
             variant="contained"
             color="primary"
@@ -249,70 +237,70 @@ const Profile = ({ id }: { id: any }) => {
       </Box>
 
       {/* NAVIGATION TABS */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <Button variant="outlined" color="primary" size="small">
-          Overview
-        </Button>
-        <Button variant="outlined" color="secondary" size="small">
-          Activities
-        </Button>
-        <Button variant="outlined" color="secondary" size="small">
-          Projects
-        </Button>
-        <Button variant="outlined" color="secondary" size="small">
-          Documents
-        </Button>
-      </Box>
+      {/* <Box sx={{ display: 'flex', gap: 2, mb: 3 }}> */}
+      {/*   <Button variant="outlined" color="primary" size="small"> */}
+      {/*     Overview */}
+      {/*   </Button> */}
+      {/*   <Button variant="outlined" color="secondary" size="small"> */}
+      {/*     Activities */}
+      {/*   </Button> */}
+      {/*   <Button variant="outlined" color="secondary" size="small"> */}
+      {/*     Projects */}
+      {/*   </Button> */}
+      {/*   <Button variant="outlined" color="secondary" size="small"> */}
+      {/*     Documents */}
+      {/*   </Button> */}
+      {/* </Box> */}
 
       {/* MAIN GRID */}
       <Grid container spacing={3}>
         {/* LEFT COLUMN */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Dealer Tier Status
-              </Typography>
-              {/* Progress bar logic can be dynamic later */}
-              <Box sx={{ width: "100%", mb: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2">65%</Typography>
-                  <Typography variant="body2">Tier Progress</Typography>
-                </Box>
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: 8,
-                    bgcolor: "#e0e0e0",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: "65%",
-                      height: "100%",
-                      bgcolor: theme.palette.success.main,
-                      borderRadius: 1,
-                    }}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
+          {/* <Card sx={{ mb: 2 }}> */}
+          {/*   <CardContent> */}
+          {/*     <Typography variant="h6" gutterBottom> */}
+          {/*       Dealer Tier Status */}
+          {/*     </Typography> */}
+          {/* Progress bar logic can be dynamic later */}
+          {/*     <Box sx={{ width: '100%', mb: 2 }}> */}
+          {/*       <Box */}
+          {/*         sx={{ */}
+          {/*           display: 'flex', */}
+          {/*           justifyContent: 'space-between', */}
+          {/*           mb: 1, */}
+          {/*         }} */}
+          {/*       > */}
+          {/*         <Typography variant="body2">65%</Typography> */}
+          {/*         <Typography variant="body2">Tier Progress</Typography> */}
+          {/*       </Box> */}
+          {/*       <Box */}
+          {/*         sx={{ */}
+          {/*           width: '100%', */}
+          {/*           height: 8, */}
+          {/*           bgcolor: '#e0e0e0', */}
+          {/*           borderRadius: 1, */}
+          {/*         }} */}
+          {/*       > */}
+          {/*         <Box */}
+          {/*           sx={{ */}
+          {/*             width: '65%', */}
+          {/*             height: '100%', */}
+          {/*             bgcolor: theme.palette.success.main, */}
+          {/*             borderRadius: 1, */}
+          {/*           }} */}
+          {/*         /> */}
+          {/*       </Box> */}
+          {/*     </Box> */}
+          {/*   </CardContent> */}
+          {/* </Card> */}
 
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Info
               </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">
                     Dealer Name:
                   </Typography>
@@ -320,7 +308,7 @@ const Profile = ({ id }: { id: any }) => {
                     {profileData.name}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">
                     Owner:
                   </Typography>
@@ -328,7 +316,7 @@ const Profile = ({ id }: { id: any }) => {
                     {profileData.owner}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">
                     Contact Email:
                   </Typography>
@@ -336,7 +324,7 @@ const Profile = ({ id }: { id: any }) => {
                     {profileData.contactEmail}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">
                     Location:
                   </Typography>
@@ -344,7 +332,7 @@ const Profile = ({ id }: { id: any }) => {
                     {profileData.location}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">
                     Username:
                   </Typography>
@@ -352,7 +340,7 @@ const Profile = ({ id }: { id: any }) => {
                     @{profileData.username}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" fontWeight="bold">
                     Login Email:
                   </Typography>
@@ -374,12 +362,12 @@ const Profile = ({ id }: { id: any }) => {
               </Typography>
               <Typography variant="body1" component="p" gutterBottom>
                 Welcome to {profileData.name}, owned by {profileData.owner}. We
-                provide top-tier services and products to our customers across{" "}
+                provide top-tier services and products to our customers across{' '}
                 {profileData.location}. Visit our website to learn more!
               </Typography>
 
-              <Box sx={{ display: "flex", gap: 4, mt: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 4, mt: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Person sx={{ color: theme.palette.text.secondary }} />
                   <Box>
                     <Typography variant="body2" color="textSecondary">
@@ -388,7 +376,7 @@ const Profile = ({ id }: { id: any }) => {
                     <Typography variant="body1">{profileData.owner}</Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Web sx={{ color: theme.palette.text.secondary }} />
                   <Box>
                     <Typography variant="body2" color="textSecondary">
@@ -399,7 +387,7 @@ const Profile = ({ id }: { id: any }) => {
                       color="primary.main"
                       component="a"
                       href={
-                        profileData.website.startsWith("http")
+                        profileData.website.startsWith('http')
                           ? profileData.website
                           : `https://${profileData.website}`
                       }
@@ -419,9 +407,9 @@ const Profile = ({ id }: { id: any }) => {
             <CardContent>
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   mb: 2,
                 }}
               >
@@ -434,7 +422,7 @@ const Profile = ({ id }: { id: any }) => {
               </Box>
               <Divider sx={{ my: 2 }} />
 
-              <Box sx={{ display: "flex", gap: 2, alignItems: "start", mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'start', mb: 2 }}>
                 <Avatar
                   src="/static/images/avatar/jacqueline.jpg"
                   alt="Jacqueline Steve"
@@ -448,9 +436,7 @@ const Profile = ({ id }: { id: any }) => {
               </Box>
 
               <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-                Our team is working hard to bring you the latest updates and
-                offers. Stay tuned for exciting announcements and seasonal
-                promotions tailored for our valued partners.
+                Bought Something
               </Typography>
             </CardContent>
           </Card>
@@ -467,9 +453,9 @@ const Profile = ({ id }: { id: any }) => {
         <DialogTitle>
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <Typography variant="h6">Edit Dealer Profile</Typography>

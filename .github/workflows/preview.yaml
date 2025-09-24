@@ -1,84 +1,84 @@
-
-name: GitHub Actions Vercel Preview Deployment
-
-on:
-  push:
-    branches-ignore:
-      - master
-
-jobs:
-  Deploy-Frontend:
-    runs-on: ubuntu-latest
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@canary
-
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Frontend
-        run: pnpm --filter frontend build
-
-      - name: Pull Vercel Env (Frontend)
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/frontend
-
-      - name: Build Artifacts (Frontend)
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/frontend
-
-      - name: Deploy Frontend
-        run: vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/frontend
-
-  Deploy-Backend:
-    runs-on: ubuntu-latest
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@canary
-
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Backend
-        run: pnpm --filter backend build
-
-      - name: Pull Vercel Env (Backend)
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/backend
-
-      - name: Build Artifacts (Backend)
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/backend
-
-      - name: Deploy Backend
-        run: vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/backend
+#
+# name: GitHub Actions Vercel Preview Deployment
+#
+# on:
+#   push:
+#     branches-ignore:
+#       - master
+#
+# jobs:
+#   Deploy-Frontend:
+#     runs-on: ubuntu-latest
+#     env:
+#       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+#       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+#       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+#     steps:
+#       - uses: actions/checkout@v5
+#
+#       - name: Install Vercel CLI
+#         run: npm install --global vercel@canary
+#
+#       - uses: pnpm/action-setup@v4
+#         name: Install pnpm
+#         with:
+#           run_install: false
+#
+#       - name: Install Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 22
+#           cache: 'pnpm'
+#
+#       - name: Install dependencies
+#         run: pnpm install --frozen-lockfile
+#
+#       - name: Build Frontend
+#         run: pnpm --filter frontend build
+#
+#       - name: Pull Vercel Env (Frontend)
+#         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/frontend
+#
+#       - name: Build Artifacts (Frontend)
+#         run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/frontend
+#
+#       - name: Deploy Frontend
+#         run: vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/frontend
+#
+#   Deploy-Backend:
+#     runs-on: ubuntu-latest
+#     env:
+#       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+#       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
+#       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+#     steps:
+#       - uses: actions/checkout@v5
+#
+#       - name: Install Vercel CLI
+#         run: npm install --global vercel@canary
+#
+#       - uses: pnpm/action-setup@v4
+#         name: Install pnpm
+#         with:
+#           run_install: false
+#
+#       - name: Install Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 22
+#           cache: 'pnpm'
+#
+#       - name: Install dependencies
+#         run: pnpm install --frozen-lockfile
+#
+#       - name: Build Backend
+#         run: pnpm --filter backend build
+#
+#       - name: Pull Vercel Env (Backend)
+#         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/backend
+#
+#       - name: Build Artifacts (Backend)
+#         run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/backend
+#
+#       - name: Deploy Backend
+#         run: vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=./apps/backend
