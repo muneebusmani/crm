@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LeadMessage } from './entities/lead-message.entity';
-
+import { MailerService } from '@nestjs-modules/mailer';
 import type { CreateLeadMessageDto, CreateLeadMessageSchema, UpdateLeadMessageDto, UpdateLeadMessageSchema } from '@crm/types';
 import { Dealer, User } from 'src/user/entities';
 import { Lead } from 'src/leads/entities/lead.entity';
@@ -16,6 +16,8 @@ export class LeadMessageService {
     private readonly dealerRepo: Repository<User>,
     @InjectRepository(Lead)
     private readonly leadRepo: Repository<Lead>,
+
+     private readonly mailService: MailerService,
   ) {}
 
   async create(dto: CreateLeadMessageDto, delertId: number): Promise<LeadMessage> {
@@ -30,6 +32,16 @@ export class LeadMessageService {
         content: dto.content,
         dealer,
         lead,
+      });
+
+       this.mailService.sendMail({
+        to: lead.email, // 👈 you must have dealer.email field
+        subject: 'New Quotation Created',
+        template: 'dealer-message', // file: templates/quotation.hbs
+        context: {
+          dealershipName: dealer.email,
+          message: dto.content
+        },
       });
       return await  this.leadMessageRepo.save(message);
     }
