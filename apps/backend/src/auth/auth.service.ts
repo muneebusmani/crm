@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: <idk> */
 import { LoginDto, RegisterDto, User } from '@crm/types';
 import {
   Injectable,
@@ -22,7 +23,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {
     this.saltRounds = parseInt(
-      this.configService.get<string>('SALT_ROUNDS') || '10',
+      this.configService.get<string>('SALT_ROUNDS')!,
       10,
     );
   }
@@ -30,9 +31,9 @@ export class AuthService {
   private async generateToken(user: {
     id: number;
     email: string;
-    type : string
+    type: string;
   }): Promise<string> {
-    const payload = { sub: user.id, email: user.email, type : user.type };
+    const payload = { sub: user.id, email: user.email, type: user.type };
     return await this.jwtService.signAsync(payload);
   }
 
@@ -59,6 +60,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         username: user.username,
+        status: user.status,
         type: user.type,
       },
       accessToken,

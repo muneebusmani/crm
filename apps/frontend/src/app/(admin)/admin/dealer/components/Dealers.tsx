@@ -1660,7 +1660,7 @@
 // };
 //
 // export default Dealers;
-"use client";
+'use client';
 
 import {
   Add as AddIcon,
@@ -1673,7 +1673,7 @@ import {
   Phone as PhoneIcon,
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -1696,24 +1696,23 @@ import {
   Tooltip,
   Typography,
   useTheme,
-} from "@mui/material";
-import Image from "next/image";
-import type React from "react";
-import { type ChangeEvent, useEffect, useState } from "react";
-import AddDealerDialog from "./AddDealerDialog";
-import type { Dealer } from "@crm/types";
-import { api } from "@/lib/api";
+} from '@mui/material';
+import Image from 'next/image';
+import type React from 'react';
+import { type ChangeEvent, useEffect, useState } from 'react';
+import AddDealerDialog from './AddDealerDialog';
+import type { Dealer } from '@crm/types';
+import { api } from '@/lib/api';
 
 const Dealers = () => {
-  const API_URL = process.env.NEXT_PUBLIC_BASE_API_URL || "";
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Name");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('Name');
   const [page, setPage] = useState(1);
-  const [locationFilter, setLocationFilter] = useState<string>("");
+  const [locationFilter, setLocationFilter] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Dealer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1725,10 +1724,10 @@ const Dealers = () => {
       try {
         setLoading(true);
         const response = await api.get(`/dealers`);
-        if (response.status !== 200) throw new Error("Failed to fetch dealers");
+        if (response.status !== 200) throw new Error('Failed to fetch dealers');
 
         const data = await response.data;
-        console.log("raw data ===>", data);
+        console.log('raw data ===>', data);
 
         // flatten structure
         // biome-ignore lint/suspicious/noExplicitAny: <idk>
@@ -1746,7 +1745,7 @@ const Dealers = () => {
           tierName: u.dealer?.tier?.name,
         }));
 
-        console.log("flatData ===>", flatData);
+        console.log('flatData ===>', flatData);
         setDealers(flatData);
 
         // Remove auto-selection of first dealer
@@ -1754,7 +1753,7 @@ const Dealers = () => {
         //   setSelectedDealer(flatData[0]);
         // }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
       }
@@ -1779,20 +1778,20 @@ const Dealers = () => {
   }) => {
     try {
       const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("email", data.email);
-      formData.append("username", data.username);
-      formData.append("password", data.password);
-      formData.append("owner", data.owner);
-      formData.append("location", data.location);
-      if (data.logo) formData.append("logo", data.logo);
-      if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
-      formData.append("website", data.website);
-      formData.append("contactEmail", data.contactEmail);
-      if (data.tierId) formData.append("tierId", data.tierId.toString());
+      formData.append('name', data.name);
+      formData.append('email', data.email);
+      formData.append('username', data.username);
+      formData.append('password', data.password);
+      formData.append('owner', data.owner);
+      formData.append('location', data.location);
+      if (data.logo) formData.append('logo', data.logo);
+      if (data.logoFile) formData.append('logoFile', data.logoFile); // actual file
+      formData.append('website', data.website);
+      formData.append('contactEmail', data.contactEmail);
+      if (data.tierId) formData.append('tierId', data.tierId.toString());
 
       const { data: newDealer } = await api.post(
-        "/dealers",
+        '/dealers',
         formData,
         //   {
         //   headers: {
@@ -1805,7 +1804,7 @@ const Dealers = () => {
       setOpen(false);
       setSelectedDealer(newDealer);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add dealer");
+      setError(err instanceof Error ? err.message : 'Failed to add dealer');
     }
   };
 
@@ -1846,31 +1845,31 @@ const Dealers = () => {
 
       const formData = new FormData();
 
-      if (data.name) formData.append("name", data.name);
-      if (data.email) formData.append("email", data.email);
-      if (data.username) formData.append("username", data.username);
-      if (data.owner) formData.append("owner", data.owner);
-      if (data.location) formData.append("location", data.location);
-      if (data.logo) formData.append("logo", data.logo);
-      if (data.logoFile) formData.append("logoFile", data.logoFile); // actual file
-      if (data.website) formData.append("website", data.website);
-      if (data.contactEmail) formData.append("contactEmail", data.contactEmail);
-      if (data.tierId) formData.append("tierId", data.tierId.toString());
+      if (data.name) formData.append('name', data.name);
+      if (data.email) formData.append('email', data.email);
+      if (data.username) formData.append('username', data.username);
+      if (data.owner) formData.append('owner', data.owner);
+      if (data.location) formData.append('location', data.location);
+      if (data.logo) formData.append('logo', data.logo);
+      if (data.logoFile) formData.append('logoFile', data.logoFile); // actual file
+      if (data.website) formData.append('website', data.website);
+      if (data.contactEmail) formData.append('contactEmail', data.contactEmail);
+      if (data.tierId) formData.append('tierId', data.tierId.toString());
 
       // Only append password if it's not empty
-      if (data.password && data.password.trim() !== "") {
-        formData.append("password", data.password);
+      if (data.password && data.password.trim() !== '') {
+        formData.append('password', data.password);
       }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers/${editData.id}`,
         {
-          method: "PUT",
+          method: 'PUT',
           body: formData, // send as FormData
         },
       );
 
-      if (!response.ok) throw new Error("Failed to update dealer");
+      if (!response.ok) throw new Error('Failed to update dealer');
 
       const updatedDealer = await response.json();
 
@@ -1880,7 +1879,7 @@ const Dealers = () => {
       setSelectedDealer(updatedDealer);
       setIsEditing(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update dealer");
+      setError(err instanceof Error ? err.message : 'Failed to update dealer');
     }
   };
 
@@ -1890,11 +1889,11 @@ const Dealers = () => {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
         {
-          method: "DELETE",
+          method: 'DELETE',
         },
       );
 
-      if (!response.ok) throw new Error("Failed to delete dealer");
+      if (!response.ok) throw new Error('Failed to delete dealer');
 
       const updatedDealers = dealers.filter((dealer) => dealer.id !== id);
       setDealers(updatedDealers);
@@ -1907,7 +1906,7 @@ const Dealers = () => {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete dealer");
+      setError(err instanceof Error ? err.message : 'Failed to delete dealer');
     }
   };
 
@@ -1915,20 +1914,20 @@ const Dealers = () => {
   const handleExportCSV = () => {
     if (dealers.length === 0) return;
 
-    const headers = Object.keys(dealers[0]).join(",");
+    const headers = Object.keys(dealers[0]).join(',');
     const rows = dealers
       .map((dealer) =>
         Object.values(dealer)
-          .map((value) => (typeof value === "string" ? `"${value}"` : value))
-          .join(","),
+          .map((value) => (typeof value === 'string' ? `"${value}"` : value))
+          .join(','),
       )
-      .join("\n");
+      .join('\n');
 
     const csvContent = `data:text/csv;charset=utf-8,${headers}\n${rows}`;
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "dealers.csv");
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'dealers.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1947,8 +1946,8 @@ const Dealers = () => {
       return matchesSearch && matchesLocation;
     })
     .sort((a, b) => {
-      if (sortBy === "Owner") return a.owner.localeCompare(b.owner);
-      if (sortBy === "Name") return a.name.localeCompare(b.name);
+      if (sortBy === 'Owner') return a.owner.localeCompare(b.owner);
+      if (sortBy === 'Name') return a.name.localeCompare(b.name);
       return a.name.localeCompare(b.name);
     });
 
@@ -1988,13 +1987,13 @@ const Dealers = () => {
       dealers
         .map((d) => {
           // Handle undefined or empty location
-          const location = d.location || "";
-          if (!location.trim()) return "";
+          const location = d.location || '';
+          if (!location.trim()) return '';
 
-          const parts = location.split(", ");
+          const parts = location.split(', ');
           return parts[parts.length - 1]; // Get country
         })
-        .filter((location) => location !== ""), // Remove empty strings
+        .filter((location) => location !== ''), // Remove empty strings
     ),
   );
 
@@ -2011,11 +2010,11 @@ const Dealers = () => {
       {/* Top Controls */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           mb: 3,
-          flexWrap: "wrap",
+          flexWrap: 'wrap',
           gap: 2,
         }}
       >
@@ -2026,7 +2025,7 @@ const Dealers = () => {
           onClick={() => setOpen(true)}
           sx={{
             backgroundColor: theme.palette.primary.main,
-            "&:hover": {
+            '&:hover': {
               backgroundColor: theme.palette.primary.dark,
             },
           }}
@@ -2034,7 +2033,7 @@ const Dealers = () => {
           Add Dealer
         </Button>
 
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             startIcon={<FilterListIcon />}
             variant="outlined"
@@ -2042,7 +2041,7 @@ const Dealers = () => {
             sx={{
               borderColor: theme.palette.error.main,
               color: theme.palette.error.main,
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.error.light,
               },
             }}
@@ -2057,7 +2056,7 @@ const Dealers = () => {
             sx={{
               borderColor: theme.palette.success.main,
               color: theme.palette.success.main,
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.success.light,
               },
             }}
@@ -2071,7 +2070,7 @@ const Dealers = () => {
             sx={{
               borderColor: theme.palette.info.main,
               color: theme.palette.info.main,
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.info.light,
               },
             }}
@@ -2084,11 +2083,11 @@ const Dealers = () => {
       {/* Search and Filters */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           mb: 3,
-          flexWrap: "wrap",
+          flexWrap: 'wrap',
           gap: 2,
         }}
       >
@@ -2101,7 +2100,7 @@ const Dealers = () => {
           slotProps={{
             input: {
               startAdornment: (
-                <Box sx={{ mr: 1, display: "flex" }}>
+                <Box sx={{ mr: 1, display: 'flex' }}>
                   <SearchIcon />
                 </Box>
               ),
@@ -2109,21 +2108,21 @@ const Dealers = () => {
           }}
           sx={{
             width: 300,
-            "& .MuiOutlinedInput-root": {
+            '& .MuiOutlinedInput-root': {
               fieldset: {
                 borderColor: theme.palette.divider,
               },
-              "&:hover fieldset": {
+              '&:hover fieldset': {
                 borderColor: theme.palette.primary.main,
               },
-              "&.Mui-focused fieldset": {
+              '&.Mui-focused fieldset': {
                 borderColor: theme.palette.primary.main,
               },
             },
           }}
         />
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Location</InputLabel>
             <Select
@@ -2131,14 +2130,14 @@ const Dealers = () => {
               onChange={handleLocationFilterChange}
               label="Location"
               sx={{
-                "& .MuiOutlinedInput-root": {
+                '& .MuiOutlinedInput-root': {
                   fieldset: {
                     borderColor: theme.palette.divider,
                   },
-                  "&:hover fieldset": {
+                  '&:hover fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
-                  "&.Mui-focused fieldset": {
+                  '&.Mui-focused fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
                 },
@@ -2153,7 +2152,7 @@ const Dealers = () => {
             </Select>
           </FormControl>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" color={theme.palette.text.secondary}>
               Sort by:
             </Typography>
@@ -2164,14 +2163,14 @@ const Dealers = () => {
               size="small"
               sx={{
                 minWidth: 150,
-                "& .MuiOutlinedInput-root": {
+                '& .MuiOutlinedInput-root': {
                   fieldset: {
                     borderColor: theme.palette.divider,
                   },
-                  "&:hover fieldset": {
+                  '&:hover fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
-                  "&.Mui-focused fieldset": {
+                  '&.Mui-focused fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
                 },
@@ -2185,16 +2184,16 @@ const Dealers = () => {
       </Box>
 
       {/* Main Content */}
-      <Box sx={{ display: "flex", gap: 3 }}>
+      <Box sx={{ display: 'flex', gap: 3 }}>
         {/* Table */}
         <Box flex={1}>
           {dealers.length === 0 ? (
             <Box
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
                 height: 400,
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 1,
@@ -2207,7 +2206,7 @@ const Dealers = () => {
               <Typography
                 variant="body2"
                 color="textSecondary"
-                sx={{ mb: 3, textAlign: "center" }}
+                sx={{ mb: 3, textAlign: 'center' }}
               >
                 Get started by adding your first dealer
               </Typography>
@@ -2352,11 +2351,11 @@ const Dealers = () => {
                         key={dealer.id}
                         hover
                         sx={{
-                          cursor: "pointer",
-                          "&:hover": {
+                          cursor: 'pointer',
+                          '&:hover': {
                             backgroundColor: theme.palette.action.hover,
                           },
-                          "&.Mui-selected": {
+                          '&.Mui-selected': {
                             backgroundColor: theme.palette.action.selected,
                           },
                         }}
@@ -2380,8 +2379,8 @@ const Dealers = () => {
                         <TableCell>
                           <Box
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
+                              display: 'flex',
+                              alignItems: 'center',
                               gap: 1,
                             }}
                           >
@@ -2389,7 +2388,7 @@ const Dealers = () => {
                               sx={{
                                 width: 24,
                                 height: 24,
-                                position: "relative",
+                                position: 'relative',
                               }}
                             >
                               <Image
@@ -2397,7 +2396,7 @@ const Dealers = () => {
                                 alt={dealer.name}
                                 width={24}
                                 height={24}
-                                style={{ borderRadius: "50%" }}
+                                style={{ borderRadius: '50%' }}
                               />
                             </Box>
                             <Typography>{dealer.name}</Typography>
@@ -2406,7 +2405,7 @@ const Dealers = () => {
                         <TableCell>{dealer.owner}</TableCell>
                         <TableCell>{dealer.location}</TableCell>
                         <TableCell>
-                          <Box sx={{ display: "flex", gap: 1 }}>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
                             <Tooltip title="Call">
                               <IconButton
                                 size="small"
@@ -2472,8 +2471,8 @@ const Dealers = () => {
               {/* Pagination */}
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
+                  display: 'flex',
+                  justifyContent: 'flex-end',
                   mt: 2,
                   gap: 1,
                 }}
@@ -2503,13 +2502,13 @@ const Dealers = () => {
               boxShadow: theme.shadows[2],
             }}
           >
-            <Box sx={{ textAlign: "center", mb: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
               <Box
                 sx={{
                   width: 60,
                   height: 60,
-                  position: "relative",
-                  margin: "0 auto 8px",
+                  position: 'relative',
+                  margin: '0 auto 8px',
                 }}
               >
                 <Image
@@ -2517,7 +2516,7 @@ const Dealers = () => {
                   alt={selectedDealer.name}
                   width={60}
                   height={60}
-                  style={{ borderRadius: "50%" }}
+                  style={{ borderRadius: '50%' }}
                 />
               </Box>
               <Typography variant="h6">{selectedDealer.name}</Typography>
@@ -2529,8 +2528,8 @@ const Dealers = () => {
               </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "center",
+                  display: 'flex',
+                  justifyContent: 'center',
                   gap: 1,
                   mt: 2,
                 }}
@@ -2564,8 +2563,8 @@ const Dealers = () => {
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -2576,7 +2575,7 @@ const Dealers = () => {
                   {selectedDealer.location}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -2594,7 +2593,7 @@ const Dealers = () => {
                   {selectedDealer.website}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -2605,7 +2604,7 @@ const Dealers = () => {
                   {selectedDealer.contactEmail}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -2615,7 +2614,7 @@ const Dealers = () => {
                 <Typography variant="body2">
                   {selectedDealer.tierId
                     ? `Tier ${selectedDealer.tierId}`
-                    : "N/A"}
+                    : 'N/A'}
                 </Typography>
               </Box>
             </Box>
