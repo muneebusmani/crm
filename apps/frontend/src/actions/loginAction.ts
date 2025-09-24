@@ -12,7 +12,7 @@ export async function loginAction(formData: FormData) {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
     };
-    const data = await api.post<Login, LoginDto>('/auth/login', formdata);
+    const data = (await api.post('/auth/login', formdata)) as any;
     // console.log('data ===>', data);
     const userType = data?.user.type as UserType;
     const token = data?.accessToken as string;

@@ -94,7 +94,7 @@ const LeadEditDialog: React.FC<LeadEditDialogProps> = ({
 
   const handleDelete = () => {
     if (confirmDelete) {
-      onDelete(lead.id);
+      onDelete(lead.id!);
       onClose();
     } else {
       setConfirmDelete(true);

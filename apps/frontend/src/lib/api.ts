@@ -335,9 +335,7 @@ export async function get<T>(
   options?: RequestConfig<T>,
   skipAuth = false,
 ) {
-  return http.get<T>(path, await attachToken(options, skipAuth)) as Promise<
-    ApiResponse<T>
-  >;
+  return http.get<T>(path, await attachToken(options, skipAuth));
 }
 
 export async function del<T>(
