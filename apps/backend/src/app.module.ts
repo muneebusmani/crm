@@ -11,6 +11,7 @@ import { LeadsModule } from './leads/leads.module'
 import { AdminModule } from './user/admin/admin.module'
 import { DealerModule } from './user/dealer/dealer.module'
 import { AnalyticsModule } from './analytics/analytics.module'
+import { LeadMessageModule } from './leads-messages/lead-message.module'
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { AnalyticsModule } from './analytics/analytics.module'
     AdminModule,
     DealerModule,
     ActivityLogModule,
+    LeadMessageModule,
     AnalyticsModule
   ],
   controllers: [AppController],

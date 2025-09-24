@@ -25,6 +25,7 @@ import { Lead } from 'src/leads/entities/lead.entity';
 import { DealerLead } from '../entities/dealer-lead.entity';
 import type { Multer } from 'multer';
 import * as fs from 'fs';
+import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 
 
 @Injectable()
@@ -38,6 +39,8 @@ export class DealerService {
     @InjectRepository(Lead)
     private leadRepository: Repository<Lead>,
 
+
+
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
 
@@ -46,6 +49,9 @@ export class DealerService {
 
     @InjectRepository(DealerLead)
     private readonly dealerLeadRepository: Repository<DealerLead>,
+
+    @InjectRepository(LeadMessage)
+    private leadMessageRepository: Repository<LeadMessage>,
 
     private readonly mailService: MailerService,
     private readonly configService: ConfigService,   // 👈 inject here
@@ -222,10 +228,10 @@ export class DealerService {
     return await this.userRepository.delete(id);
   }
 
-  async createQuotation(dto: CreateQuotationDto) {
+  async createQuotation(dto: CreateQuotationDto, delaerId: number) {
     try {
 
-      const dealer = await this.userRepository.findOne({ where: { id: dto.dealerId } });
+      const dealer = await this.userRepository.findOne({ where: { id: delaerId } });
       if (!dealer) {
         throw new Error('Dealer not found');
       }
@@ -234,16 +240,19 @@ export class DealerService {
         throw new Error('Lead not found');
       }
 
-
-      const quotation = this.quotationRepository.create({
-        ...dto,
-        dealer,
-        lead
-      });
+        const quotation = this.quotationRepository.create({
+          engineCodeName : lead.engine_code,
+          dealershipName : dealer.name,
+          quotationPrice : dto.quotationPrice,
+          message : dto.message,
+          subject : dto.subject,
+          dealer,
+          lead,
+        });
 
       const result = await this.quotationRepository.save(quotation);
       this.mailService.sendMail({
-        to: "alamhamza873@gmail.com", // 👈 you must have dealer.email field
+        to: lead.email, // 👈 you must have dealer.email field
         subject: 'New Quotation Created',
         template: 'quotation', // file: templates/quotation.hbs
         context: {
@@ -254,7 +263,8 @@ export class DealerService {
           message: result.message
         },
       });
-      await this.ensureDealerLead(dto.leadId, dto.dealerId!, LeadStatus.OPEN);
+      await this.ensureDealerLead(dto.leadId, delaerId!, LeadStatus.QUOTATION_SENT);
+      await this.leadMessage(lead.id, dealer.id, dto.message);
       return result;
     }
     catch (error: unknown) {
@@ -358,6 +368,33 @@ export class DealerService {
     });
 
     return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+  }
+
+
+   private async leadMessage(leadId: number, dealerId: number, content: string) {
+    // check if already exists
+
+    const existing = await this.leadMessageRepository.findOne({
+      where: { dealer: { id: dealerId }, lead: { id: leadId }},
+      relations: ['dealer', 'lead'],
+    });
+
+
+    if (existing) return existing; // already linked
+
+    // fetch dealer + lead (only ids needed)
+    const dealer = await this.userRepository.findOneBy({ id: dealerId });
+    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+
+    const lead = await this.leadRepository.findOneBy({ id: leadId });
+    if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+   const message = this.leadMessageRepository.create({
+        content: content,
+        dealer,
+        lead,
+      });
+      return await  this.leadMessageRepository.save(message);
   }
 
 

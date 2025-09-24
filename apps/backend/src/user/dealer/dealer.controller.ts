@@ -78,10 +78,10 @@ export class DealerController {
   @Post("quotations")
   @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
   async createQuotation(@Body() dto: CreateQuotationDto, @Req() req): Promise<ApiResponse<Quotation>> {
-    dto.dealerId = req.user.id;  // cast to 'any' if TS complains
-    const result = await this.dealerService.createQuotation(dto)
+    const delaerId = req.user.id;  // cast to 'any' if TS complains
+    const result = await this.dealerService.createQuotation(dto,delaerId)
     return this.buildResponse(result);
-  }
+  } 
 
   @Post('forgot-password')
   async forgotPassword(@Body('email') email: string): Promise<ApiResponse<User>> {

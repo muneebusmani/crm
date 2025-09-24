@@ -8,9 +8,10 @@ import { Dealer } from '../../user/entities/dealer.entity';  // 👈 direct impo
 import { CustomMailerModule } from 'src/mailer/mailer.module';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { DealerLead } from '../entities/dealer-lead.entity';
+import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Dealer, DealerTier, Quotation, Lead, DealerLead]), CustomMailerModule],
+  imports: [TypeOrmModule.forFeature([User, Dealer, DealerTier, Quotation, Lead, DealerLead, LeadMessage]), CustomMailerModule],
   controllers: [DealerController],
   providers: [DealerService],
   exports: [DealerService],
