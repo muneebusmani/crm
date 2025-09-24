@@ -5,10 +5,12 @@ import { LeadMessageService } from './lead-message.service';
 import { LeadMessageController } from './lead-message.controller';
 import { Dealer, User } from 'src/user/entities';
 import { Lead } from 'src/leads/entities/lead.entity';
+import { CustomMailerModule } from 'src/mailer/mailer.module';
+
 
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LeadMessage, User, Lead])],
+  imports: [TypeOrmModule.forFeature([LeadMessage, User, Lead]), CustomMailerModule],
   controllers: [LeadMessageController],
   providers: [LeadMessageService],
   exports: [LeadMessageService],
