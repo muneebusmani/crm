@@ -1,37 +1,37 @@
-name: GitHub Actions Vercel Production Deployment
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-on:
-  push:
-    branches:
-      - master
-    # paths:
-    #   - 'frontend/**'
-jobs:
-  Deploy-Production:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Vercel CLI
-        run: npm install --global vercel@canary
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          run_install: false
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install --filter frontend
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps
-      - name: Deploy Project Artifacts to Vercel
-        run: |
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps)
-          echo "Deployed to $DEPLOYMENT_URL"
+# name: GitHub Actions Vercel Production Deployment
+# env:
+#   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+#   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+#   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+# on:
+#   push:
+#     branches:
+#       - master
+#     # paths:
+#     #   - 'frontend/**'
+# jobs:
+#   Deploy-Production:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v5
+#       - name: Install Vercel CLI
+#         run: npm install --global vercel@canary
+#       - uses: pnpm/action-setup@v4
+#         name: Install pnpm
+#         with:
+#           run_install: false
+#       - name: Install Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 22
+#           cache: 'pnpm'
+#       - name: Install dependencies
+#         run: pnpm install --filter frontend
+#       - name: Pull Vercel Environment Information
+#         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps
+#       - name: Build Project Artifacts
+#         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps
+#       - name: Deploy Project Artifacts to Vercel
+#         run: |
+#           DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} --cwd=/home/runner/work/crm/crm/apps)
+#           echo "Deployed to $DEPLOYMENT_URL"

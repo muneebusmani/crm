@@ -1,437 +1,10 @@
-// 'use client'
-//
-// import {
-//   AccountBoxOutlined as AccountBoxOutlinedIcon,
-//   Circle as CircleIcon,
-//   Dashboard as DashboardIcon,
-//   ExpandLess as ExpandLessIcon,
-//   ExpandMore as ExpandMoreIcon,
-//   GroupOutlined as GroupOutlinedIcon,
-//   Groups2 as Groups2Icon,
-//   Home as HomeIcon,
-//   Inventory2Outlined as Inventory2OutlinedIcon,
-//   Logout as LogoutIcon,
-//   Menu as MenuIcon,
-//   Message as MessageIcon,
-//   Person as PersonIcon,
-// } from '@mui/icons-material'
-// import {
-//   Box,
-//   Collapse,
-//   Divider,
-//   Drawer,
-//   IconButton,
-//   List,
-//   ListItem,
-//   ListItemButton,
-//   ListItemIcon,
-//   ListItemText,
-//   Typography,
-//   useMediaQuery,
-//   useTheme,
-// } from '@mui/material'
-// import Link from 'next/link'
-// import { usePathname } from 'next/navigation'
-// import React, { useState } from 'react'
-//
-// const drawerWidth = 280
-//
-// const adminNavigationItems: NavigationItem[] = [
-//   { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
-//   { text: 'Leads', icon: <GroupOutlinedIcon />, path: '/dealer/leads' },
-//   { text: 'Dealers', icon: <PersonIcon />, path: '/admin/dealer' },
-// ]
-//
-// const dealerNavigationItems: NavigationItem[] = [
-//   { text: 'Home', icon: <HomeIcon />, path: '/dealer' },
-//   { text: 'Leads', icon: <Groups2Icon />, path: '/dealer/leads' },
-//   { text: 'Messages', icon: <MessageIcon />, path: '/dealer/messages' },
-//   {
-//     text: 'Packages',
-//     icon: <Inventory2OutlinedIcon />,
-//     path: '/dealer/packages',
-//   },
-//   {
-//     text: 'Profile',
-//     icon: <AccountBoxOutlinedIcon />,
-//     path: '/dealer/profile',
-//   },
-// ]
-// interface NavigationItem {
-//   text: string
-//   icon: React.ReactNode
-//   path: string
-//   subItems?: Array<{
-//     text: string
-//     path: string
-//   }>
-// }
-//
-// interface SidebarProps {
-//   userType: string | undefined
-//   mobileOpen?: boolean
-//   onMobileToggle?: () => void
-// }
-//
-// const Sidebar: React.FC<SidebarProps> = ({
-//   userType,
-//   mobileOpen = false,
-//   onMobileToggle,
-// }) => {
-//   const navigationItems =
-//     userType === 'dealer' ? dealerNavigationItems : adminNavigationItems
-//
-//   const bottomNavigationItems: NavigationItem[] = [
-//     // { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
-//     // { text: "Help", icon: <HelpIcon />, path: "/help" },
-//     { text: 'Logout', icon: <LogoutIcon />, path: '/logout' },
-//   ]
-//   const theme = useTheme()
-//   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-//   const pathname = usePathname()
-//   const [expandedItems, setExpandedItems] = useState<string[]>([])
-//
-//   const handleMobileClose = () => {
-//     if (isMobile && onMobileToggle) {
-//       onMobileToggle()
-//     }
-//   }
-//
-//   const handleExpandClick = (itemText: string) => {
-//     setExpandedItems((prev) =>
-//       prev.includes(itemText)
-//         ? prev.filter((item) => item !== itemText)
-//         : [...prev, itemText],
-//     )
-//   }
-//
-//   const isActive = (path: string) => {
-//     return pathname === path || (pathname?.startsWith(path) && path !== '/')
-//   }
-//
-//   const renderNavigationItem = (item: NavigationItem) => {
-//     const hasSubItems = item.subItems && item.subItems.length > 0
-//     const isExpanded = expandedItems.includes(item.text)
-//     const active = isActive(item.path)
-//
-//     return (
-//       <React.Fragment key={item.text}>
-//         <ListItem disablePadding>
-//           {hasSubItems ? (
-//             <ListItemButton
-//               onClick={() => handleExpandClick(item.text)}
-//               sx={{
-//                 backgroundColor: active
-//                   ? theme.palette.primary.main
-//                   : 'transparent',
-//                 color: active ? theme.palette.primary.contrastText : 'inherit',
-//                 '&:hover': {
-//                   backgroundColor: active
-//                     ? theme.palette.primary.dark
-//                     : theme.palette.action.hover,
-//                 },
-//                 borderRadius: 1,
-//                 mx: 1,
-//                 my: 0.5,
-//               }}
-//             >
-//               <ListItemIcon
-//                 sx={{
-//                   color: active
-//                     ? theme.palette.primary.contrastText
-//                     : 'inherit',
-//                   minWidth: 40,
-//                 }}
-//               >
-//                 {item.icon}
-//               </ListItemIcon>
-//               <ListItemText primary={item.text} sx={{ ml: 1 }} />
-//               {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-//             </ListItemButton>
-//           ) : (
-//             <Link
-//               href={item.path}
-//               style={{
-//                 textDecoration: 'none',
-//                 color: 'inherit',
-//                 width: '100%',
-//               }}
-//               onClick={handleMobileClose}
-//             >
-//               <ListItemButton
-//                 sx={{
-//                   backgroundColor: active
-//                     ? theme.palette.primary.main
-//                     : 'transparent',
-//                   color: active
-//                     ? theme.palette.primary.contrastText
-//                     : 'inherit',
-//                   '&:hover': {
-//                     backgroundColor: active
-//                       ? theme.palette.primary.dark
-//                       : theme.palette.action.hover,
-//                   },
-//                   borderRadius: 1,
-//                   mx: 1,
-//                   my: 0.5,
-//                 }}
-//               >
-//                 <ListItemIcon
-//                   sx={{
-//                     color: active
-//                       ? theme.palette.primary.contrastText
-//                       : 'inherit',
-//                     minWidth: 40,
-//                   }}
-//                 >
-//                   {item.icon}
-//                 </ListItemIcon>
-//                 <ListItemText primary={item.text} sx={{ ml: 1 }} />
-//               </ListItemButton>
-//             </Link>
-//           )}
-//         </ListItem>
-//
-//         {hasSubItems && (
-//           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-//             <List component="div" disablePadding>
-//               {item.subItems?.map((subItem) => (
-//                 <ListItem key={subItem.text} disablePadding>
-//                   <Link
-//                     href={subItem.path}
-//                     style={{
-//                       textDecoration: 'none',
-//                       color: 'inherit',
-//                       width: '100%',
-//                     }}
-//                     onClick={handleMobileClose}
-//                   >
-//                     <ListItemButton
-//                       sx={{
-//                         pl: 4,
-//                         backgroundColor: isActive(subItem.path)
-//                           ? theme.palette.primary.main
-//                           : 'transparent',
-//                         color: isActive(subItem.path)
-//                           ? theme.palette.primary.contrastText
-//                           : 'inherit',
-//                         '&:hover': {
-//                           backgroundColor: isActive(subItem.path)
-//                             ? theme.palette.primary.dark
-//                             : theme.palette.action.hover,
-//                         },
-//                         borderRadius: 1,
-//                         mx: 1,
-//                         my: 0.25,
-//                       }}
-//                     >
-//                       <ListItemIcon sx={{ minWidth: 20 }}>
-//                         <CircleIcon
-//                           sx={{
-//                             fontSize: 8,
-//                             color: isActive(subItem.path)
-//                               ? theme.palette.primary.contrastText
-//                               : theme.palette.text.secondary,
-//                           }}
-//                         />
-//                       </ListItemIcon>
-//                       <ListItemText primary={subItem.text} sx={{ ml: 1 }} />
-//                     </ListItemButton>
-//                   </Link>
-//                 </ListItem>
-//               ))}
-//             </List>
-//           </Collapse>
-//         )}
-//       </React.Fragment>
-//     )
-//   }
-//
-//   const drawerContent = (
-//     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-//       {/* Header */}
-//       <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
-//         <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-//           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-//             Your App
-//           </Typography>
-//           <Typography variant="body2" color="text.secondary">
-//             Dashboard
-//           </Typography>
-//         </Link>
-//       </Box>
-//
-//       {/* Main Navigation */}
-//       <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-//         <List>{navigationItems.map(renderNavigationItem)}</List>
-//       </Box>
-//
-//       {/* Bottom Navigation */}
-//       <Box>
-//         <Divider />
-//         <List sx={{ py: 1 }}>
-//           {bottomNavigationItems.map((item) => (
-//             <ListItem key={item.text} disablePadding>
-//               <Link
-//                 href={item.path}
-//                 style={{
-//                   textDecoration: 'none',
-//                   color: 'inherit',
-//                   width: '100%',
-//                 }}
-//                 onClick={handleMobileClose}
-//               >
-//                 <ListItemButton
-//                   sx={{
-//                     backgroundColor: isActive(item.path)
-//                       ? theme.palette.primary.main
-//                       : 'transparent',
-//                     color: isActive(item.path)
-//                       ? theme.palette.primary.contrastText
-//                       : 'inherit',
-//                     '&:hover': {
-//                       backgroundColor: isActive(item.path)
-//                         ? theme.palette.primary.dark
-//                         : theme.palette.action.hover,
-//                     },
-//                     borderRadius: 1,
-//                     mx: 1,
-//                     my: 0.5,
-//                   }}
-//                 >
-//                   <ListItemIcon
-//                     sx={{
-//                       color: isActive(item.path)
-//                         ? theme.palette.primary.contrastText
-//                         : 'inherit',
-//                       minWidth: 40,
-//                     }}
-//                   >
-//                     {item.icon}
-//                   </ListItemIcon>
-//                   <ListItemText primary={item.text} sx={{ ml: 1 }} />
-//                 </ListItemButton>
-//               </Link>
-//             </ListItem>
-//           ))}
-//         </List>
-//       </Box>
-//     </Box>
-//   )
-//
-//   return (
-//     <Box
-//       component="nav"
-//       sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-//     >
-//       {/* Mobile drawer */}
-//       <Drawer
-//         variant="temporary"
-//         open={mobileOpen}
-//         onClose={onMobileToggle}
-//         ModalProps={{
-//           keepMounted: true,
-//         }}
-//         sx={{
-//           display: { xs: 'block', md: 'none' },
-//           '& .MuiDrawer-paper': {
-//             boxSizing: 'border-box',
-//             width: drawerWidth,
-//             border: 'none',
-//             boxShadow: theme.shadows[8],
-//           },
-//         }}
-//       >
-//         {drawerContent}
-//       </Drawer>
-//
-//       {/* Desktop drawer */}
-//       <Drawer
-//         variant="permanent"
-//         sx={{
-//           display: { xs: 'none', md: 'block' },
-//           '& .MuiDrawer-paper': {
-//             boxSizing: 'border-box',
-//             width: drawerWidth,
-//             border: 'none',
-//             borderRight: `1px solid ${theme.palette.divider}`,
-//           },
-//         }}
-//         open
-//       >
-//         {drawerContent}
-//       </Drawer>
-//     </Box>
-//   )
-// }
-//
-// // Layout component
-// const Layout: React.FC<{
-//   children: React.ReactNode
-//   userType: string | undefined
-// }> = ({ children, userType }) => {
-//   const [mobileOpen, setMobileOpen] = useState(false)
-//   const theme = useTheme()
-//   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-//
-//   const handleDrawerToggle = () => {
-//     setMobileOpen(!mobileOpen)
-//   }
-//
-//   return (
-//     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-//       <Sidebar
-//         userType={userType}
-//         mobileOpen={mobileOpen}
-//         onMobileToggle={handleDrawerToggle}
-//       />
-//
-//       <Box
-//         component="main"
-//         sx={{
-//           flexGrow: 1,
-//           width: { md: `calc(100% - ${drawerWidth}px)` },
-//           backgroundColor: theme.palette.grey[50],
-//           minHeight: '100vh',
-//         }}
-//       >
-//         {/* Mobile menu button */}
-//         {isMobile && (
-//           <IconButton
-//             color="inherit"
-//             aria-label="open drawer"
-//             edge="start"
-//             onClick={handleDrawerToggle}
-//             sx={{
-//               position: 'fixed',
-//               top: 16,
-//               left: 16,
-//               zIndex: theme.zIndex.appBar,
-//               backgroundColor: theme.palette.background.paper,
-//               boxShadow: theme.shadows[2],
-//               '&:hover': {
-//                 backgroundColor: theme.palette.action.hover,
-//               },
-//             }}
-//           >
-//             <MenuIcon />
-//           </IconButton>
-//         )}
-//
-//         {/* Main content area */}
-//         <Box>{children}</Box>
-//       </Box>
-//     </Box>
-//   )
-// }
-//
-// export default Sidebar
-// export { Layout }
 'use client';
 
 import { UserType } from '@crm/types';
 import {
   AccountBoxOutlined as AccountBoxOutlinedIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Circle as CircleIcon,
   Dashboard as DashboardIcon,
   ExpandLess as ExpandLessIcon,
@@ -442,10 +15,12 @@ import {
   Inventory2Outlined as Inventory2OutlinedIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
+  MenuOpen,
   Message as MessageIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
 import {
+  alpha,
   Box,
   Collapse,
   Divider,
@@ -457,15 +32,23 @@ import {
   ListItemIcon,
   ListItemText,
   SxProps,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 
-const drawerWidth = 280;
+// Constants
+const DRAWER_WIDTH = 280;
+const DRAWER_WIDTH_SHRUNK = 80;
+const DRAWER_WIDTH_HIDDEN = 0;
+const SIDEBAR_STORAGE_KEY = 'sidebar-preferences';
+
+// Types
+type SidebarMode = 'full' | 'shrink' | 'hover' | 'hidden';
 
 interface NavigationItem {
   text: string;
@@ -481,7 +64,51 @@ interface SidebarProps {
   userType: UserType;
   mobileOpen?: boolean;
   onMobileToggle?: () => void;
+  mode?: SidebarMode;
+  onModeChange?: (mode: SidebarMode) => void;
 }
+
+interface SidebarContextType {
+  mode: SidebarMode;
+  isShrunk: boolean;
+  isHidden: boolean;
+  toggleMode: () => void;
+  setMode: (mode: SidebarMode) => void;
+}
+
+interface SidebarPreferences {
+  mode: SidebarMode;
+}
+
+const SidebarContext = React.createContext<SidebarContextType | undefined>(
+  undefined,
+);
+
+// LocalStorage utilities
+const getStoredSidebarPreferences = (): SidebarPreferences | null => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error(
+      'Error reading sidebar preferences from localStorage:',
+      error,
+    );
+    return null;
+  }
+};
+
+const setStoredSidebarPreferences = (preferences: SidebarPreferences): void => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(preferences));
+  } catch (error) {
+    console.error('Error saving sidebar preferences to localStorage:', error);
+  }
+};
 
 // ✅ REUSABLE COMPONENT: NavigationLink
 const NavigationLink: React.FC<{
@@ -492,8 +119,20 @@ const NavigationLink: React.FC<{
   onClick?: () => void;
   sx?: SxProps;
   pl?: number;
-}> = ({ href, icon, text, isActive, onClick, sx = {}, pl = 0 }) => {
+  showText?: boolean;
+}> = ({
+  href,
+  icon,
+  text,
+  isActive,
+  onClick,
+  sx = {},
+  pl = 0,
+  showText = true,
+}) => {
   const theme = useTheme();
+  const sidebarContext = React.useContext(SidebarContext);
+  const isShrunk = sidebarContext?.isShrunk || false;
 
   const baseSx = {
     display: 'flex',
@@ -505,8 +144,11 @@ const NavigationLink: React.FC<{
     '&:hover': {
       backgroundColor: isActive
         ? theme.palette.primary.dark
-        : theme.palette.action.hover,
+        : alpha(theme.palette.primary.main, 0.1),
     },
+    justifyContent: isShrunk && !pl ? 'center' : 'flex-start',
+    minHeight: 48,
+    px: isShrunk && !pl ? 2 : 2,
   };
 
   return (
@@ -515,17 +157,25 @@ const NavigationLink: React.FC<{
       style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}
       onClick={onClick}
     >
-      <ListItemButton sx={{ ...baseSx, ...sx }}>
-        <ListItemIcon
-          sx={{
-            color: isActive ? theme.palette.primary.contrastText : 'inherit',
-            minWidth: pl ? 20 : 40,
-          }}
-        >
-          {icon}
-        </ListItemIcon>
-        <ListItemText primary={text} sx={{ ml: 1 }} />
-      </ListItemButton>
+      <Tooltip title={isShrunk && showText ? text : ''} placement="right">
+        <ListItemButton sx={{ ...baseSx, ...sx }}>
+          <ListItemIcon
+            sx={{
+              color: isActive ? theme.palette.primary.contrastText : 'inherit',
+              minWidth: pl ? 20 : isShrunk ? 0 : 40,
+              justifyContent: 'center',
+            }}
+          >
+            {icon}
+          </ListItemIcon>
+          {showText && (
+            <ListItemText
+              primary={text}
+              sx={{ ml: pl ? 1 : 2, opacity: isShrunk ? 0 : 1 }}
+            />
+          )}
+        </ListItemButton>
+      </Tooltip>
     </Link>
   );
 };
@@ -552,10 +202,12 @@ const userRoutesMap: Record<UserType, NavigationItem[]> = {
     },
   ],
 };
+
 const userPrefixMap: Record<UserType, string> = {
   admin: '/admin',
   dealer: '/dealer',
 };
+
 const prefixRoutes = (
   items: NavigationItem[],
   prefix: string,
@@ -573,15 +225,72 @@ const Sidebar: React.FC<SidebarProps> = ({
   userType,
   mobileOpen = false,
   onMobileToggle,
+  mode = 'full',
+  onModeChange,
 }) => {
   const navigationItems =
     userType && userRoutesMap[userType]
       ? prefixRoutes(userRoutesMap[userType], userPrefixMap[userType])
       : [];
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [hovered, setHovered] = useState(false);
+  const [localMode, setLocalMode] = useState<SidebarMode>(mode);
+
+  // Load preferences from localStorage on mount
+  useLayoutEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedPreferences = getStoredSidebarPreferences();
+      if (storedPreferences?.mode) {
+        setLocalMode(storedPreferences.mode);
+        onModeChange?.(storedPreferences.mode);
+      }
+    }
+  }, [onModeChange]);
+
+  // Sync with props
+  // useEffect(() => {
+  //   setLocalMode(mode);
+  // }, [mode]);
+
+  const isShrunk =
+    localMode === 'shrink' || (localMode === 'hover' && !hovered);
+  const isHidden = localMode === 'hidden';
+  const currentWidth = isHidden
+    ? DRAWER_WIDTH_HIDDEN
+    : isShrunk
+      ? DRAWER_WIDTH_SHRUNK
+      : DRAWER_WIDTH;
+
+  const handleModeChange = (newMode: SidebarMode) => {
+    setLocalMode(newMode);
+
+    // Save to localStorage
+    setStoredSidebarPreferences({ mode: newMode });
+
+    // Notify parent component
+    onModeChange?.(newMode);
+  };
+
+  const toggleMode = () => {
+    const newMode = localMode === 'full' ? 'shrink' : 'full';
+    handleModeChange(newMode);
+  };
+
+  const handleMouseEnter = () => {
+    if (localMode === 'hover') {
+      setHovered(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (localMode === 'hover') {
+      setHovered(false);
+    }
+  };
 
   const handleMobileClose = () => {
     if (isMobile && onMobileToggle) {
@@ -606,6 +315,47 @@ const Sidebar: React.FC<SidebarProps> = ({
     const isExpanded = expandedItems.includes(item.text);
     const active = isActive(item.path);
 
+    if (hasSubItems && isShrunk) {
+      // Special handling for subitems in shrunk mode
+      return (
+        <Tooltip key={item.text} title={item.text} placement="right">
+          <ListItem disablePadding>
+            <ListItemButton
+              onClick={() => handleExpandClick(item.text)}
+              sx={{
+                borderRadius: 1,
+                my: 0.5,
+                backgroundColor: active
+                  ? theme.palette.primary.main
+                  : 'transparent',
+                color: active ? theme.palette.primary.contrastText : 'inherit',
+                '&:hover': {
+                  backgroundColor: active
+                    ? theme.palette.primary.dark
+                    : alpha(theme.palette.primary.main, 0.1),
+                },
+                justifyContent: 'center',
+                minHeight: 48,
+                px: 2,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  color: active
+                    ? theme.palette.primary.contrastText
+                    : 'inherit',
+                  minWidth: 0,
+                  justifyContent: 'center',
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+            </ListItemButton>
+          </ListItem>
+        </Tooltip>
+      );
+    }
+
     return (
       <React.Fragment key={item.text}>
         <ListItem disablePadding>
@@ -622,8 +372,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 '&:hover': {
                   backgroundColor: active
                     ? theme.palette.primary.dark
-                    : theme.palette.action.hover,
+                    : alpha(theme.palette.primary.main, 0.1),
                 },
+                justifyContent: isShrunk ? 'center' : 'flex-start',
+                minHeight: 48,
+                px: 2,
               }}
             >
               <ListItemIcon
@@ -631,13 +384,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                   color: active
                     ? theme.palette.primary.contrastText
                     : 'inherit',
-                  minWidth: 40,
+                  minWidth: isShrunk ? 0 : 40,
+                  justifyContent: 'center',
                 }}
               >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.text} sx={{ ml: 1 }} />
-              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              {!isShrunk && (
+                <>
+                  <ListItemText primary={item.text} sx={{ ml: 1 }} />
+                  {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </>
+              )}
             </ListItemButton>
           ) : (
             <NavigationLink
@@ -646,11 +404,12 @@ const Sidebar: React.FC<SidebarProps> = ({
               text={item.text}
               isActive={active}
               onClick={handleMobileClose}
+              showText={!isShrunk}
             />
           )}
         </ListItem>
 
-        {hasSubItems && (
+        {hasSubItems && !isShrunk && (
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
               {item.subItems?.map((subItem) => (
@@ -662,6 +421,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     isActive={isActive(subItem.path)}
                     onClick={handleMobileClose}
                     pl={4}
+                    showText={!isShrunk}
                   />
                 </ListItem>
               ))}
@@ -672,49 +432,103 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  const sidebarContextValue: SidebarContextType = {
+    mode: localMode,
+    isShrunk,
+    isHidden,
+    toggleMode,
+    setMode: handleModeChange,
+  };
+
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-            Your App
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Dashboard
-          </Typography>
-        </Link>
+    <SidebarContext.Provider value={sidebarContextValue}>
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          borderColor: theme.palette.divider,
+          transition: theme.transitions.create(['background-color', 'color']),
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            minHeight: 64,
+          }}
+        >
+          {!isShrunk && (
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              CRM Dashboard
+            </Typography>
+          )}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: isShrunk ? 0 : 1,
+            }}
+          >
+            {!isMobile && (
+              <IconButton
+                onClick={toggleMode}
+                size="small"
+                sx={{
+                  color: 'inherit',
+                  ml: isShrunk ? 0 : 'auto', // Center when shrunk
+                }}
+              >
+                {isShrunk ? <MenuIcon /> : <MenuOpen />}
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+        {/* Main Navigation */}
+        <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+          <List>{navigationItems.map(renderNavigationItem)}</List>
+        </Box>
+        {/* Bottom Navigation */}
+        <Box>
+          <Divider />
+          <List sx={{ py: 1 }}>
+            {bottomNavigationItems.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <NavigationLink
+                  href={item.path}
+                  icon={item.icon}
+                  text={item.text}
+                  isActive={isActive(item.path)}
+                  onClick={handleMobileClose}
+                  showText={!isShrunk}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
       </Box>
-
-      {/* Main Navigation */}
-      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-        <List>{navigationItems.map(renderNavigationItem)}</List>
-      </Box>
-
-      {/* Bottom Navigation */}
-      <Box>
-        <Divider />
-        <List sx={{ py: 1 }}>
-          {bottomNavigationItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <NavigationLink
-                href={item.path}
-                icon={item.icon}
-                text={item.text}
-                isActive={isActive(item.path)}
-                onClick={handleMobileClose}
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Box>
-    </Box>
+    </SidebarContext.Provider>
   );
+
+  if (isHidden && !isMobile) {
+    return null;
+  }
 
   return (
     <Box
       component="nav"
-      sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+      sx={{
+        width: { md: currentWidth },
+        flexShrink: { md: 0 },
+        transition: theme.transitions.create('width'),
+      }}
     >
       {/* Mobile drawer */}
       <Drawer
@@ -728,9 +542,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
-            width: drawerWidth,
+            width: DRAWER_WIDTH,
             border: 'none',
             boxShadow: theme.shadows[8],
+            backgroundColor: theme.palette.background.paper,
           },
         }}
       >
@@ -738,21 +553,26 @@ const Sidebar: React.FC<SidebarProps> = ({
       </Drawer>
 
       {/* Desktop drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: drawerWidth,
-            border: 'none',
-            borderRight: `1px solid ${theme.palette.divider}`,
-          },
-        }}
-        open
-      >
-        {drawerContent}
-      </Drawer>
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: currentWidth,
+              border: 'none',
+              borderRight: `1px solid ${theme.palette.divider}`,
+              overflowX: 'hidden',
+              transition: theme.transitions.create('width'),
+              backgroundColor: theme.palette.background.paper,
+            },
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      )}
     </Box>
   );
 };
@@ -761,7 +581,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 const Layout: React.FC<{
   children: React.ReactNode;
   userType: string | undefined;
-}> = ({ children, userType }) => {
+  sidebarMode?: SidebarMode;
+  onSidebarModeChange?: (mode: SidebarMode) => void;
+}> = ({ children, userType, sidebarMode, onSidebarModeChange }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -770,21 +592,31 @@ const Layout: React.FC<{
     setMobileOpen(!mobileOpen);
   };
 
+  const currentWidth =
+    sidebarMode === 'hidden'
+      ? DRAWER_WIDTH_HIDDEN
+      : sidebarMode === 'shrink' || sidebarMode === 'hover'
+        ? DRAWER_WIDTH_SHRUNK
+        : DRAWER_WIDTH;
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar
         userType={userType as UserType}
         mobileOpen={mobileOpen}
         onMobileToggle={handleDrawerToggle}
+        mode={sidebarMode}
+        onModeChange={onSidebarModeChange}
       />
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          width: { md: `calc(100% - ${currentWidth}px)` },
           backgroundColor: theme.palette.grey[50],
           minHeight: '100vh',
+          transition: theme.transitions.create('width'),
         }}
       >
         {/* Mobile menu button */}
@@ -810,12 +642,45 @@ const Layout: React.FC<{
           </IconButton>
         )}
 
+        {/* Desktop sidebar toggle for hidden mode */}
+        {!isMobile && sidebarMode === 'hidden' && (
+          <IconButton
+            color="inherit"
+            aria-label="show sidebar"
+            edge="start"
+            onClick={() => onSidebarModeChange?.('full')}
+            sx={{
+              position: 'fixed',
+              top: 16,
+              left: 16,
+              zIndex: theme.zIndex.appBar,
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.shadows[2],
+              '&:hover': {
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
+
         {/* Main content area */}
-        <Box>{children}</Box>
+        <Box height={'100%'}>{children}</Box>
       </Box>
     </Box>
   );
 };
 
+// Hook for using sidebar context
+const useSidebar = () => {
+  const context = React.useContext(SidebarContext);
+  if (context === undefined) {
+    throw new Error('useSidebar must be used within a SidebarProvider');
+  }
+  return context;
+};
+
 export default Sidebar;
-export { Layout };
+export { Layout, useSidebar };
+export type { SidebarMode };
