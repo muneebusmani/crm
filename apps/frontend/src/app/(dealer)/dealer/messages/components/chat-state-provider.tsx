@@ -1,118 +1,10 @@
-// // components/chat-state-provider.tsx
-// "use client";
-//
-// import ChatWindow from "@dealer/components/chat-window";
-// import type { Message } from "@dealer/types/chat";
-// import { useCallback, useState } from "react";
-//
-// export default function ChatStateProvider() {
-//   const [messages, setMessages] = useState<Message[]>([
-//     {
-//       id: "1",
-//       text: "Hello! How can I help you today?",
-//       sender: "other",
-//       timestamp: new Date(),
-//     },
-//   ]);
-//   const [isLoading, setIsLoading] = useState(false);
-//
-//   const addMessage = useCallback((text: string) => {
-//     const userMessage: Message = {
-//       id: Date.now().toString(),
-//       text,
-//       sender: "user",
-//       timestamp: new Date(),
-//     };
-//
-//     setMessages((prev) => [...prev, userMessage]);
-//     setIsLoading(true);
-//
-//     setTimeout(() => {
-//       const botMessage: Message = {
-//         id: (Date.now() + 1).toString(),
-//         text: `You said: "${text}". I'm just a demo bot! 😊`,
-//         sender: "other",
-//         timestamp: new Date(),
-//       };
-//       setMessages((prev) => [...prev, botMessage]);
-//       setIsLoading(false);
-//     }, 1500);
-//   }, []);
-//
-//   return (
-//     <ChatWindow messages={messages} onSend={addMessage} isLoading={isLoading} />
-//   );
-// }
-// components/chat-state-provider.tsx
-// "use client";
-//
-// import ChatWindow from "@dealer/components/chat-window";
-// import type { Message } from "@dealer/types/chat";
-// import { useCallback, useState } from "react";
-//
-// export default function ChatStateProvider() {
-//   const [messages, setMessages] = useState<Message[]>([
-//     {
-//       id: "1",
-//       text: "Hello! How can I help you today?",
-//       sender: "other",
-//       timestamp: new Date(),
-//     },
-//   ]);
-//   const [isLoading, setIsLoading] = useState(false);
-//
-//   const addMessage = useCallback((text: string) => {
-//     const userMessage: Message = {
-//       id: Date.now().toString(),
-//       text,
-//       sender: "user",
-//       timestamp: new Date(),
-//     };
-//
-//     setMessages((prev) => [...prev, userMessage]);
-//     setIsLoading(true);
-//
-//     setTimeout(() => {
-//       const botMessage: Message = {
-//         id: (Date.now() + 1).toString(),
-//         text: `You said: "${text}". I'm just a demo bot! 😊`,
-//         sender: "other",
-//         timestamp: new Date(),
-//       };
-//       setMessages((prev) => [...prev, botMessage]);
-//       setIsLoading(false);
-//     }, 1500);
-//   }, []);
-//
-//   const handleAttach = useCallback(() => {
-//     alert("Attachment feature not implemented yet.");
-//     // You can open file picker here:
-//     // const input = document.createElement("input");
-//     // input.type = "file";
-//     // input.onchange = (e) => {
-//     //   const file = e.target.files?.[0];
-//     //   console.log(file);
-//     // };
-//     // input.click();
-//   }, []);
-//
-//   return (
-//     <ChatWindow
-//       messages={messages}
-//       onSend={addMessage}
-//       isLoading={isLoading}
-//       onAttach={handleAttach}
-//     />
-//   );
-// }
-// components/chat-state-provider.tsx
-'use client'
+'use client';
 
-import type { Message } from '@dealer/types/chat'
-import { Box, useTheme } from '@mui/material'
-import { useCallback, useState } from 'react'
-import Sidebar from './chat-sidebar'
-import ChatWindow from './chat-window'
+import type { Message } from '@dealer/types/chat';
+import { Box } from '@mui/material';
+import { useCallback, useState } from 'react';
+import Sidebar from './chat-sidebar';
+import ChatWindow from './chat-window';
 
 // Mock data for multiple chats
 const mockChats = [
@@ -196,7 +88,7 @@ const mockChats = [
     avatarUrl:
       'https://ui-avatars.com/api/?name=Sophia+Turner&background=3f51b5&color=ffffff&type=png',
   },
-]
+];
 
 export default function ChatStateProvider() {
   const [messages, setMessages] = useState<Record<string, Message[]>>({
@@ -208,9 +100,9 @@ export default function ChatStateProvider() {
         timestamp: new Date(),
       },
     ],
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentChatId, setCurrentChatId] = useState('1')
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState('1');
 
   const addMessage = useCallback(
     (text: string) => {
@@ -219,14 +111,14 @@ export default function ChatStateProvider() {
         text,
         sender: 'user',
         timestamp: new Date(),
-      }
+      };
 
       setMessages((prev) => {
-        const newMessages = [...(prev[currentChatId] || []), userMessage]
-        return { ...prev, [currentChatId]: newMessages }
-      })
+        const newMessages = [...(prev[currentChatId] || []), userMessage];
+        return { ...prev, [currentChatId]: newMessages };
+      });
 
-      setIsLoading(true)
+      setIsLoading(true);
 
       setTimeout(() => {
         const botMessage: Message = {
@@ -234,25 +126,24 @@ export default function ChatStateProvider() {
           text: `You said: "${text}". I'm just a demo bot! 😊`,
           sender: 'other',
           timestamp: new Date(),
-        }
+        };
         setMessages((prev) => {
-          const newMessages = [...(prev[currentChatId] || []), botMessage]
-          return { ...prev, [currentChatId]: newMessages }
-        })
-        setIsLoading(false)
-      }, 1500)
+          const newMessages = [...(prev[currentChatId] || []), botMessage];
+          return { ...prev, [currentChatId]: newMessages };
+        });
+        setIsLoading(false);
+      }, 1500);
     },
     [currentChatId],
-  )
+  );
 
   const handleAttach = useCallback(() => {
-    alert('Attachment feature not implemented yet.')
-  }, [])
+    alert('Attachment feature not implemented yet.');
+  }, []);
 
   const handleSelectChat = useCallback((id: string) => {
-    setCurrentChatId(id)
-  }, [])
-  const theme = useTheme()
+    setCurrentChatId(id);
+  }, []);
 
   return (
     <Box
@@ -276,5 +167,5 @@ export default function ChatStateProvider() {
         onAttach={handleAttach}
       />
     </Box>
-  )
+  );
 }

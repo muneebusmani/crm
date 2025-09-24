@@ -3,8 +3,6 @@
 import { UserType } from '@crm/types';
 import {
   AccountBoxOutlined as AccountBoxOutlinedIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   Circle as CircleIcon,
   Dashboard as DashboardIcon,
   ExpandLess as ExpandLessIcon,
@@ -39,7 +37,7 @@ import {
 } from '@mui/material';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 
 // Constants
 const DRAWER_WIDTH = 280;
@@ -134,7 +132,7 @@ const NavigationLink: React.FC<{
   const sidebarContext = React.useContext(SidebarContext);
   const isShrunk = sidebarContext?.isShrunk || false;
 
-  const baseSx = {
+  const baseSx: SxProps = {
     display: 'flex',
     alignItems: 'center',
     borderRadius: 1,
@@ -146,9 +144,8 @@ const NavigationLink: React.FC<{
         ? theme.palette.primary.dark
         : alpha(theme.palette.primary.main, 0.1),
     },
-    justifyContent: isShrunk && !pl ? 'center' : 'flex-start',
+    justifyContent: 'center',
     minHeight: 48,
-    px: isShrunk && !pl ? 2 : 2,
   };
 
   return (
@@ -234,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       : [];
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [hovered, setHovered] = useState(false);
@@ -257,7 +254,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   // }, [mode]);
 
   const isShrunk =
-    localMode === 'shrink' || (localMode === 'hover' && !hovered);
+    !isMobile &&
+    (localMode === 'shrink' || (localMode === 'hover' && !hovered));
   const isHidden = localMode === 'hidden';
   const currentWidth = isHidden
     ? DRAWER_WIDTH_HIDDEN
@@ -336,7 +334,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 },
                 justifyContent: 'center',
                 minHeight: 48,
-                px: 2,
               }}
             >
               <ListItemIcon
@@ -376,7 +373,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 },
                 justifyContent: isShrunk ? 'center' : 'flex-start',
                 minHeight: 48,
-                px: 2,
               }}
             >
               <ListItemIcon
@@ -459,31 +455,34 @@ const Sidebar: React.FC<SidebarProps> = ({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-evenly',
+            justifyContent: 'space-between',
+            px: 3,
             borderBottom: `1px solid ${theme.palette.divider}`,
             minHeight: 64,
           }}
         >
-          {!isShrunk && (
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              CRM Dashboard
-            </Typography>
-          )}
-          <Box
+          <Typography
+            variant="h6"
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: isShrunk ? 0 : 1,
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              transition: theme.transitions.create(['opacity', 'maxWidth'], {
+                duration: theme.transitions.duration.shortest,
+              }),
+              opacity: isShrunk && !isMobile ? 0 : 1,
+              maxWidth: isShrunk && !isMobile ? 0 : 'auto',
             }}
           >
+            Engine Finders
+          </Typography>
+          <Box>
             {!isMobile && (
               <IconButton
                 onClick={toggleMode}
                 size="small"
                 sx={{
                   color: 'inherit',
-                  ml: isShrunk ? 0 : 'auto', // Center when shrunk
                 }}
               >
                 {isShrunk ? <MenuIcon /> : <MenuOpen />}
@@ -492,7 +491,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Box>
         </Box>
         {/* Main Navigation */}
-        <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: 'auto',
+            py: 1,
+          }}
+        >
           <List>{navigationItems.map(renderNavigationItem)}</List>
         </Box>
         {/* Bottom Navigation */}
