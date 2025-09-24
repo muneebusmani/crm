@@ -90,6 +90,7 @@ export class AuthService {
           name: user.name,
           email: user.email,
           username: user.username,
+          status: user.status,
           type: user.type,
         },
         accessToken,

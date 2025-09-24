@@ -1,5 +1,4 @@
 // /** biome-ignore-all lint/style/noNonNullAssertion: <idk> */
-
 // import type {
 //   ApiResponse,
 //   CreateLeadDto,
@@ -106,46 +105,25 @@
 //     }
 //   },
 // };
-import type {
-  ApiResponse,
-  CreateLeadDto,
-  Lead,
-  UpdateLeadDto,
-} from '@crm/types';
-import { api } from '../app/lib/api';
+import type { CreateLeadDto, Lead, UpdateLeadDto } from '@crm/types';
+import * as api from '@lib/api';
+import { handleResponse } from './response.service';
 
 const LEADS_BASE = '/leads';
 
-async function handleResponse<T>(
-  promise: Promise<ApiResponse<T>>,
-  allowNoData = false,
-): Promise<T> {
-  const result = await promise;
-  if (!result.success) {
-    throw new Error(result.error || 'API request failed');
-  }
-  if (!allowNoData && (result.data === undefined || result.data === null)) {
-    throw new Error('API returned no data');
-  }
-  return result.data as T;
-}
-
 export const leadsApi = {
   getAll: async (): Promise<Lead[]> =>
-    handleResponse(api<Lead[]>(LEADS_BASE, { method: 'GET' })),
+    handleResponse(api.get<Lead[]>(LEADS_BASE)),
 
   getOne: async (id: number): Promise<Lead> =>
-    handleResponse(api<Lead>(`${LEADS_BASE}/${id}`, { method: 'GET' })),
+    handleResponse(api.get<Lead>(`${LEADS_BASE}/${id}`)),
 
   create: async (leadData: CreateLeadDto): Promise<Lead> =>
-    handleResponse(api<Lead>(LEADS_BASE, { method: 'POST', data: leadData })),
+    handleResponse(api.post<Lead, CreateLeadDto>(LEADS_BASE, leadData)),
 
   update: async (leadData: UpdateLeadDto): Promise<Lead> =>
-    handleResponse(api<Lead>(LEADS_BASE, { method: 'PUT', data: leadData })),
+    handleResponse(api.put<Lead, UpdateLeadDto>(LEADS_BASE, leadData)),
 
   delete: async (id: number): Promise<void> =>
-    handleResponse(
-      api<void>(`${LEADS_BASE}/${id}`, { method: 'DELETE' }),
-      true,
-    ),
+    handleResponse(api.del<void>(`${LEADS_BASE}/${id}`), true),
 };

@@ -5,12 +5,11 @@ export * from './types/Dealer';
 export * from './types/Quotation';
 export * from './types/UserStatus';
 export * from './types/LeadTypes';
-export *  from './types/LeadMessage';
-
+export * from './types/LeadMessage';
 export * from './schemas/auth.schema';
 export * from './schemas/admin.schema';
 export * from './schemas/dealer.schema';
-export * from './schemas/user.schema'; 
-export * from './schemas/lead.schema'
-export * from './schemas/quotation.schema'
-export * from './schemas/lead-message.schme'
+export * from './schemas/user.schema';
+export * from './schemas/lead.schema';
+export * from './schemas/quotation.schema';
+export * from './schemas/lead-message.schme';

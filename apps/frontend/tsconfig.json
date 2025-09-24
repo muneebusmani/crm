@@ -20,6 +20,11 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
+      "@actions/*": ["./src/actions/*"],
+      "@adapters/*": ["./src/adapters/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@services/*": ["./src/services/*"],
+      "@components/*": ["./src/components/*"],
       "@dealer/*": ["./src/app/(dealer)/dealer/*"],
       "@admin/*": ["./src/app/(admin)/admin/*"]
     }
