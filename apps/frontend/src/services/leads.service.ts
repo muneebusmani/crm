@@ -111,10 +111,10 @@ import type {
   CreateLeadDto,
   Lead,
   UpdateLeadDto,
-} from "@crm/types";
-import { api } from "../app/lib/api";
+} from '@crm/types';
+import { api } from '../app/lib/api';
 
-const LEADS_BASE = "/leads";
+const LEADS_BASE = '/leads';
 
 async function handleResponse<T>(
   promise: Promise<ApiResponse<T>>,
@@ -122,30 +122,30 @@ async function handleResponse<T>(
 ): Promise<T> {
   const result = await promise;
   if (!result.success) {
-    throw new Error(result.error || "API request failed");
+    throw new Error(result.error || 'API request failed');
   }
   if (!allowNoData && (result.data === undefined || result.data === null)) {
-    throw new Error("API returned no data");
+    throw new Error('API returned no data');
   }
   return result.data as T;
 }
 
 export const leadsApi = {
   getAll: async (): Promise<Lead[]> =>
-    handleResponse(api<Lead[]>(LEADS_BASE, { method: "GET" })),
+    handleResponse(api<Lead[]>(LEADS_BASE, { method: 'GET' })),
 
   getOne: async (id: number): Promise<Lead> =>
-    handleResponse(api<Lead>(`${LEADS_BASE}/${id}`, { method: "GET" })),
+    handleResponse(api<Lead>(`${LEADS_BASE}/${id}`, { method: 'GET' })),
 
   create: async (leadData: CreateLeadDto): Promise<Lead> =>
-    handleResponse(api<Lead>(LEADS_BASE, { method: "POST", data: leadData })),
+    handleResponse(api<Lead>(LEADS_BASE, { method: 'POST', data: leadData })),
 
   update: async (leadData: UpdateLeadDto): Promise<Lead> =>
-    handleResponse(api<Lead>(LEADS_BASE, { method: "PUT", data: leadData })),
+    handleResponse(api<Lead>(LEADS_BASE, { method: 'PUT', data: leadData })),
 
   delete: async (id: number): Promise<void> =>
     handleResponse(
-      api<void>(`${LEADS_BASE}/${id}`, { method: "DELETE" }),
+      api<void>(`${LEADS_BASE}/${id}`, { method: 'DELETE' }),
       true,
     ),
 };

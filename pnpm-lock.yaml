@@ -11,6 +11,9 @@ importers:
       next:
         specifier: 15.5.2
         version: 15.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next-axis:
+        specifier: ^0.0.6
+        version: 0.0.6
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -4448,6 +4451,9 @@ packages:
     peerDependenciesMeta:
       '@nestjs/swagger':
         optional: true
+
+  next-axis@0.0.6:
+    resolution: {integrity: sha512-8e3W51n/+Tz7dLHR0/AlYysYM4C9OGowUf/t+9AWJf/dTFrQyurtKDab0X/ZEOVZp5AnTBv0BLGxe6H67gn8CA==}
 
   next@15.5.2:
     resolution: {integrity: sha512-H8Otr7abj1glFhbGnvUt3gz++0AF1+QoCXEBmd/6aKbfdFwrn0LpA836Ed5+00va/7HQSDD+mOoVhn3tNy3e/Q==}
@@ -10585,6 +10591,8 @@ snapshots:
       zod: 4.1.5
     optionalDependencies:
       '@nestjs/swagger': 11.2.0(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)
+
+  next-axis@0.0.6: {}
 
   next@15.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:

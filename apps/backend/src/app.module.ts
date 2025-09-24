@@ -1,17 +1,17 @@
-import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { APP_PIPE } from '@nestjs/core'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { ZodValidationPipe } from 'nestjs-zod'
-import { ActivityLogModule } from './activity-log/activity-log.module'
-import { AppController } from './app.controller'
-import { AppService } from './app.service'
-import { AuthModule } from './auth/auth.module'
-import { LeadsModule } from './leads/leads.module'
-import { AdminModule } from './user/admin/admin.module'
-import { DealerModule } from './user/dealer/dealer.module'
-import { AnalyticsModule } from './analytics/analytics.module'
-import { LeadMessageModule } from './leads-messages/lead-message.module'
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_PIPE } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { ActivityLogModule } from './activity-log/activity-log.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { LeadsModule } from './leads/leads.module';
+import { LeadMessageModule } from './leads-messages/lead-message.module';
+import { AdminModule } from './user/admin/admin.module';
+import { DealerModule } from './user/dealer/dealer.module';
 
 @Module({
   imports: [
@@ -40,7 +40,7 @@ import { LeadMessageModule } from './leads-messages/lead-message.module'
     DealerModule,
     ActivityLogModule,
     LeadMessageModule,
-    AnalyticsModule
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,19 +1,20 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: <needed> */
 'use client';
 
 import type { Lead } from '@crm/types';
 import {
-  Add as AddIcon,
+  // Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   Email as EmailIcon,
-  FilterList as FilterListIcon,
+  // FilterList as FilterListIcon,
   Info as InfoIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   Box,
-  Button,
+  // Button,
   Checkbox,
   Chip,
   IconButton,
@@ -178,7 +179,7 @@ const LeadsTable: React.FC = () => {
         setOpenEditDialog(true);
         break;
       case 'info': {
-        const detailedLead = await fetchLeadById(lead.id);
+        const detailedLead = await fetchLeadById(lead.id!);
         if (detailedLead) {
           setOpenInfoDialog(true);
         }
@@ -387,7 +388,7 @@ const LeadsTable: React.FC = () => {
                       if (selectedRows.length === currentLeads.length) {
                         setSelectedRows([]);
                       } else {
-                        setSelectedRows(currentLeads.map((lead) => lead.id));
+                        setSelectedRows(currentLeads.map((lead) => lead.id!));
                       }
                     }}
                   />
@@ -434,8 +435,8 @@ const LeadsTable: React.FC = () => {
                 <TableRow key={lead.id}>
                   <TableCell padding="checkbox">
                     <Checkbox
-                      checked={selectedRows.includes(lead.id)}
-                      onChange={() => handleRowSelect(lead.id)}
+                      checked={selectedRows.includes(lead.id!)}
+                      onChange={() => handleRowSelect(lead.id!)}
                     />
                   </TableCell>
                   <TableCell>
@@ -479,7 +480,7 @@ const LeadsTable: React.FC = () => {
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleLeadDelete(lead.id)}
+                        onClick={() => handleLeadDelete(lead.id!)}
                         title="Delete"
                       >
                         <DeleteIcon fontSize="small" />
@@ -522,7 +523,7 @@ const LeadsTable: React.FC = () => {
             open={openEmailDialog}
             onClose={() => setOpenEmailDialog(false)}
             lead={{
-              id: selectedLead.id,
+              id: selectedLead.id!,
               name: selectedLead.name || '',
               email: selectedLead.email,
             }}
