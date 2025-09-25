@@ -27,30 +27,42 @@ const Timestamp = styled(Typography)(({ theme }) => ({
 
 interface MessageBubbleProps {
   message: Message;
+  isOwnMessage?: boolean;
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
-  const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+export default function MessageBubble({ message, isOwnMessage = false }: MessageBubbleProps) {
+  const formatTime = (date: Date | string): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Generate avatar URL
+  // Generate avatar URL based on sender name
   const getAvatarUrl = (name: string) => {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=40&background=3f51b5&color=ffffff&type=png`;
+    const encodedName = encodeURIComponent((name || 'U').substring(0, 2));
+    return `https://ui-avatars.com/api/?name=${encodedName}&size=40&background=${isOwnMessage ? '3f51b5' : '757575'}&color=ffffff&type=png`;
   };
 
-  const avatarUrl =
-    message.sender === 'user' ? getAvatarUrl('You') : getAvatarUrl('Ali');
+  // Use the sender from the message or default to 'User'
+  const senderName = isOwnMessage ? 'You' : message.sender || 'User';
+  const avatarUrl = getAvatarUrl(senderName);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      {/* Avatar + Message */}
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        width: '100%',
+        alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
+        mb: 1.5,
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
+          flexDirection: isOwnMessage ? 'row-reverse' : 'row',
           alignItems: 'flex-start',
-          gap: 1,
-          flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
+          maxWidth: '85%',
+          gap: 1
         }}
       >
         <Box
@@ -70,12 +82,47 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             style={{ objectFit: 'cover' }}
           />
         </Box>
-        <Bubble isUser={message.sender === 'user'}>
-          <Typography variant="body1" sx={{ fontWeight: 400 }}>
-            {message.text}
-          </Typography>
-          <Timestamp variant="body2">{formatTime(message.timestamp)}</Timestamp>
-        </Bubble>
+        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <Bubble 
+            isUser={isOwnMessage}
+            elevation={1}
+            sx={{
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                boxShadow: isOwnMessage 
+                  ? '0 2px 8px rgba(63, 81, 181, 0.3)' 
+                  : '0 2px 8px rgba(0, 0, 0, 0.1)'
+              }
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                '& a': {
+                  color: isOwnMessage ? '#90caf9' : 'primary.main',
+                  textDecoration: 'underline',
+                  '&:hover': {
+                    textDecoration: 'none',
+                  },
+                },
+              }}
+              dangerouslySetInnerHTML={{ 
+                __html: message.text.replace(/\n/g, '<br />')
+              }} 
+            />
+            <Timestamp 
+              sx={{ 
+                mt: 0.5,
+                color: isOwnMessage ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
+                textAlign: 'right',
+              }}
+            >
+              {formatTime(message.timestamp)}
+            </Timestamp>
+          </Bubble>
+        </Box>
       </Box>
     </Box>
   );
