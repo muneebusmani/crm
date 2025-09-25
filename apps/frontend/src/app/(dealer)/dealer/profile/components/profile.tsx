@@ -20,7 +20,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import * as api from '@/lib/api';
+import axios from 'axios';
 
 // biome-ignore lint/suspicious/noExplicitAny: <any>
 const Profile = ({ id }: { id: any }) => {
@@ -34,7 +35,9 @@ const Profile = ({ id }: { id: any }) => {
       try {
         setLoading(true);
         console.log(id);
-        const response = await api.get(`/dealers/${id}`);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
+        );
         console.log(response.data);
         if (response.status !== 200) throw new Error('Failed to fetch profile');
 

@@ -1,0 +1,46 @@
+version: "3.9"
+
+networks:
+  web:
+    external: true
+
+services:
+  frontend:
+    build: ./apps/frontend
+    container_name: crm-frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm-frontend.rule=Host(`crm.enginesmarket.co.uk`)"
+      - "traefik.http.routers.crm-frontend.entrypoints=websecure"
+      - "traefik.http.routers.crm-frontend.tls.certresolver=le"
+      - "traefik.http.routers.crm-frontend-http.rule=Host(`crm.enginesmarket.co.uk`)"
+      - "traefik.http.routers.crm-frontend-http.entrypoints=web"
+      - "traefik.http.routers.crm-frontend-http.middlewares=to-https"
+      - "traefik.http.middlewares.to-https.redirectscheme.scheme=https"
+      - "traefik.http.services.crm-frontend.loadbalancer.server.port=3000"
+    networks:
+      - web
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    build: ./apps/backend
+    container_name: crm-backend
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm-backend.rule=Host(`api-crm.enginesmarket.co.uk`)"
+      - "traefik.http.routers.crm-backend.entrypoints=websecure"
+      - "traefik.http.routers.crm-backend.tls.certresolver=le"
+      - "traefik.http.routers.crm-backend-http.rule=Host(`api-crm.enginesmarket.co.uk`)"
+      - "traefik.http.routers.crm-backend-http.entrypoints=web"
+      - "traefik.http.routers.crm-backend-http.middlewares=to-https"
+      - "traefik.http.middlewares.to-https.redirectscheme.scheme=https"
+      - "traefik.http.services.crm-backend.loadbalancer.server.port=3001"
+    networks:
+      - web
+    restart: unless-stopped
+    depends_on:
+      - db

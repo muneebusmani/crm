@@ -1702,7 +1702,7 @@ import type React from 'react';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import AddDealerDialog from './AddDealerDialog';
 import type { Dealer } from '@crm/types';
-import { api } from '@/lib/api';
+import * as api from '@/lib/api';
 
 const Dealers = () => {
   const theme = useTheme();
@@ -1723,11 +1723,12 @@ const Dealers = () => {
     const fetchDealers = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/dealers`);
-        if (response.status !== 200) throw new Error('Failed to fetch dealers');
+        const response = await api.get<Array<any>>(`/dealers`);
+        // if (response) throw new Error(response.error);
 
-        const data = await response.data;
-        console.log('raw data ===>', data);
+        const data = response as unknown as Array<any>;
+        console.log('Response ===>', data);
+        // console.log('raw data ===>', data);
 
         // flatten structure
         // biome-ignore lint/suspicious/noExplicitAny: <idk>
@@ -1745,8 +1746,8 @@ const Dealers = () => {
           tierName: u.dealer?.tier?.name,
         }));
 
-        console.log('flatData ===>', flatData);
-        setDealers(flatData);
+        // console.log('flatData ===>', flatData);
+        setDealers(flatData as any);
 
         // Remove auto-selection of first dealer
         // if (flatData.length > 0) {
@@ -1800,9 +1801,9 @@ const Dealers = () => {
         // }
       );
 
-      setDealers([...dealers, newDealer]);
+      setDealers([...(dealers as any), newDealer as any]);
       setOpen(false);
-      setSelectedDealer(newDealer);
+      setSelectedDealer(newDealer as any);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add dealer');
     }
