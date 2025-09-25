@@ -51,119 +51,122 @@ export default function ChatStateProvider() {
       try {
         setIsLoading(true);
         const leadId = parseInt(currentChatId, 10);
-        if (isNaN(leadId)) return;
+        if (isNaN(leadId)) {
+          console.error('Invalid lead ID');
+          return;
+        }
+
+        console.log(`Loading messages for lead ${leadId}...`);
 
         // Initialize with empty messages array for this chat
-        setMessages((prev) => ({
-          ...prev,
-          [currentChatId]: prev[currentChatId] || [],
-        }));
+        setMessages((prev) => {
+          const updated = {
+            ...prev,
+            [currentChatId]: prev[currentChatId] || [],
+          };
+          console.log('Initialized messages state:', updated);
+          return updated;
+        });
 
-        try {
-          // Fetch messages from the API
-          const messages = await leadMessagesApi.getByLead(leadId);
+        // Fetch messages from the API
+        const messages = await leadMessagesApi.getByLead(leadId);
+        console.log('Fetched messages from API:', messages);
 
-          // Only update state if the component is still mounted
-          if (!isMounted) return;
+        // Only update state if the component is still mounted
+        if (!isMounted) return;
 
-          // Format messages using the API utility
-          const formattedMessages = messages.map((msg) =>
-            leadMessagesApi.formatMessage(msg, msg?.sender === "user")
-          );
+        if (!Array.isArray(messages)) {
+          console.error('Invalid messages format:', messages);
+          return;
+        }
 
-          // Sort messages by timestamp (oldest first)
-          formattedMessages.sort(
-            (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
+        // Format messages using the API utility
+        const formattedMessages = messages.map((msg) =>
+          leadMessagesApi.formatMessage(msg, msg?.sender === "user")
+        );
 
-          setMessages((prev) => ({
+        console.log('Formatted messages:', formattedMessages);
+
+        // Sort messages by timestamp (oldest first)
+        formattedMessages.sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        setMessages((prev) => {
+          const updated = {
             ...prev,
             [currentChatId]: formattedMessages,
-          }));
+          };
+          console.log('Updated messages after loading:', updated);
+          return updated;
+        });
 
-          // Update the chat in the sidebar if it exists, or add it if it's a new chat
+        // Update the chat in the sidebar if it exists
+        if (formattedMessages.length > 0) {
           setChats((prev) => {
             const chatIndex = prev.findIndex(
               (chat) => chat.id === currentChatId
             );
+            
+            if (chatIndex === -1) {
+              console.log('Chat not found in sidebar, adding new one');
+              const lastMessage = formattedMessages[formattedMessages.length - 1];
+              return [
+                {
+                  id: currentChatId,
+                  name: `Lead #${currentChatId}`,
+                  lastMessage: lastMessage.text.length > 30 
+                    ? `${lastMessage.text.substring(0, 30)}...` 
+                    : lastMessage.text,
+                  timestamp: lastMessage.timestamp
+                    ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : new Date().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                  avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
+                },
+                ...prev,
+              ];
+            }
+
+            console.log('Updating existing chat in sidebar');
             const lastMessage = formattedMessages[formattedMessages.length - 1];
-            const lastMessageText = lastMessage?.text || "No messages yet";
+            const updatedChats = [...prev];
+            updatedChats[chatIndex] = {
+              ...updatedChats[chatIndex],
+              lastMessage: lastMessage.text.length > 30 
+                ? `${lastMessage.text.substring(0, 30)}...` 
+                : lastMessage.text,
+              timestamp: lastMessage.timestamp
+                ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+            };
 
-            if (chatIndex !== -1) {
-              // Update existing chat
-              const updatedChats = [...prev];
-              updatedChats[chatIndex] = {
-                ...updatedChats[chatIndex],
-                lastMessage:
-                  lastMessageText.length > 30
-                    ? `${lastMessageText.substring(0, 30)}...`
-                    : lastMessageText,
-                timestamp: lastMessage?.timestamp
-                  ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : new Date().toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }),
-              };
-              return updatedChats;
-            }
-
-            // Add a new chat entry if it doesn't exist
-            return [
-              {
-                id: currentChatId,
-                name: `Lead #${currentChatId}`,
-                lastMessage: lastMessageText,
-                timestamp: lastMessage?.timestamp
-                  ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : new Date().toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }),
-                avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
-              },
-              ...prev,
-            ];
-          });
-        } catch (error) {
-          console.error("Error loading messages:", error);
-
-          // Initialize with empty messages if there's an error
-          setMessages((prev) => ({
-            ...prev,
-            [currentChatId]: [],
-          }));
-
-          // Update chat list with error state
-          setChats((prev) => {
-            const chatIndex = prev.findIndex(
-              (chat) => chat.id === currentChatId
-            );
-            if (chatIndex !== -1) {
-              const updatedChats = [...prev];
-              updatedChats[chatIndex] = {
-                ...updatedChats[chatIndex],
-                lastMessage: "Error loading messages",
-                timestamp: new Date().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              };
-              return updatedChats;
-            }
-            return prev;
+            return updatedChats;
           });
         }
       } catch (error) {
-        console.error("Failed to load messages:", error);
-        // You might want to show an error to the user here
+        console.error("Error loading messages:", error);
+        // Initialize with empty messages if there's an error
+        setMessages((prev) => {
+          const updated = {
+            ...prev,
+            [currentChatId]: [],
+          };
+          console.log('Error loading messages, reset to empty:', updated);
+          return updated;
+        });
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -181,16 +184,22 @@ export default function ChatStateProvider() {
 
   const addMessage = useCallback(
     async (text: string) => {
-      if (!currentChatId || !text.trim()) return;
+      if (!currentChatId || !text.trim()) {
+        console.log('No current chat ID or empty message');
+        return;
+      }
 
       const leadId = parseInt(currentChatId, 10);
-      if (isNaN(leadId)) return;
+      if (isNaN(leadId)) {
+        console.error('Invalid lead ID:', currentChatId);
+        return;
+      }
 
-      // Create a temporary message ID that will be replaced by the server response
       const tempMessageId = `temp-${Date.now()}`;
       const now = new Date();
 
-      const userMessage: Message = {
+      // Create a temporary message with a unique ID
+      const tempMessage: Message = {
         id: tempMessageId,
         text,
         sender: "user",
@@ -198,26 +207,35 @@ export default function ChatStateProvider() {
         senderName: "You",
       };
 
+      console.log('Adding temporary message:', tempMessage);
+
       // Update UI optimistically
-      setMessages((prev) => ({
-        ...prev,
-        [currentChatId]: [...(prev[currentChatId] || []), userMessage],
-      }));
+      setMessages((prev) => {
+        const currentMessages = prev[currentChatId] || [];
+        const updatedMessages = {
+          ...prev,
+          [currentChatId]: [...currentMessages, tempMessage],
+        };
+        console.log('Updated messages state:', updatedMessages);
+        return updatedMessages;
+      });
 
       try {
-        setIsLoading(true);
-
-        // Send the message to the server
+        console.log('Sending message to server...');
         const createdMessage = await leadMessagesApi.create({
           content: text,
           leadId,
         });
 
-        // Format the server response using the formatMessage utility
-        const serverMessage = leadMessagesApi.formatMessage(
-          createdMessage,
-          true
-        );
+        console.log('Server response for create message:', createdMessage);
+
+        if (!createdMessage) {
+          throw new Error('No valid response from server');
+        }
+
+        // Format the server response
+        const serverMessage = leadMessagesApi.formatMessage(createdMessage, true);
+        console.log('Formatted server message:', serverMessage);
 
         // Update the message in the UI with the server response
         setMessages((prev) => {
@@ -226,34 +244,44 @@ export default function ChatStateProvider() {
             (m) => m.id === tempMessageId
           );
 
-          if (messageIndex === -1) {
-            // If the temp message is not found, add the server message
-            return {
-              ...prev,
-              [currentChatId]: [...currentMessages, serverMessage],
-            };
-          }
-
-          // Replace the temp message with the server message
-          const updatedMessages = [...currentMessages];
-          updatedMessages[messageIndex] = serverMessage;
-
-          return {
+          const updatedMessages = {
             ...prev,
-            [currentChatId]: updatedMessages,
+            [currentChatId]: messageIndex === -1
+              ? [...currentMessages, serverMessage]
+              : currentMessages.map((msg, idx) => 
+                  idx === messageIndex ? serverMessage : msg
+                )
           };
+
+          console.log('Updated messages after server response:', updatedMessages);
+          return updatedMessages;
         });
 
-        // Update the chat list with the new last message
+        // Update the chat in the sidebar
         setChats((prev) => {
           const chatIndex = prev.findIndex((chat) => chat.id === currentChatId);
-          if (chatIndex === -1) return prev;
+          if (chatIndex === -1) {
+            console.log('Chat not found in sidebar, adding new one');
+            return [
+              {
+                id: currentChatId,
+                name: `Lead #${currentChatId}`,
+                lastMessage: text.length > 30 ? `${text.substring(0, 30)}...` : text,
+                timestamp: now.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
+              },
+              ...prev,
+            ];
+          }
 
+          console.log('Updating existing chat in sidebar');
           const updatedChats = [...prev];
           updatedChats[chatIndex] = {
             ...updatedChats[chatIndex],
-            lastMessage:
-              text.length > 30 ? `${text.substring(0, 30)}...` : text,
+            lastMessage: text.length > 30 ? `${text.substring(0, 30)}...` : text,
             timestamp: now.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -265,25 +293,26 @@ export default function ChatStateProvider() {
           return [updatedChat, ...updatedChats];
         });
       } catch (error) {
-        console.error("Failed to send message:", error);
+        console.error('Failed to send message:', error);
 
-        // Remove the temporary message if there was an error
+        // Remove the temporary message on error
         setMessages((prev) => {
           const currentMessages = prev[currentChatId] || [];
           const filteredMessages = currentMessages.filter(
             (m) => m.id !== tempMessageId
           );
 
-          return {
+          const updatedMessages = {
             ...prev,
             [currentChatId]: filteredMessages,
           };
+
+          console.log('Removed temporary message after error:', updatedMessages);
+          return updatedMessages;
         });
 
         // Show error to the user
-        // You might want to use a toast or alert here
-      } finally {
-        setIsLoading(false);
+        alert(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
     [currentChatId]
