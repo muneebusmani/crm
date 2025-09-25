@@ -8,6 +8,8 @@ services:
   frontend:
     build: ./apps/frontend
     container_name: crm-frontend
+    env_file:
+      - .env.frontend
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm-frontend.rule=Host(`crm.enginesmarket.co.uk`)"
@@ -28,7 +30,7 @@ services:
     build: ./apps/backend
     container_name: crm-backend
     env_file:
-      - .env
+      - .env.backend
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm-backend.rule=Host(`api-crm.enginesmarket.co.uk`)"
