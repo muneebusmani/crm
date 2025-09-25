@@ -36,7 +36,7 @@ export class LeadMessageService {
 
        this.mailService.sendMail({
         to: lead.email, // 👈 you must have dealer.email field
-        subject: 'New Quotation Created',
+        subject: 'New Message',
         template: 'dealer-message', // file: templates/quotation.hbs
         context: {
           dealershipName: dealer.email,
@@ -50,10 +50,23 @@ export class LeadMessageService {
     }
   }
 
-  findAll(): Promise<LeadMessage[]> {
-    return this.leadMessageRepo.find({
-      order: { createdAt: 'DESC' },
-    });
+ async findAll(dealerId: number): Promise<LeadMessage[]> {
+     try{
+     const leadMessage = await this.leadMessageRepo.find({
+          where: {
+            dealer: { id: dealerId },
+          },
+          relations: ['lead', 'dealer'], // load related entities if needed
+        });
+      if (!leadMessage) {
+        throw new NotFoundException(`LeadMessage with id ${dealerId} not found`);
+      }
+      return leadMessage;
+    }
+    catch (error: unknown) { 
+       console.error('FindOne error:', error);  // 👈 log the real cause 
+      throw new CustomError("Unable to fetch leads");
+    }
   }
 
   async findOne(leadId: number, dealerId: number): Promise<LeadMessage[]> {

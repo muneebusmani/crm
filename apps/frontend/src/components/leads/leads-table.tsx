@@ -11,6 +11,8 @@ import {
   Info as InfoIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import ChatIcon from "@mui/icons-material/Chat";
+
 import {
   Alert,
   Box,
@@ -37,8 +39,14 @@ import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
+import { useRouter } from "next/navigation";  // ✅ App Router hook
 
 const LeadsTable: React.FC = () => {
+   const router = useRouter();
+    const handleOpenChat = (leadId: number) => {
+      router.push(`/dealer/messages?leadId=${leadId}`);
+    };
+ 
   const theme = useTheme();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -477,12 +485,21 @@ const LeadsTable: React.FC = () => {
                       >
                         <InfoIcon fontSize="small" />
                       </IconButton>
+                          <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => router.push(`/dealer/messages?leadId=${lead.id}`)}
+                          title="Open Chat"
+                        >
+                          <ChatIcon />
+                        </IconButton>
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => handleLeadDelete(lead.id!)}
                         title="Delete"
                       >
+                     
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>

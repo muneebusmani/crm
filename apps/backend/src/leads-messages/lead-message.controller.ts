@@ -36,17 +36,19 @@ export class LeadMessageController {
     const result = await this.leadMessageService.create(dto, dealerId);
     return this.buildResponse(result);
   }
-
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Get()
-  findAll() {
-    return this.leadMessageService.findAll();
+  async findAll(@Req() req) {
+    const dealerId = req.user.id;
+    const result =  await this.leadMessageService.findAll(dealerId);
+    return this.buildResponse(result);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, DealerGuard)
-  @Post()
   async findOne(@Param('id') id: number, @Req() req) {
     const dealerId = req.user.id;
+
     return await this.leadMessageService.findOne(id,dealerId);
   }
 
