@@ -13,8 +13,9 @@ export async function loginAction(formData: FormData) {
       password: formData.get('password') as string,
     };
     const data = (await api.post('/auth/login', formdata)) as any;
+    console.log(data);
     // console.log('data ===>', data);
-    const userType = data?.user.type as UserType;
+    const userType = data?.data.type as UserType;
     const token = data?.accessToken as string;
 
     // expiry values in seconds (to match cookie maxAge)
@@ -38,7 +39,7 @@ export async function loginAction(formData: FormData) {
 
     cookieStore.set('token', token, commonOptions);
     cookieStore.set('user_type', userType, commonOptions);
-    cookieStore.set('id', data?.user.id.toString() as string, commonOptions);
+    cookieStore.set('id', data?.data.id.toString() as string, commonOptions);
 
     const redirectMap: Record<UserType, string> = {
       [UserType.ADMIN]: '/admin',
