@@ -28,19 +28,79 @@ export default function ChatStateProvider() {
     const loadChats = async () => {
       try {
         setIsLoading(true);
-        // In a real app, you would fetch the list of leads/chats from the API
-        // For now, we'll use an empty array and let the user start a new chat
-        // TODO: Implement fetching the list of chats/leads from the API
-        setChats([]);
+        
+        console.log('Fetching all messages...');
+        // Fetch all messages to build the chat history
+        const response = await leadMessagesApi.getAll();
+        console.log('API Response:', response);
+        
+        // Handle case where response is not an array
+        if (!Array.isArray(response)) {
+          console.error('Invalid messages format:', response);
+          setChats([]);
+          return;
+        }
+        
+        const allMessages = response;
+        
+        // Group messages by lead ID
+        const chatsByLeadId = allMessages.reduce<Record<string, typeof allMessages>>((acc, message) => {
+          if (message.lead?.id) {
+            const leadId = message.lead.id.toString();
+            if (!acc[leadId]) {
+              acc[leadId] = [];
+            }
+            acc[leadId].push(message);
+          }
+          return acc;
+        }, {});
+        
+        // Create chat objects for each lead
+        const chatList = Object.entries(chatsByLeadId).map(([leadId, messages]) => {
+          // Sort messages by timestamp (newest first)
+          const sortedMessages = [...messages].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          
+          const lastMessage = sortedMessages[0];
+          const leadName = lastMessage.lead?.name || `Lead #${leadId}`;
+          const safeLeadName = typeof leadName === 'string' ? leadName : `Lead #${leadId}`;
+          
+          return {
+            id: leadId,
+            name: safeLeadName,
+            lastMessage: lastMessage.content.length > 30 
+              ? `${lastMessage.content.substring(0, 30)}...` 
+              : lastMessage.content,
+            timestamp: lastMessage.createdAt
+              ? new Date(lastMessage.createdAt).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : new Date().toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(safeLeadName)}&background=3f51b5&color=ffffff&type=png`,
+          };
+        });
+        
+        setChats(chatList);
+        
+        // If there are chats, select the first one by default
+        if (chatList.length > 0 && !currentChatId) {
+          setCurrentChatId(chatList[0].id);
+        }
       } catch (error) {
         console.error("Failed to load chats:", error);
+        setChats([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadChats();
-  }, []);
+  }, [currentChatId]); // Add currentChatId to dependencies to prevent re-fetching when it changes
 
   // Load messages when the current chat changes
   useEffect(() => {
@@ -59,14 +119,10 @@ export default function ChatStateProvider() {
         console.log(`Loading messages for lead ${leadId}...`);
 
         // Initialize with empty messages array for this chat
-        setMessages((prev) => {
-          const updated = {
-            ...prev,
-            [currentChatId]: prev[currentChatId] || [],
-          };
-          console.log('Initialized messages state:', updated);
-          return updated;
-        });
+        setMessages((prev) => ({
+          ...prev,
+          [currentChatId]: prev[currentChatId] || [],
+        }));
 
         // Fetch messages from the API
         const messages = await leadMessagesApi.getByLead(leadId);
@@ -81,9 +137,11 @@ export default function ChatStateProvider() {
         }
 
         // Format messages using the API utility
-        const formattedMessages = messages.map((msg) =>
-          leadMessagesApi.formatMessage(msg, msg?.sender === "user")
-        );
+        const formattedMessages = messages.map((msg) => {
+          // Determine if the message is from the current user (dealer)
+          const isCurrentUser = msg.dealer?.id !== undefined; // Assuming dealer messages have dealer.id
+          return leadMessagesApi.formatMessage(msg, isCurrentUser);
+        });
 
         console.log('Formatted messages:', formattedMessages);
 
@@ -93,14 +151,10 @@ export default function ChatStateProvider() {
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         );
 
-        setMessages((prev) => {
-          const updated = {
-            ...prev,
-            [currentChatId]: formattedMessages,
-          };
-          console.log('Updated messages after loading:', updated);
-          return updated;
-        });
+        setMessages((prev) => ({
+          ...prev,
+          [currentChatId]: formattedMessages,
+        }));
 
         // Update the chat in the sidebar if it exists
         if (formattedMessages.length > 0) {

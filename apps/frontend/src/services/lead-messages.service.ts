@@ -41,7 +41,9 @@ interface LeadMessage {
 interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
+  results?: T; // Some APIs use 'results' instead of 'data'
   error?: string;
+  [key: string]: unknown; // Allow for additional properties
 }
 
 // Define the create message response type
@@ -66,19 +68,47 @@ interface CreateMessageResponse {
   [key: string]: unknown;
 }
 
-async function handleResponse<T>(
-  response: ApiResponse<T>,
-  allowNoData = false,
-): Promise<T> {
+async function handleResponse<T>(response: ApiResponse<T>, allowNoData = false): Promise<T> {
+  console.log('Handling response:', response);
+  
+  if (!response) {
+    console.error('No response received');
+    throw new Error('No response received from server');
+  }
+
   if (!response.success) {
-    throw new Error(response.error || 'API request failed');
+    const errorMsg = response.error || 'Request failed';
+    console.error('API Error:', errorMsg);
+    throw new Error(errorMsg);
   }
-  if (!allowNoData && (response.data === undefined || response.data === null)) {
-    throw new Error('API returned no data');
+
+  // Check for data in different possible locations
+  if (Array.isArray(response.data)) {
+    return response.data as unknown as T;
   }
-  // The backend returns the data directly in the response
-  // So we return the response itself when data is not available
-  return (response.data || response) as T;
+  
+  if (Array.isArray(response.results)) {
+    return response.results as unknown as T;
+  }
+  
+  if (Array.isArray(response)) {
+    return response as unknown as T;
+  }
+
+  if (response.data !== undefined) {
+    return response.data as T;
+  }
+
+  if (response.results !== undefined) {
+    return response.results as T;
+  }
+
+  if (allowNoData) {
+    return undefined as unknown as T;
+  }
+
+  console.error('No data in response:', response);
+  throw new Error('No data returned from server');
 }
 
 export const leadMessagesApi = {
@@ -116,8 +146,35 @@ export const leadMessagesApi = {
 
   // Get all messages (admin function)
   getAll: async (): Promise<LeadMessage[]> => {
-    const response = await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
-    return handleResponse(response);
+    try {
+      console.log('Fetching all messages from:', LEAD_MESSAGES_BASE);
+      const response = await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
+      console.log('Raw API response:', response);
+      
+      // If the response is already an array, return it directly
+      if (Array.isArray(response)) {
+        console.log('Response is already an array, returning as is');
+        return response;
+      }
+      
+      // Handle the case where response is an object with a data property
+      if (response && Array.isArray(response.data)) {
+        console.log('Found messages in response.data');
+        return response.data;
+      }
+      
+      // Handle the case where response is an object with a results property
+      if (response && Array.isArray(response.results)) {
+        console.log('Found messages in response.results');
+        return response.results;
+      }
+      
+      console.warn('Unexpected response format, returning empty array');
+      return [];
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      return [];
+    }
   },
 
   // Get messages for specific lead and dealer combination
