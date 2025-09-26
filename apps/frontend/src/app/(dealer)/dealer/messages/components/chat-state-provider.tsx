@@ -3,6 +3,8 @@
 import type { Message } from "@dealer/types/chat";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { leadMessagesApi } from "@/services/lead-messages.service";
+import { leadsApi } from "@/services/leads.service";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ChatWindow from "./chat-window";
 import Sidebar from "./chat-sidebar";
@@ -16,10 +18,87 @@ interface Chat {
 }
 
 export default function ChatStateProvider() {
+  const searchParams = useSearchParams();
+  const leadIdParam = searchParams?.get('leadId');
+  
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [hasCheckedLeadParam, setHasCheckedLeadParam] = useState(false);
+
+  // Handle leadId parameter from URL
+  useEffect(() => {
+    const handleLeadParam = async () => {
+      if (!leadIdParam || hasCheckedLeadParam) return;
+      
+      try {
+        setIsLoading(true);
+        const leadId = parseInt(leadIdParam, 10);
+        
+        if (Number.isNaN(leadId)) {
+          console.error('Invalid lead ID in URL:', leadIdParam);
+          return;
+        }
+
+        // Check if we already have a chat with this lead
+        const existingChat = chats.find(chat => chat.id === leadIdParam);
+        
+        if (existingChat) {
+          // Chat already exists, just select it
+          setCurrentChatId(leadIdParam);
+          return;
+        }
+
+        try {
+          // Try to fetch lead details
+          const lead = await leadsApi.getOne(leadId);
+          
+          // Generate a display name for the lead
+          const leadName = lead?.name || `Lead #${leadId}`;
+          const vehicleInfo = [lead?.vehicle_brand, lead?.vehicle_model].filter(Boolean).join(' ');
+          
+          // Add the chat to the sidebar
+          const newChat = {
+            id: leadIdParam,
+            name: leadName,
+            lastMessage: vehicleInfo || "No messages yet",
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
+          };
+          
+          setChats(prev => [newChat, ...prev]);
+          setCurrentChatId(leadIdParam);
+        } catch (error) {
+          console.warn(`Lead with ID ${leadId} not found, creating chat with minimal info`);
+          // Create a basic chat entry even if we can't fetch lead details
+          const newChat = {
+            id: leadIdParam,
+            name: `Lead #${leadId}`,
+            lastMessage: "No messages yet",
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            avatarUrl: `https://ui-avatars.com/api/?name=Lead+${leadId}&background=3f51b5&color=ffffff&type=png`,
+          };
+          
+          setChats(prev => [newChat, ...prev]);
+          setCurrentChatId(leadIdParam);
+        }
+      } catch (error) {
+        console.error('Error handling lead parameter:', error);
+      } finally {
+        setHasCheckedLeadParam(true);
+        setIsLoading(false);
+      }
+    };
+    
+    handleLeadParam();
+  }, [leadIdParam, hasCheckedLeadParam, chats]);
 
   // Load chats when the component mounts
   useEffect(() => {
