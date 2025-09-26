@@ -485,14 +485,14 @@ const LeadsTable: React.FC = () => {
                       >
                         <InfoIcon fontSize="small" />
                       </IconButton>
-                          <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => router.push(`/dealer/messages?leadId=${lead.id}`)}
-                          title="Open Chat"
-                        >
-                          <ChatIcon />
-                        </IconButton>
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleOpenChat(lead.id!)}
+                        title="Open Chat"
+                      >
+                        <ChatIcon />
+                      </IconButton>
                       <IconButton
                         size="small"
                         color="error"

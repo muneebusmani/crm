@@ -1,18 +1,28 @@
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
   Box,
   Button,
   IconButton,
-  InputBase,
   List,
   Paper,
-  TextField,
   Typography,
   useTheme,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  CircularProgress,
+  Divider,
+  Avatar,
+  InputBase,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SidebarChatItem from "./sidebar-chat-item";
+import { leadsApi } from "@/services/leads.service";
+import type { Lead } from "@crm/types";
 
 interface ChatItem {
   id: string;
@@ -26,7 +36,12 @@ interface SidebarProps {
   chats: ChatItem[];
   currentChatId?: string | null;
   onSelectChat: (id: string) => void;
-  onNewChat: (leadId: string) => void;
+  onNewChat: (leadId: string, leadData?: {
+    name?: string;
+    email?: string;
+    vehicle_brand?: string;
+    vehicle_model?: string;
+  }) => void;
 }
 
 export default function Sidebar({
@@ -37,13 +52,49 @@ export default function Sidebar({
 }: SidebarProps) {
   const theme = useTheme();
 
-  const [newChatLeadId, setNewChatLeadId] = useState("");
   const [isAddingChat, setIsAddingChat] = useState(false);
+  const [uncontactedLeads, setUncontactedLeads] = useState<Lead[]>([]);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
-  const handleStartNewChat = () => {
-    if (newChatLeadId.trim()) {
-      onNewChat(newChatLeadId);
-      setNewChatLeadId("");
+  const loadUncontactedLeads = useCallback(async () => {
+    try {
+      setIsLoadingLeads(true);
+      const leads = await leadsApi.getUncontacted();
+      // Ensure all leads have a valid ID
+      const validLeads = leads.filter((lead): lead is Lead => Boolean(lead?.id));
+      setUncontactedLeads(validLeads);
+    } catch (error) {
+      console.error('Error loading uncontacted leads:', error);
+    } finally {
+      setIsLoadingLeads(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAddingChat) {
+      loadUncontactedLeads();
+    }
+  }, [isAddingChat, loadUncontactedLeads]);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSelectLead = (lead: Lead) => {
+    if (lead.id) {
+      onNewChat(lead.id.toString(), {
+        name: lead.name,
+        email: lead.email as string,
+        vehicle_brand: lead.vehicle_brand,
+        vehicle_model: lead.vehicle_model
+      });
+      handleClose();
       setIsAddingChat(false);
     }
   };
@@ -82,37 +133,87 @@ export default function Sidebar({
         </Button>
       </Box>
 
-      {/* New Chat Form */}
+      {/* New Chat Button */}
       {isAddingChat && (
         <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Start a new chat with Lead ID
+              Select a lead to start chatting
             </Typography>
-            <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Enter Lead ID"
-                value={newChatLeadId}
-                onChange={(e) => setNewChatLeadId(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleStartNewChat()}
-              />
-              <Button
-                variant="contained"
-                onClick={handleStartNewChat}
-                disabled={!newChatLeadId.trim()}
-              >
-                Start
-              </Button>
-            </Box>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleClick}
+              endIcon={open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              disabled={isLoadingLeads}
+              sx={{ 
+                justifyContent: 'space-between',
+                textTransform: 'none',
+                mb: 1
+              }}
+            >
+              {isLoadingLeads ? 'Loading leads...' : 'Select Lead'}
+              {isLoadingLeads && <CircularProgress size={20} sx={{ ml: 1 }} />}
+            </Button>
+            
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              PaperProps={{
+                style: {
+                  maxHeight: 300,
+                  width: '300px',
+                },
+              }}
+            >
+              {uncontactedLeads.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {isLoadingLeads ? 'Loading...' : 'No uncontacted leads found'}
+                  </Typography>
+                </Box>
+              ) : (
+                uncontactedLeads.map((lead) => (
+                  <MenuItem 
+                    key={lead.id} 
+                    onClick={() => handleSelectLead(lead)}
+                    sx={{ py: 1.5 }}
+                  >
+                    <ListItemIcon>
+                      <Avatar 
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name || `Lead ${lead.id}`)}&background=3f51b5&color=ffffff`}
+                        sx={{ width: 32, height: 32, fontSize: '0.875rem' }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={lead.name || `Lead #${lead.id}`}
+                      secondary={`${lead.vehicle_brand || ''} ${lead.vehicle_model || ''}`.trim()}
+                      primaryTypographyProps={{
+                        variant: 'subtitle2',
+                        noWrap: true,
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        noWrap: true,
+                      }}
+                    />
+                  </MenuItem>
+                ))
+              )}
+            </Menu>
+            
+            <Divider sx={{ my: 1 }} />
+            
             <Button
               size="small"
               color="inherit"
               onClick={() => {
                 setIsAddingChat(false);
-                setNewChatLeadId("");
+                handleClose();
               }}
+              fullWidth
+              sx={{ justifyContent: 'flex-start', pl: 1 }}
             >
               Cancel
             </Button>
