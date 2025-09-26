@@ -33,6 +33,7 @@ export const CreateLeadSchema = z.object({
   used_condition: z.string().trim().optional(),
   new_condition: z.string().trim().optional(),
   consider_all_condition: z.string().trim().optional(),
+  createdAt : z.date().optional(),
 
   postcode: z.string()
     .trim()
