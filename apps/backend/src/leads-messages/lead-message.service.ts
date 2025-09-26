@@ -51,7 +51,9 @@ export class LeadMessageService {
       this.mailService.sendMail(emailtoSend);
       return await this.leadMessageRepo.save(message);
     } catch (error: unknown) {
-      throw new CustomError('Unable insert message');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.logger.error('Error creating lead message:', error);
+      throw new CustomError(`Unable to insert message: ${errorMessage}`);
     }
   }
 
@@ -97,8 +99,9 @@ export class LeadMessageService {
       }
       return leadMessage;
     } catch (error: unknown) {
-      console.error('FindOne error:', error); // 👈 log the real cause
-      throw new CustomError('Unable to fetch leads');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.logger.error(`Error finding lead message (leadId: ${leadId}, dealerId: ${dealerId}):`, errorMessage);
+      throw new CustomError(`Unable to fetch lead messages: ${errorMessage}`);
     }
   }
 
@@ -111,17 +114,22 @@ export class LeadMessageService {
       Object.assign(message, dto);
       return await this.leadMessageRepo.save(message);
     } catch (error: unknown) {
-      throw new CustomError('Unable to update lead message');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.logger.error(`Error updating lead message (id: ${id}):`, errorMessage);
+      throw new CustomError(`Unable to update lead message: ${errorMessage}`);
     }
   }
 
   async remove(id: number): Promise<void> {
     try {
       const result = await this.leadMessageRepo.delete(id);
-      if (result.affected === 0)
-        throw new NotFoundException('Message not found');
+      if (result.affected === 0) {
+        throw new NotFoundException(`Message with id ${id} not found`);
+      }
     } catch (error: unknown) {
-      throw new CustomError('Unable to fetch leads');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.logger.error(`Error removing lead message (id: ${id}):`, errorMessage);
+      throw new CustomError(`Unable to remove lead message: ${errorMessage}`);
     }
   }
 
@@ -132,7 +140,9 @@ export class LeadMessageService {
         order: { createdAt: 'DESC' },
       });
     } catch (error: unknown) {
-      throw new CustomError('Unable to fetch leads');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.logger.error(`Error finding messages for lead (leadId: ${leadId}):`, errorMessage);
+      throw new CustomError(`Unable to fetch lead messages: ${errorMessage}`);
     }
   }
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import type { Message } from "@dealer/types/chat";
-import { Box, CircularProgress, Typography, Button } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-import Sidebar from "./chat-sidebar";
-import ChatWindow from "./chat-window";
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { leadMessagesApi } from "@/services/lead-messages.service";
+import { useCallback, useEffect, useState } from "react";
+import ChatWindow from "./chat-window";
+import Sidebar from "./chat-sidebar";
 
 interface Chat {
   id: string;
@@ -257,7 +257,7 @@ export default function ChatStateProvider() {
       }
 
       const leadId = parseInt(currentChatId, 10);
-      if (isNaN(leadId)) {
+      if (Number.isNaN(leadId)) {
         console.error("Invalid lead ID:", currentChatId);
         return;
       }

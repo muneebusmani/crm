@@ -114,43 +114,44 @@ const LEADS_BASE = '/leads';
 
 export const leadsApi = {
   getAll: async (): Promise<Lead[]> =>
-    handleResponse(api.get<Lead[]>(LEADS_BASE)),
+    handleResponse(api.get(LEADS_BASE)),
 
   getOne: async (id: number): Promise<Lead> =>
-    handleResponse(api.get<Lead>(`${LEADS_BASE}/${id}`)),
+    handleResponse(api.get(`${LEADS_BASE}/${id}`)),
 
   create: async (leadData: CreateLeadDto): Promise<Lead> =>
-    handleResponse(api.post<Lead, CreateLeadDto>(LEADS_BASE, leadData)),
+    handleResponse(api.post(LEADS_BASE, leadData)),
 
   update: async (leadData: UpdateLeadDto): Promise<Lead> =>
-    handleResponse(api.put<Lead, UpdateLeadDto>(LEADS_BASE, leadData)),
+    handleResponse(api.put(LEADS_BASE, leadData)),
 
   delete: async (id: number): Promise<void> =>
-    handleResponse(api.del<void>(`${LEADS_BASE}/${id}`), true),
+    handleResponse(api.del(`${LEADS_BASE}/${id}`), true),
     
   // Get uncontacted leads (leads that don't have any messages yet)
   getUncontacted: async (): Promise<Lead[]> => {
     try {
       // Fetch all leads
-      const allLeadsResponse = await api.get<{ data: Lead[]; success: boolean }>(LEADS_BASE);
-      if (!allLeadsResponse.success || !allLeadsResponse.data) {
-        throw new Error('Failed to fetch leads');
+      const allLeads = await handleResponse(api.get(LEADS_BASE) as Promise<{ success: boolean; data: Lead[] }>);
+      
+      if (!Array.isArray(allLeads)) {
+        throw new Error('Invalid leads data format');
       }
-      const allLeads = allLeadsResponse.data;
       
       // Fetch all messages to find which leads have been contacted
       const allMessages = await leadMessagesApi.getAll();
       
       // Extract unique lead IDs that have messages
       const contactedLeadIds = new Set<number>();
-      allMessages.forEach((message: any) => {
-        if (message.lead?.id) {
-          contactedLeadIds.add(message.lead.id);
+      allMessages.forEach((message) => {
+        const leadId = message.lead?.id;
+        if (typeof leadId === 'number') {
+          contactedLeadIds.add(leadId);
         }
       });
       
       // Filter out leads that have been contacted
-      return allLeads.filter((lead: Lead) => !contactedLeadIds.has(lead.id));
+      return allLeads.filter((lead) => lead.id !== undefined && !contactedLeadIds.has(lead.id));
     } catch (error) {
       console.error('Error fetching uncontacted leads:', error);
       throw error;
