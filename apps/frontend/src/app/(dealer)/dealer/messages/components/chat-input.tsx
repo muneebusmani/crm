@@ -1,5 +1,6 @@
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import {
   Box,
   CircularProgress,
@@ -13,6 +14,7 @@ import { useState } from 'react';
 interface ChatInputProps {
   onSend: (text: string) => void | Promise<void>;
   onAttach: () => void;
+  onRequestQuote: () => void;
   disabled?: boolean;
   isSending?: boolean;
 }
@@ -20,6 +22,7 @@ interface ChatInputProps {
 export default function ChatInput({
   onSend,
   onAttach,
+  onRequestQuote,
   disabled = false,
   isSending = false,
 }: ChatInputProps) {
@@ -57,19 +60,40 @@ export default function ChatInput({
     >
       <Tooltip title="Attach file">
         <span>
-          <IconButton
-            onClick={onAttach}
-            disabled={disabled || isSending}
-            sx={{
-              color: theme.palette.text.secondary,
-              marginRight: 1,
-              '&:disabled': {
-                opacity: 0.5,
-              },
-            }}
-          >
-            <AttachFileIcon />
-          </IconButton>
+<Tooltip title="Attach file">
+            <span>
+              <IconButton
+                onClick={onAttach}
+                disabled={disabled || isSending}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  marginRight: 1,
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                }}
+              >
+                <AttachFileIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Send Quotation">
+            <span>
+              <IconButton
+                onClick={onRequestQuote}
+                disabled={disabled || isSending}
+                sx={{
+                  color: theme.palette.success.main,
+                  marginRight: 1,
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                }}
+              >
+                <RequestQuoteIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
         </span>
       </Tooltip>
 

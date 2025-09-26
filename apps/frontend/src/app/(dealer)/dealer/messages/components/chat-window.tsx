@@ -1,4 +1,4 @@
-import type { Message } from '@dealer/types/chat';
+import type { Message } from "@dealer/types/chat";
 import {
   Box,
   CircularProgress,
@@ -6,11 +6,12 @@ import {
   useTheme,
   Paper,
   Avatar,
-} from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import ChatInput from './chat-input';
-import MessageBubble from './message-bubble';
-import { Person } from '@mui/icons-material';
+} from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
+import QuotationDialog from "./quotation-dialog";
+import ChatInput from "./chat-input";
+import MessageBubble from "./message-bubble";
+import { Person } from "@mui/icons-material";
 // Icons
 // const UserIcon = () => (
 //   <svg
@@ -36,6 +37,7 @@ interface ChatWindowProps {
   onSend: (text: string) => void;
   isLoading: boolean;
   onAttach: () => void;
+  onRequestQuote: () => void;
   currentChatId?: string | null;
   leadName?: string;
 }
@@ -45,24 +47,31 @@ export default function ChatWindow({
   onSend,
   isLoading,
   onAttach,
+  onRequestQuote,
   currentChatId,
   leadName,
 }: ChatWindowProps) {
-  console.log('Rendering ChatWindow with messages:', messages);
+  console.log("Rendering ChatWindow with messages:", messages);
   const [isSending, setIsSending] = useState(false);
+  const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messages.length > 0) {
-      scrollToBottom('smooth');
+      scrollToBottom("smooth");
     }
   }, [messages, scrollToBottom]);
+
+  const handleQuotationSent = () => {
+    // You might want to refresh the messages or show a success message
+    console.log("Quotation sent successfully");
+  };
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isSending) return;
@@ -71,7 +80,7 @@ export default function ChatWindow({
       setIsSending(true);
       await onSend(text);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
       // Optionally show error to user
     } finally {
       setIsSending(false);
@@ -83,19 +92,19 @@ export default function ChatWindow({
     return (
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          width: '100%',
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          width: "100%",
           backgroundColor: theme.palette.background.default,
         }}
       >
         <Box
           sx={{
             flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <CircularProgress />
@@ -111,6 +120,7 @@ export default function ChatWindow({
           <ChatInput
             onSend={handleSend}
             onAttach={onAttach}
+            onRequestQuote={onRequestQuote}
             isSending={isSending}
             disabled={!currentChatId}
           />
@@ -123,11 +133,11 @@ export default function ChatWindow({
   if (messages.length === 0) {
     return (
       <Box
-        width={'100%' as const}
+        width={"100%" as const}
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
           // backgroundColor: theme.palette.background.default,
           // backgroundColor: 'red',
         }}
@@ -135,24 +145,24 @@ export default function ChatWindow({
         <Box
           sx={{
             flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
             p: 3,
-            textAlign: 'center',
+            textAlign: "center",
           }}
         >
           <Paper
             elevation={0}
             sx={{
               p: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               maxWidth: 400,
-              width: '100%',
-              backgroundColor: 'transparent',
+              width: "100%",
+              backgroundColor: "transparent",
             }}
           >
             <Avatar
@@ -166,12 +176,12 @@ export default function ChatWindow({
               <Person />
             </Avatar>
             <Typography variant="h6" gutterBottom>
-              {currentChatId ? 'No messages yet' : 'No chat selected'}
+              {currentChatId ? "No messages yet" : "No chat selected"}
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               {currentChatId
-                ? 'Send a message to start the conversation'
-                : 'Select a chat or start a new one'}
+                ? "Send a message to start the conversation"
+                : "Select a chat or start a new one"}
             </Typography>
           </Paper>
         </Box>
@@ -180,12 +190,13 @@ export default function ChatWindow({
           sx={{
             p: 2,
             borderTop: `1px solid ${theme.palette.divider}`,
-            backgroundColor: 'background.paper',
+            backgroundColor: "background.paper",
           }}
         >
           <ChatInput
             onSend={handleSend}
             onAttach={onAttach}
+            onRequestQuote={onRequestQuote}
             isSending={isSending}
             disabled={!currentChatId}
           />
@@ -197,10 +208,10 @@ export default function ChatWindow({
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        width: '100%',
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        width: "100%",
         flex: 1,
         backgroundColor: theme.palette.background.default,
       }}
@@ -210,8 +221,8 @@ export default function ChatWindow({
         elevation={0}
         sx={{
           p: 2,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor: theme.palette.background.paper,
           flexShrink: 0,
@@ -226,15 +237,15 @@ export default function ChatWindow({
             color: theme.palette.primary.contrastText,
           }}
         >
-          {(currentChatId || 'U')[0].toUpperCase()}
+          {(currentChatId || "U")[0].toUpperCase()}
         </Avatar>
         <Box>
           <Typography variant="subtitle1" fontWeight="medium">
             {leadName ||
-              (currentChatId ? `Lead #${currentChatId}` : 'Unknown User')}
+              (currentChatId ? `Lead #${currentChatId}` : "Unknown User")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
+            {messages.length} message{messages.length !== 1 ? "s" : ""}
           </Typography>
         </Box>
       </Paper>
@@ -243,10 +254,10 @@ export default function ChatWindow({
       <Box
         sx={{
           flex: 1,
-          overflowY: 'auto',
+          overflowY: "auto",
           p: 2,
           minHeight: 0, // Fix for Firefox flexbox issue
-          '& > * + *': {
+          "& > * + *": {
             mt: 1.5,
           },
         }}
@@ -255,14 +266,14 @@ export default function ChatWindow({
           <MessageBubble
             key={message.id || index}
             message={message}
-            isOwnMessage={message.sender === 'user'}
+            isOwnMessage={message.sender === "user"}
           />
         ))}
         {isLoading && (
           <Box
             sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
+              display: "flex",
+              justifyContent: "flex-start",
               marginLeft: 2,
               marginTop: 1,
               mb: 2,
@@ -279,14 +290,25 @@ export default function ChatWindow({
         sx={{
           p: 2,
           borderTop: `1px solid ${theme.palette.divider}`,
-          backgroundColor: 'background.paper',
+          backgroundColor: "background.paper",
         }}
       >
         <ChatInput
           onSend={handleSend}
           onAttach={onAttach}
+          onRequestQuote={() => setShowQuotationDialog(true)}
           isSending={isSending}
+          disabled={!currentChatId}
         />
+
+        {currentChatId && (
+          <QuotationDialog
+            open={showQuotationDialog}
+            onClose={() => setShowQuotationDialog(false)}
+            leadId={parseInt(currentChatId, 10)}
+            onQuotationSent={handleQuotationSent}
+          />
+        )}
       </Box>
     </Box>
   );

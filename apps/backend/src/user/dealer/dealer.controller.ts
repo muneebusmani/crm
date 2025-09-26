@@ -30,6 +30,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { DealerGuard } from 'src/auth/guards/dealer.guard';
 import { Lead } from 'src/leads/entities/lead.entity';
 import type { Multer } from 'multer';
+import type { Request } from 'express';
 
 @Controller('dealers')
 export class DealerController {
