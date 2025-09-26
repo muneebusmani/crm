@@ -44,7 +44,7 @@ export class LeadMessageService {
         subject: 'New Message',
         template: 'dealer-message', // file: templates/quotation.hbs
         context: {
-          dealerName: dealer.email,
+          dealershipName: dealer.email, // Changed from dealerName to match template
           message: dto.content,
         },
       };

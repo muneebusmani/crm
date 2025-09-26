@@ -108,6 +108,7 @@
 import type { CreateLeadDto, Lead, UpdateLeadDto } from '@crm/types';
 import * as api from '@lib/api';
 import { handleResponse } from './response.service';
+import { leadMessagesApi } from './lead-messages.service';
 
 const LEADS_BASE = '/leads';
 
@@ -126,4 +127,33 @@ export const leadsApi = {
 
   delete: async (id: number): Promise<void> =>
     handleResponse(api.del<void>(`${LEADS_BASE}/${id}`), true),
+    
+  // Get uncontacted leads (leads that don't have any messages yet)
+  getUncontacted: async (): Promise<Lead[]> => {
+    try {
+      // Fetch all leads
+      const allLeadsResponse = await api.get<{ data: Lead[]; success: boolean }>(LEADS_BASE);
+      if (!allLeadsResponse.success || !allLeadsResponse.data) {
+        throw new Error('Failed to fetch leads');
+      }
+      const allLeads = allLeadsResponse.data;
+      
+      // Fetch all messages to find which leads have been contacted
+      const allMessages = await leadMessagesApi.getAll();
+      
+      // Extract unique lead IDs that have messages
+      const contactedLeadIds = new Set<number>();
+      allMessages.forEach((message: any) => {
+        if (message.lead?.id) {
+          contactedLeadIds.add(message.lead.id);
+        }
+      });
+      
+      // Filter out leads that have been contacted
+      return allLeads.filter((lead: Lead) => !contactedLeadIds.has(lead.id));
+    } catch (error) {
+      console.error('Error fetching uncontacted leads:', error);
+      throw error;
+    }
+  },
 };

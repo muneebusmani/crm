@@ -497,7 +497,7 @@ export default function ChatStateProvider() {
   );
 
   const handleStartNewChat = useCallback(
-    (leadId: string) => {
+    (leadId: string, leadData?: { name?: string; email?: string; vehicle_brand?: string; vehicle_model?: string }) => {
       // Clean the leadId (remove any non-numeric characters)
       const cleanLeadId = leadId.replace(/\D/g, "");
 
@@ -518,17 +518,21 @@ export default function ChatStateProvider() {
       // Create a new chat and switch to it
       setCurrentChatId(cleanLeadId);
 
+      // Generate a display name for the lead
+      const leadName = leadData?.name || `Lead #${cleanLeadId}`;
+      const vehicleInfo = [leadData?.vehicle_brand, leadData?.vehicle_model].filter(Boolean).join(' ');
+      
       // Add a placeholder chat to the sidebar
       setChats((prev) => [
         {
           id: cleanLeadId,
-          name: `Lead #${cleanLeadId}`,
-          lastMessage: "No messages yet",
+          name: leadName,
+          lastMessage: vehicleInfo || "No messages yet",
           timestamp: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          avatarUrl: `https://ui-avatars.com/api/?name=Lead+${cleanLeadId}&background=3f51b5&color=ffffff&type=png`,
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
         },
         ...prev,
       ]);
