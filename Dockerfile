@@ -121,17 +121,17 @@ RUN pnpm run build-server
 
 # --- frontend runtime ---
 FROM node:22-alpine AS frontend-runtime
-# WORKDIR /app/apps/frontend
-WORKDIR /app/apps/frontend/apps/frontend
+WORKDIR /app
+
 ENV NODE_ENV=production
 
-COPY --from=builder /app/apps/frontend/.next/standalone ./
-COPY --from=builder /app/apps/frontend/public ./public
-# optional: standalone already includes .next/static
-# COPY --from=builder /app/apps/frontend/.next/static ./.next/static
+COPY --from=builder /app/apps/frontend/.next/standalone/* /app/
+COPY --from=builder /app/apps/frontend/.next/static /app/.next/static
+COPY --from=builder /app/apps/frontend/public /app/public
 
 EXPOSE 3000
 CMD ["node", "server.js"]
+
 
 # --- backend runtime ---
 FROM node:22-alpine AS backend-runtime
