@@ -2,10 +2,8 @@
 -- PostgreSQL database dump
 --
 
-\restrict dg6rhG84FNcsIhWkjXr43d7KH6u0dM5Fc97P7gIpcJZP55IOEiq38sSN8DcuGp8
-
 -- Dumped from database version 17.6
--- Dumped by pg_dump version 17.6
+-- Dumped by pg_dump version 17.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -535,6 +533,11 @@ COPY public.activity_logs (id, action, description, user_id, entity, entity_id, 
 7	CREATE_LEAD	Created lead (Civic)	0	Lead	8	2025-09-22 19:51:26.702345
 8	CREATE_LEAD	Created lead (Civic)	0	Lead	9	2025-09-22 19:52:35.846926
 9	CREATE_LEAD	Created lead (Civic)	0	Lead	10	2025-09-24 01:14:43.651874
+10	CREATE_LEAD	Created lead (Civic)	0	Lead	11	2025-09-24 13:42:43.359674
+11	CREATE_LEAD	Created lead (Civic)	0	Lead	12	2025-09-24 13:42:46.11603
+12	CREATE_LEAD	Created lead (Civic)	0	Lead	13	2025-09-25 13:24:02.9527
+13	CREATE_LEAD	Created lead (Civic)	0	Lead	14	2025-09-26 00:27:57.299445
+14	CREATE_LEAD	Created lead (Civic)	0	Lead	15	2025-09-26 01:41:08.656734
 \.
 
 
@@ -570,6 +573,7 @@ COPY public.dealer (id, "userId", "tierId", name, owner, location, logo, website
 --
 
 COPY public.dealer_leads (id, status, "userId", "leadId") FROM stdin;
+3	OPEN	5	14
 \.
 
 
@@ -590,6 +594,34 @@ COPY public.dealer_tier (id, name) FROM stdin;
 --
 
 COPY public.lead_messages (id, content, "createdAt", "dealerId", "leadId") FROM stdin;
+1	Hello	2025-09-25 14:26:58.364924	5	13
+2	hi	2025-09-25 17:34:58.896956	5	13
+3	Hi There Testing from muneeb	2025-09-25 19:47:53.889515	5	13
+4	Hi	2025-09-25 19:55:57.74365	5	13
+5	Hi	2025-09-25 20:02:16.067413	5	13
+6	Hello	2025-09-25 20:05:42.211434	5	13
+7	Loml	2025-09-25 20:09:04.851714	5	13
+8	Loml2	2025-09-25 20:09:33.961922	5	13
+9	Looml4	2025-09-25 20:10:51.665789	5	13
+10	Hey there	2025-09-25 20:17:01.374125	5	13
+11	How are you i am under the water ubuuububub	2025-09-25 20:18:43.761029	5	13
+12	Mithu Mithu	2025-09-25 20:25:30.193261	5	13
+13	Hi There	2025-09-25 21:02:25.881094	5	13
+14	Helo THere	2025-09-26 00:23:22.845009	5	13
+15	Hi There	2025-09-26 00:28:30.329576	5	14
+16	hellow	2025-09-26 00:42:14.693595	5	13
+17	testing	2025-09-26 00:42:41.595041	5	13
+18	Hi there	2025-09-26 01:45:59.49271	5	15
+19	Testing v3	2025-09-26 01:46:17.389816	5	14
+20	Testing v4	2025-09-26 01:46:22.736877	5	15
+21	Testing v5	2025-09-26 01:46:29.14229	5	13
+22	testing lmao	2025-09-26 01:51:39.895746	5	14
+23	testing loml	2025-09-26 01:51:46.944348	5	13
+24	testing shaolin	2025-09-26 01:51:52.903375	5	15
+25	Tesitng	2025-09-26 01:53:46.025671	5	13
+26	testing	2025-09-26 01:53:53.574572	5	14
+27	Testing	2025-09-26 01:53:58.628042	5	15
+28	Yelllow	2025-09-26 02:17:02.249724	5	15
 \.
 
 
@@ -598,8 +630,13 @@ COPY public.lead_messages (id, content, "createdAt", "dealerId", "leadId") FROM 
 --
 
 COPY public.leads (id, vehicle_model, vehicle_reg, vehicle_brand, vehicle_title, vehicle_vrm, vehicle_series, vehicle_part, engin_capacity, "fuelType", part_supplied, supply_only, consider_both, reconditioned_condition, used_condition, new_condition, consider_all_condition, postcode, vehicle_drive, collection_required, email, name, description, engine_code, source, status, assigned_to, follow_up_date, notes, "createdAt", "updatedAt", is_deleted) FROM stdin;
-9	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	user@example.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-22 19:52:35.840304	2025-09-22 19:52:35.840304	f
-10	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	user@example.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 01:14:43.635571	2025-09-24 01:14:43.635571	f
+13	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-25 13:24:02.935938	2025-09-25 13:24:02.935938	f
+15	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-26 01:41:08.638368	2025-09-26 01:41:08.638368	f
+14	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-26 00:27:57.286973	2025-09-26 01:53:38.259608	t
+9	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	muneebusmani1122@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-22 19:52:35.840304	2025-09-26 01:56:17.331257	t
+11	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	muneebusmani1122@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 13:42:43.344968	2025-09-26 01:56:17.6832	t
+12	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 13:42:46.103979	2025-09-26 02:49:13.99766	t
+10	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 01:14:43.635571	2025-09-26 02:49:14.597626	t
 \.
 
 
@@ -626,7 +663,7 @@ COPY public."user" (id, email, password, name, username, type, status, "resetPas
 -- Name: activity_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.activity_logs_id_seq', 9, true);
+SELECT pg_catalog.setval('public.activity_logs_id_seq', 14, true);
 
 
 --
@@ -654,7 +691,7 @@ SELECT pg_catalog.setval('public.dealer_id_seq', 4, true);
 -- Name: dealer_leads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.dealer_leads_id_seq', 2, true);
+SELECT pg_catalog.setval('public.dealer_leads_id_seq', 3, true);
 
 
 --
@@ -668,14 +705,14 @@ SELECT pg_catalog.setval('public.dealer_tier_id_seq', 4, true);
 -- Name: lead_messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.lead_messages_id_seq', 1, false);
+SELECT pg_catalog.setval('public.lead_messages_id_seq', 28, true);
 
 
 --
 -- Name: leads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.leads_id_seq', 10, true);
+SELECT pg_catalog.setval('public.leads_id_seq', 15, true);
 
 
 --
@@ -903,6 +940,4 @@ ALTER TABLE ONLY public.lead_messages
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict dg6rhG84FNcsIhWkjXr43d7KH6u0dM5Fc97P7gIpcJZP55IOEiq38sSN8DcuGp8
 
