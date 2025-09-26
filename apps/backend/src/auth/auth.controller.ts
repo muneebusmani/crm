@@ -29,7 +29,7 @@ export class AuthController {
   async login(@Body() dto: LoginDto): Promise<Login> {
     const { user, accessToken } = await this.authService.login(dto);
     return {
-      user,
+      data: user,
       accessToken,
     };
   }
@@ -41,7 +41,7 @@ export class AuthController {
   async register(@Body() dto: RegisterDto): Promise<Register> {
     const { user, accessToken } = await this.authService.register(dto);
     return {
-      user,
+      data : user,
       accessToken,
     };
   }

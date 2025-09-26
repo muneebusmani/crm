@@ -41,7 +41,7 @@ export class LeadMessageService {
 
       const emailtoSend = {
         to: lead.email, // 👈 you must have dealer.email field
-        subject: 'New Quotation Created',
+        subject: 'New Message',
         template: 'dealer-message', // file: templates/quotation.hbs
         context: {
           dealerName: dealer.email,
@@ -55,11 +55,31 @@ export class LeadMessageService {
     }
   }
 
+// <<<<<<< muneeb
   findAll(): Promise<LeadMessage[]> {
     this.logger.log(`This is from Lead Message Service Find All`);
     return this.leadMessageRepo.find({
       order: { createdAt: 'DESC' },
     });
+// =======
+//  async findAll(dealerId: number): Promise<LeadMessage[]> {
+//      try{
+//      const leadMessage = await this.leadMessageRepo.find({
+//           where: {
+//             dealer: { id: dealerId },
+//           },
+//           relations: ['lead', 'dealer'], // load related entities if needed
+//         });
+//       if (!leadMessage) {
+//         throw new NotFoundException(`LeadMessage with id ${dealerId} not found`);
+//       }
+//       return leadMessage;
+//     }
+//     catch (error: unknown) { 
+//        console.error('FindOne error:', error);  // 👈 log the real cause 
+//       throw new CustomError("Unable to fetch leads");
+//     }
+// >>>>>>> master
   }
 
   async findOne(leadId: number, dealerId: number): Promise<LeadMessage[]> {
