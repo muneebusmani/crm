@@ -96,9 +96,9 @@ export default function ChatStateProvider() {
         setChats(chatList);
 
         // If there are chats, select the first one by default
-        if (chatList.length > 0 && !currentChatId) {
-          setCurrentChatId(chatList[0].id);
-        }
+        // if (chatList.length > 0 && !currentChatId) {
+        //   setCurrentChatId(chatList[0].id);
+        // }
       } catch (error) {
         console.error("Failed to load chats:", error);
         setChats([]);
@@ -108,7 +108,7 @@ export default function ChatStateProvider() {
     };
 
     loadChats();
-  }, [currentChatId]); // Add currentChatId to dependencies to prevent re-fetching when it changes
+  }, []); // Add currentChatId to dependencies to prevent re-fetching when it changes
 
   // Load messages when the current chat changes
   useEffect(() => {
@@ -589,6 +589,7 @@ export default function ChatStateProvider() {
           isLoading={isLoading}
           onAttach={handleAttach}
           currentChatId={currentChatId}
+          leadName={chats.find((chat) => chat.id === currentChatId)?.name}
         />
       ) : (
         <Box

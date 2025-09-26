@@ -37,6 +37,7 @@ interface ChatWindowProps {
   isLoading: boolean;
   onAttach: () => void;
   currentChatId?: string | null;
+  leadName?: string;
 }
 
 export default function ChatWindow({
@@ -45,6 +46,7 @@ export default function ChatWindow({
   isLoading,
   onAttach,
   currentChatId,
+  leadName,
 }: ChatWindowProps) {
   console.log('Rendering ChatWindow with messages:', messages);
   const [isSending, setIsSending] = useState(false);
@@ -228,7 +230,7 @@ export default function ChatWindow({
         </Avatar>
         <Box>
           <Typography variant="subtitle1" fontWeight="medium">
-            {currentChatId ? `Lead #${currentChatId}` : 'Unknown User'}
+            {leadName || (currentChatId ? `Lead #${currentChatId}` : 'Unknown User')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {messages.length} message{messages.length !== 1 ? 's' : ''}
