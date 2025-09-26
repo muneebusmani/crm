@@ -59,6 +59,7 @@ const LeadsTable: React.FC = () => {
   const [openEmailDialog, setOpenEmailDialog] = useState(false);
   const [openInfoDialog, setOpenInfoDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -178,21 +179,45 @@ const LeadsTable: React.FC = () => {
   };
 
   const handleActionClick = async (action: string, lead: Lead) => {
-    setSelectedLead(lead);
     switch (action) {
       case 'email':
+        setSelectedLead(lead);
         setOpenEmailDialog(true);
         break;
+        
       case 'edit':
+        setSelectedLead(lead);
         setOpenEditDialog(true);
         break;
+        
       case 'info': {
-        const detailedLead = await fetchLeadById(lead.id!);
-        if (detailedLead) {
-          setOpenInfoDialog(true);
+        // Set the selected lead with basic info
+        setSelectedLead(lead);
+        setOpenInfoDialog(true);
+        
+        // Load detailed info in the background
+        if (!lead.email || !lead.vehicle_brand) { // Only fetch if we don't have basic details
+          try {
+            setIsInfoDialogLoading(true);
+            const detailedLead = await fetchLeadById(lead.id!);
+            if (detailedLead) {
+              setSelectedLead(prev => ({
+                ...prev,
+                ...detailedLead,
+                // Preserve any existing fields that might be missing in the detailed response
+                ...(prev?.name && !detailedLead.name ? { name: prev.name } : {}),
+                ...(prev?.email && !detailedLead.email ? { email: prev.email } : {}),
+              }));
+            }
+          } catch (error) {
+            console.error('Error fetching lead details:', error);
+          } finally {
+            setIsInfoDialogLoading(false);
+          }
         }
         break;
       }
+      
       default:
         break;
     }
@@ -559,6 +584,7 @@ const LeadsTable: React.FC = () => {
             open={openInfoDialog}
             onClose={() => setOpenInfoDialog(false)}
             lead={selectedLead}
+            isLoading={isInfoDialogLoading}
           />
         </>
       )}
