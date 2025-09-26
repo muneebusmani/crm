@@ -114,7 +114,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 
 # Frontend build needs its .env
-RUN cp apps/frontend/.env apps/frontend/.env || true
+RUN cp apps/frontend/.env.production apps/frontend/.env.production || true
 
 # Run Turbo build (frontend + backend + shared types)
 RUN pnpm run build-server
@@ -122,15 +122,16 @@ RUN pnpm run build-server
 # --- frontend runtime ---
 FROM node:22-alpine AS frontend-runtime
 WORKDIR /app
+
 ENV NODE_ENV=production
 
-COPY --from=builder /app/apps/frontend/.next/standalone ./
-COPY --from=builder /app/apps/frontend/public ./public
-# optional: standalone already includes .next/static
-# COPY --from=builder /app/apps/frontend/.next/static ./.next/static
+COPY --from=builder /app/apps/frontend/.next/standalone/* /app/
+COPY --from=builder /app/apps/frontend/.next/static /app/.next/static
+COPY --from=builder /app/apps/frontend/public /app/public
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "./frontend/server.js"]
+
 
 # --- backend runtime ---
 FROM node:22-alpine AS backend-runtime
@@ -143,5 +144,5 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["npm", "run", "start:prod"]
 
