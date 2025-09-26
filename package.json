@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build --affected",
+    "build-server": "turbo build --force",
     "start": "turbo start",
     "lint": "turbo lint",
     "format": "turbo format"
