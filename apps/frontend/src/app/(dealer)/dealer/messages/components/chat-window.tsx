@@ -197,7 +197,7 @@ export default function ChatWindow({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        height: '100vh',
         width: '100%',
         flex: 1,
         backgroundColor: theme.palette.background.default,

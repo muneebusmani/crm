@@ -2,7 +2,7 @@
 
 import type { Message } from "@dealer/types/chat";
 import { Box, CircularProgress, Typography, Button } from "@mui/material";
-import { useCallback, useEffect, useState} from "react";
+import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./chat-sidebar";
 import ChatWindow from "./chat-window";
 import { leadMessagesApi } from "@/services/lead-messages.service";
@@ -119,7 +119,7 @@ export default function ChatStateProvider() {
       try {
         setIsLoading(true);
         const leadId = parseInt(currentChatId, 10);
-        if (isNaN(leadId)) {
+        if (Number.isNaN(leadId)) {
           console.error("Invalid lead ID");
           return;
         }
@@ -138,6 +138,8 @@ export default function ChatStateProvider() {
 
         // Only update state if the component is still mounted
         if (!isMounted) return;
+
+        console.log("Messages format:", messages);
 
         if (!Array.isArray(messages)) {
           console.error("Invalid messages format:", messages);
@@ -403,9 +405,96 @@ export default function ChatStateProvider() {
     alert("Attachment feature not implemented yet.");
   }, []);
 
-  const handleSelectChat = useCallback((chatId: string) => {
-    setCurrentChatId(chatId);
-  }, []);
+  const handleSelectChat = useCallback(
+    async (chatId: string) => {
+      console.log("Chat selected:", chatId);
+
+      // Don't do anything if we're already on this chat
+      if (chatId === currentChatId) {
+        return;
+      }
+
+      try {
+        // Update the current chat ID first to show loading state
+        setCurrentChatId(chatId);
+
+        // Initialize with empty messages array for this chat if it doesn't exist
+        setMessages((prev) => ({
+          ...prev,
+          [chatId]: prev[chatId] || [],
+        }));
+
+        // Load messages for the selected chat
+        const leadId = parseInt(chatId, 10);
+        if (Number.isNaN(leadId)) {
+          console.error("Invalid lead ID:", chatId);
+          return;
+        }
+
+        console.log("Fetching messages for lead:", leadId);
+        const messages = await leadMessagesApi.getByLead(leadId);
+
+        if (!Array.isArray(messages)) {
+          console.error("Expected messages to be an array, got:", messages);
+          return;
+        }
+
+        console.log("Raw messages from API:", messages);
+
+        // Get current user ID from localStorage or context
+        let currentUserId: number | null = null;
+        try {
+          const userData = localStorage.getItem("user");
+          if (userData) {
+            const user = JSON.parse(userData);
+            currentUserId = user?.id || null;
+          }
+        } catch (error) {
+          console.error("Error getting current user:", error);
+        }
+
+        // Format messages using the API utility with proper error handling
+        const formattedMessages = messages
+          .map((msg) => {
+            try {
+              if (!msg) return null;
+
+              // Determine if the message is from the current user
+              const isCurrentUser = msg.dealer?.id === currentUserId;
+
+              return leadMessagesApi.formatMessage(msg, isCurrentUser);
+            } catch (error) {
+              console.error("Error formatting message:", error, msg);
+              return null;
+            }
+          })
+          .filter((msg): msg is Message => msg !== null);
+
+        console.log("Formatted messages:", formattedMessages);
+
+        // Sort messages by timestamp (oldest first)
+        const sortedMessages = [...formattedMessages].sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        // Update the messages state
+        setMessages((prev) => ({
+          ...prev,
+          [chatId]: sortedMessages,
+        }));
+      } catch (error) {
+        console.error("Error loading messages for chat:", chatId, error);
+
+        // Ensure we have at least an empty array for this chat
+        setMessages((prev) => ({
+          ...prev,
+          [chatId]: [],
+        }));
+      }
+    },
+    [currentChatId]
+  );
 
   const handleStartNewChat = useCallback(
     (leadId: string) => {

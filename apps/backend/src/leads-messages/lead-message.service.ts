@@ -1,19 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import type { CreateLeadMessageDto, UpdateLeadMessageDto } from '@crm/types';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MailerService } from '@nestjs-modules/mailer';
+import { CustomError } from 'src/common/custom-error';
+import { Lead } from 'src/leads/entities/lead.entity';
+import { User } from 'src/user/entities';
 import { Repository } from 'typeorm';
 import { LeadMessage } from './entities/lead-message.entity';
-import { MailerService } from '@nestjs-modules/mailer';
-import type {
-  CreateLeadMessageDto,
-  CreateLeadMessageSchema,
-  UpdateLeadMessageDto,
-  UpdateLeadMessageSchema,
-} from '@crm/types';
-import { Dealer, User } from 'src/user/entities';
-import { Lead } from 'src/leads/entities/lead.entity';
-import { CustomError } from 'src/common/custom-error';
 @Injectable()
 export class LeadMessageService {
+  private readonly logger = new Logger(LeadMessageService.name);
   constructor(
     @InjectRepository(LeadMessage)
     private readonly leadMessageRepo: Repository<LeadMessage>,
@@ -60,6 +56,7 @@ export class LeadMessageService {
   }
 
   findAll(): Promise<LeadMessage[]> {
+    this.logger.log(`This is from Lead Message Service Find All`);
     return this.leadMessageRepo.find({
       order: { createdAt: 'DESC' },
     });
@@ -74,6 +71,7 @@ export class LeadMessageService {
         },
         relations: ['lead', 'dealer'], // load related entities if needed
       });
+      this.logger.log('Lead Message ===>', leadMessage);
       if (!leadMessage) {
         throw new NotFoundException(`LeadMessage with id ${leadId} not found`);
       }

@@ -1,9 +1,8 @@
-import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
 import {
   Box,
   Button,
-  Divider,
   IconButton,
   InputBase,
   List,
@@ -11,9 +10,9 @@ import {
   TextField,
   Typography,
   useTheme,
-} from '@mui/material';
-import { useState } from 'react';
-import SidebarChatItem from './sidebar-chat-item';
+} from "@mui/material";
+import { useState } from "react";
+import SidebarChatItem from "./sidebar-chat-item";
 
 interface ChatItem {
   id: string;
@@ -38,13 +37,13 @@ export default function Sidebar({
 }: SidebarProps) {
   const theme = useTheme();
 
-  const [newChatLeadId, setNewChatLeadId] = useState('');
+  const [newChatLeadId, setNewChatLeadId] = useState("");
   const [isAddingChat, setIsAddingChat] = useState(false);
 
   const handleStartNewChat = () => {
     if (newChatLeadId.trim()) {
       onNewChat(newChatLeadId);
-      setNewChatLeadId('');
+      setNewChatLeadId("");
       setIsAddingChat(false);
     }
   };
@@ -53,11 +52,11 @@ export default function Sidebar({
     <Box
       sx={{
         width: 320,
-        height: '100vh',
+        height: "100vh",
         backgroundColor: theme.palette.background.paper,
         borderRight: `1px solid ${theme.palette.divider}`,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Header */}
@@ -65,9 +64,9 @@ export default function Sidebar({
         sx={{
           padding: theme.spacing(2),
           borderBottom: `1px solid ${theme.palette.divider}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
         <Typography variant="h6" fontWeight="bold">
@@ -90,14 +89,14 @@ export default function Sidebar({
             <Typography variant="subtitle2" gutterBottom>
               Start a new chat with Lead ID
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
               <TextField
                 size="small"
                 fullWidth
                 placeholder="Enter Lead ID"
                 value={newChatLeadId}
                 onChange={(e) => setNewChatLeadId(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleStartNewChat()}
+                onKeyPress={(e) => e.key === "Enter" && handleStartNewChat()}
               />
               <Button
                 variant="contained"
@@ -112,7 +111,7 @@ export default function Sidebar({
               color="inherit"
               onClick={() => {
                 setIsAddingChat(false);
-                setNewChatLeadId('');
+                setNewChatLeadId("");
               }}
             >
               Cancel
@@ -130,8 +129,8 @@ export default function Sidebar({
       >
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
+            display: "flex",
+            alignItems: "center",
             backgroundColor: theme.palette.action.hover,
             borderRadius: 1,
             px: 1,
@@ -143,15 +142,15 @@ export default function Sidebar({
           </IconButton>
           <InputBase
             placeholder="Search chats..."
-            sx={{ ml: 1, flex: 1, fontSize: '0.875rem' }}
+            sx={{ ml: 1, flex: 1, fontSize: "0.875rem" }}
           />
         </Box>
       </Box>
 
       {/* Chat List */}
-      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+      <Box sx={{ flex: 1, overflowY: "auto" }}>
         {chats.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
+          <Box sx={{ p: 2, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
               No chats yet. Start a new chat with a lead.
             </Typography>

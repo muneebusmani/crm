@@ -10,7 +10,7 @@ export type CreateLeadMessageDto = {
   content: string;
   leadId: number;
   dealerId?: number;
-  [key: string]: unknown; // Use unknown instead of any for type safety
+  [ key: string ]: unknown; // Use unknown instead of any for type safety
 };
 
 // Define the DTO for updating a message
@@ -19,178 +19,204 @@ export type UpdateLeadMessageDto = {
 };
 
 // Define the message type
-interface LeadMessage {
+interface LeadMessage
+{
   id: number;
   content: string;
   leadId: number;
   dealerId?: number;
   lead?: {
     id: number;
-    [key: string]: unknown;
+    [ key: string ]: unknown;
   };
   dealer?: {
     id: number;
-    [key: string]: unknown;
+    [ key: string ]: unknown;
   };
   createdAt: string;
   updatedAt: string;
-  [key: string]: unknown;
+  [ key: string ]: unknown;
 }
 
 // Define the API response type
-interface ApiResponse<T = unknown> {
+interface ApiResponse<T = unknown>
+{
   success: boolean;
   data?: T;
   results?: T; // Some APIs use 'results' instead of 'data'
   error?: string;
-  [key: string]: unknown; // Allow for additional properties
+  [ key: string ]: unknown; // Allow for additional properties
 }
 
 // Define the create message response type
-interface CreateMessageResponse {
+interface CreateMessageResponse
+{
   success: boolean;
   data?: {
     id: number;
     content: string;
-    lead?: { 
+    lead?: {
       id: number;
-      [key: string]: unknown;
+      [ key: string ]: unknown;
     };
-    dealer?: { 
+    dealer?: {
       id: number;
-      [key: string]: unknown;
+      [ key: string ]: unknown;
     };
     createdAt?: string;
     updatedAt?: string;
-    [key: string]: unknown;
+    [ key: string ]: unknown;
   };
   error?: string;
-  [key: string]: unknown;
+  [ key: string ]: unknown;
 }
 
-async function handleResponse<T>(response: ApiResponse<T>, allowNoData = false): Promise<T> {
-  console.log('Handling response:', response);
-  
-  if (!response) {
-    console.error('No response received');
-    throw new Error('No response received from server');
+async function handleResponse<T>( response: ApiResponse<T>, allowNoData = false ): Promise<T>
+{
+  console.log( 'Handling response:', response );
+
+  if ( !response )
+  {
+    console.error( 'No response received' );
+    throw new Error( 'No response received from server' );
   }
 
-  if (!response.success) {
+  if ( !response.success )
+  {
     const errorMsg = response.error || 'Request failed';
-    console.error('API Error:', errorMsg);
-    throw new Error(errorMsg);
+    console.error( 'API Error:', errorMsg );
+    throw new Error( errorMsg );
   }
 
   // Check for data in different possible locations
-  if (Array.isArray(response.data)) {
+  if ( Array.isArray( response.data ) )
+  {
     return response.data as unknown as T;
   }
-  
-  if (Array.isArray(response.results)) {
+
+  if ( Array.isArray( response.results ) )
+  {
     return response.results as unknown as T;
   }
-  
-  if (Array.isArray(response)) {
+
+  if ( Array.isArray( response ) )
+  {
     return response as unknown as T;
   }
 
-  if (response.data !== undefined) {
+  if ( response.data !== undefined )
+  {
     return response.data as T;
   }
 
-  if (response.results !== undefined) {
+  if ( response.results !== undefined )
+  {
     return response.results as T;
   }
 
-  if (allowNoData) {
+  if ( allowNoData )
+  {
     return undefined as unknown as T;
   }
 
-  console.error('No data in response:', response);
-  throw new Error('No data returned from server');
+  console.error( 'No data in response:', response );
+  throw new Error( 'No data returned from server' );
 }
 
 export const leadMessagesApi = {
   // Get all messages for a specific lead
-  getByLead: async (leadId: number): Promise<LeadMessage[]> => {
-    try {
-      console.log(`Fetching messages for lead ${leadId}...`);
+  getByLead: async ( leadId: number ): Promise<LeadMessage[]> =>
+  {
+    try
+    {
+      console.log( `Fetching messages for lead ${leadId}...` );
       const response = await get<ApiResponse<LeadMessage[]>>(
-        `${LEAD_MESSAGES_BASE}/lead/${leadId}`,
+        `${LEAD_MESSAGES_BASE}/${leadId}`,
       );
 
-      console.log('Raw API response for getByLead:', response);
+      console.log( 'Raw API response for getByLead:', response );
 
       // Handle case where response is already an array
-      if (Array.isArray(response)) {
-        console.log('Response is already an array, returning as is');
+      if ( Array.isArray( response ) )
+      {
+        console.log( 'Response is already an array, returning as is' );
         return response;
       }
 
       // Handle case where response has a data property
-      if (response && typeof response === 'object' && 'data' in response) {
-        console.log('Response has data property, returning data');
+      if ( response && typeof response === 'object' && 'data' in response )
+      {
+        console.log( 'Response has data property, returning data' );
         return response.data || [];
       }
 
       // Handle case where response is in the ApiResponse format
-      const result = await handleResponse(response);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('Error in getByLead:', error);
+      const result = await handleResponse( response );
+      return Array.isArray( result ) ? result : [];
+    } catch ( error )
+    {
+      console.error( 'Error in getByLead:', error );
       // Return empty array on error to prevent UI from breaking
       return [];
     }
   },
 
   // Get all messages (admin function)
-  getAll: async (): Promise<LeadMessage[]> => {
-    try {
-      console.log('Fetching all messages from:', LEAD_MESSAGES_BASE);
-      const response = await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
-      console.log('Raw API response:', response);
-      
+  getAll: async (): Promise<LeadMessage[]> =>
+  {
+    try
+    {
+      console.log( 'Fetching all messages from:', LEAD_MESSAGES_BASE );
+      const response = await get<ApiResponse<LeadMessage[]>>( LEAD_MESSAGES_BASE );
+      console.log( 'Raw API response:', response );
+
       // If the response is already an array, return it directly
-      if (Array.isArray(response)) {
-        console.log('Response is already an array, returning as is');
+      if ( Array.isArray( response ) )
+      {
+        console.log( 'Response is already an array, returning as is' );
         return response;
       }
-      
+
       // Handle the case where response is an object with a data property
-      if (response && Array.isArray(response.data)) {
-        console.log('Found messages in response.data');
+      if ( response && Array.isArray( response.data ) )
+      {
+        console.log( 'Found messages in response.data' );
         return response.data;
       }
-      
+
       // Handle the case where response is an object with a results property
-      if (response && Array.isArray(response.results)) {
-        console.log('Found messages in response.results');
+      if ( response && Array.isArray( response.results ) )
+      {
+        console.log( 'Found messages in response.results' );
         return response.results;
       }
-      
-      console.warn('Unexpected response format, returning empty array');
+
+      console.warn( 'Unexpected response format, returning empty array' );
       return [];
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+    } catch ( error )
+    {
+      console.error( 'Error fetching messages:', error );
       return [];
     }
   },
 
   // Get messages for specific lead and dealer combination
-  getOne: async (leadId: number): Promise<LeadMessage[]> => {
+  getOne: async ( leadId: number ): Promise<LeadMessage[]> =>
+  {
     const response = await get<ApiResponse<LeadMessage[]>>(
       `${LEAD_MESSAGES_BASE}/${leadId}`,
     );
-    return handleResponse(response);
+    return handleResponse( response );
   },
 
   // Create a new message
   create: async (
     createMessageData: CreateLeadMessageDto,
-  ): Promise<LeadMessage> => {
-    try {
-      console.log('Sending message data:', createMessageData);
+  ): Promise<LeadMessage> =>
+  {
+    try
+    {
+      console.log( 'Sending message data:', createMessageData );
 
       const response = await post<CreateMessageResponse, CreateLeadMessageDto>(
         LEAD_MESSAGES_BASE,
@@ -202,19 +228,22 @@ export const leadMessagesApi = {
         },
       );
 
-      console.log('Response from server create:', response);
+      console.log( 'Response from server create:', response );
 
-      if (!response) {
-        throw new Error('No response from server');
+      if ( !response )
+      {
+        throw new Error( 'No response from server' );
       }
 
       // Check if the response has an error field
-      if ('error' in response && response.error) {
-        throw new Error(response.error);
+      if ( 'error' in response && response.error )
+      {
+        throw new Error( response.error );
       }
 
       // Check if we have the expected data structure
-      if (response.data) {
+      if ( response.data )
+      {
         // First cast to unknown, then to the expected type
         const responseData = response.data as unknown;
         const messageData = responseData as {
@@ -225,18 +254,20 @@ export const leadMessagesApi = {
           createdAt?: string;
           updatedAt?: string;
         };
-        
+
         // Verify the required fields exist
-        if (typeof messageData !== 'object' || messageData === null) {
-          throw new Error('Invalid response data format');
+        if ( typeof messageData !== 'object' || messageData === null )
+        {
+          throw new Error( 'Invalid response data format' );
         }
 
-        if (!messageData.id || !messageData.content) {
+        if ( !messageData.id || !messageData.content )
+        {
           console.error(
             'Invalid response format: missing required fields',
             messageData,
           );
-          throw new Error('Invalid response format: missing required fields');
+          throw new Error( 'Invalid response format: missing required fields' );
         }
 
         // Create the return object with proper typing
@@ -255,10 +286,11 @@ export const leadMessagesApi = {
       }
 
       // If we get here, the response format is unexpected
-      console.error('Unexpected response format:', response);
-      throw new Error('Unexpected response format from server');
-    } catch (error) {
-      console.error('Error creating message:', error);
+      console.error( 'Unexpected response format:', response );
+      throw new Error( 'Unexpected response format from server' );
+    } catch ( error )
+    {
+      console.error( 'Error creating message:', error );
       throw error;
     }
   },
@@ -267,7 +299,8 @@ export const leadMessagesApi = {
   update: async (
     id: number,
     messageData: UpdateLeadMessageDto,
-  ): Promise<LeadMessage> => {
+  ): Promise<LeadMessage> =>
+  {
     const response = await put<ApiResponse<LeadMessage>, UpdateLeadMessageDto>(
       `${LEAD_MESSAGES_BASE}/${id}`,
       messageData,
@@ -278,50 +311,58 @@ export const leadMessagesApi = {
   },
 
   // Delete a message
-  delete: async (id: number): Promise<void> => {
-    const response = await del<ApiResponse<void>>(`${LEAD_MESSAGES_BASE}/${id}`);
+  delete: async ( id: number ): Promise<void> =>
+  {
+    const response = await del<ApiResponse<void>>( `${LEAD_MESSAGES_BASE}/${id}` );
     const result = await response;
-    await handleResponse(result, true);
+    await handleResponse( result, true );
   },
 
   // Format message for UI
-  formatMessage(
+  formatMessage: (
     message: LeadMessage | null | undefined,
     isCurrentUser: boolean,
-  ): Message {
-    // Handle null or undefined message
-    if (!message) {
-      console.error('Invalid message provided to formatMessage:', message);
-      return {
-        id: `error-${Date.now()}`,
-        text: 'Error: Invalid message format',
-        sender: 'other',
-        timestamp: new Date(),
-        senderName: 'System',
-      };
-    }
-    
-    // At this point, TypeScript knows message is not null or undefined
+  ): Message =>
+  {
+    // Create a safe message object with defaults
+    const safeMessage = message || {} as LeadMessage;
+
+    // Generate a default ID if none exists
+    const messageId = safeMessage.id?.toString() || `temp-${Date.now()}`;
+
+    // Ensure we have valid content
+    const messageText = safeMessage.content || '(No content)';
 
     // Parse the timestamp from the message
-    const timestamp = message.updatedAt || message.createdAt;
     let formattedTimestamp: Date;
-
-    try {
-      formattedTimestamp = timestamp ? new Date(timestamp) : new Date();
-    } catch (error) {
-      console.error('Error parsing timestamp:', timestamp, error);
+    try
+    {
+      const timestamp = safeMessage.updatedAt || safeMessage.createdAt;
+      formattedTimestamp = timestamp ? new Date( timestamp ) : new Date();
+    } catch ( error )
+    {
+      console.error( 'Error parsing timestamp:', error );
       formattedTimestamp = new Date();
     }
 
-    // Format the sender name
-    const senderName = isCurrentUser
-      ? 'You'
-      : (message.dealer as { name?: string })?.name ?? 'Dealer';
+    // Format the sender name safely
+    let senderName = 'Unknown';
+    try
+    {
+      senderName = isCurrentUser
+        ? 'You'
+        : ( safeMessage.dealer as { name?: string } )?.name ||
+        ( safeMessage.lead as { name?: string } )?.name ||
+        'Customer';
+    } catch ( error )
+    {
+      console.error( 'Error getting sender name:', error );
+      senderName = isCurrentUser ? 'You' : 'Customer';
+    }
 
     return {
-      id: message.id?.toString() || `temp-${Date.now()}`,
-      text: message.content || '',
+      id: messageId,
+      text: messageText,
       sender: isCurrentUser ? 'user' : 'other',
       timestamp: formattedTimestamp,
       senderName,
@@ -329,26 +370,28 @@ export const leadMessagesApi = {
   },
 
   // Format chat list item from lead data
-  formatChatItem: (lead: {
+  formatChatItem: ( lead: {
     id: number | string;
     name?: string;
     email?: string;
     lastMessage?: string;
     updatedAt?: string | Date | null;
-  }): {
-    id: string;
-    name: string;
-    lastMessage: string;
-    timestamp: string;
-    avatarUrl: string;
-  } => {
+  } ):
+    {
+      id: string;
+      name: string;
+      lastMessage: string;
+      timestamp: string;
+      avatarUrl: string;
+    } =>
+  {
     const name = lead.name || lead.email || 'Unknown Lead';
     const lastMessage = lead.lastMessage || 'No messages yet';
     const timestamp = lead.updatedAt
-      ? new Date(lead.updatedAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
+      ? new Date( lead.updatedAt ).toLocaleTimeString( [], {
+        hour: '2-digit',
+        minute: '2-digit',
+      } )
       : '--:--';
     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
       name,

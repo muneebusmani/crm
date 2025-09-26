@@ -30,7 +30,7 @@ import { DealerModule } from './user/dealer/dealer.module';
         database: configService.get<string>('DB_NAME'),
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
         entities: [`${__dirname}/**/*.entity{.ts,.js}`],
-        logging: configService.get('NODE_ENV') === 'development',
+        // logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
     }),

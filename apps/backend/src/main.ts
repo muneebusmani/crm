@@ -1,4 +1,5 @@
 // import { ValidationPipe } from '@nestjs/common';
+/** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -7,18 +8,24 @@ import { JwtAuthGuard } from './auth/guards/jwt.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { join } from 'path';
+import { AppLogger } from './common/logger.service';
+import { LogLevel } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'] as LogLevel[],
+  });
   const port = process.env.PORT ?? 3001;
   const host = process.env.HOST ?? '0.0.0.0';
-  const frontend_url =process.env.FRONTEND_URL;
+  const frontend_url = process.env.FRONTEND_URL;
   const frontendUrl = frontend_url ?? 'http://localhost:3000';
 
   app.setGlobalPrefix('api/v1');
 
+  const appLogger = app.get(AppLogger);
+  app.useLogger(appLogger); // 👈 tell Nest to use it
   //Swagger
-    const config = new DocumentBuilder()
+  const config = new DocumentBuilder()
     .setTitle('My API')
     .setDescription('API documentation')
     .setVersion('1.0')
@@ -40,15 +47,15 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     origin: frontend_url,
-     methods: "GET,POST,DELETE,PUT",
+    methods: 'GET,POST,DELETE,PUT',
     credentials: true,
   });
   app.use(
     '/uploads',
-    express.static(join(__dirname, '..', 'uploads')) // points to backend/uploads
+    express.static(join(__dirname, '..', 'uploads')), // points to backend/uploads
   );
   await app.listen(port, host);
-    console.log(frontend_url);
+  console.log(frontend_url);
   console.log(`Listening on ${host}:${port}`);
 }
 bootstrap();
