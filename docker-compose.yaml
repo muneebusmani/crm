@@ -12,7 +12,7 @@ services:
       target: frontend-runtime
     container_name: crm-frontend
     env_file:
-      - ./apps/frontend/.env 
+      - ./apps/frontend/.env.production 
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm-frontend.rule=Host(`crm.enginesmarket.co.uk`)"
@@ -36,7 +36,7 @@ services:
       target: backend-runtime
     container_name: crm-backend
     env_file:
-      - ./apps/backend/.env
+      - ./apps/frontend/.env.production 
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm-backend.rule=Host(`api-crm.enginesmarket.co.uk`)"
