@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ArrowDownward,
@@ -9,7 +9,7 @@ import {
   People,
   ShoppingCart,
   Visibility,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -25,8 +25,8 @@ import {
   ListItemText,
   Typography,
   useTheme,
-} from "@mui/material";
-import type React from "react";
+} from '@mui/material';
+import type React from 'react';
 import {
   Bar,
   BarChart,
@@ -42,14 +42,14 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
+} from 'recharts';
 
 // Types
 interface StatCardProps {
   title: string;
   value: string;
   change: string;
-  changeType: "positive" | "negative";
+  changeType: 'positive' | 'negative';
   icon: React.ReactNode;
   color: string;
 }
@@ -76,50 +76,50 @@ interface RecentActivity {
 
 // Mock data
 const revenueData: RevenueData[] = [
-  { name: "Jan", revenue: 4000, profit: 2400 },
-  { name: "Feb", revenue: 3000, profit: 1398 },
-  { name: "Mar", revenue: 9800, profit: 2000 },
-  { name: "Apr", revenue: 3908, profit: 2780 },
-  { name: "May", revenue: 4800, profit: 1890 },
-  { name: "Jun", revenue: 3800, profit: 2390 },
-  { name: "Jul", revenue: 4300, profit: 3490 },
+  { name: 'Jan', revenue: 4000, profit: 2400 },
+  { name: 'Feb', revenue: 3000, profit: 1398 },
+  { name: 'Mar', revenue: 9800, profit: 2000 },
+  { name: 'Apr', revenue: 3908, profit: 2780 },
+  { name: 'May', revenue: 4800, profit: 1890 },
+  { name: 'Jun', revenue: 3800, profit: 2390 },
+  { name: 'Jul', revenue: 4300, profit: 3490 },
 ];
 
 const trafficData: TrafficData[] = [
-  { name: "Direct", value: 400, color: "#0088FE" },
-  { name: "Social", value: 300, color: "#00C49F" },
-  { name: "Referral", value: 300, color: "#FFBB28" },
-  { name: "Email", value: 200, color: "#FF8042" },
+  { name: 'Direct', value: 400, color: '#0088FE' },
+  { name: 'Social', value: 300, color: '#00C49F' },
+  { name: 'Referral', value: 300, color: '#FFBB28' },
+  { name: 'Email', value: 200, color: '#FF8042' },
 ];
 
 const recentActivities: RecentActivity[] = [
   {
     id: 1,
-    user: "John Doe",
-    action: "Made a purchase",
-    time: "2 min ago",
-    avatar: "JD",
+    user: 'John Doe',
+    action: 'Made a purchase',
+    time: '2 min ago',
+    avatar: 'JD',
   },
   {
     id: 2,
-    user: "Sarah Smith",
-    action: "Subscribed to newsletter",
-    time: "15 min ago",
-    avatar: "SS",
+    user: 'Sarah Smith',
+    action: 'Subscribed to newsletter',
+    time: '15 min ago',
+    avatar: 'SS',
   },
   {
     id: 3,
-    user: "Mike Johnson",
-    action: "Left a review",
-    time: "1 hour ago",
-    avatar: "MJ",
+    user: 'Mike Johnson',
+    action: 'Left a review',
+    time: '1 hour ago',
+    avatar: 'MJ',
   },
   {
     id: 4,
-    user: "Emma Wilson",
-    action: "Shared on social media",
-    time: "3 hours ago",
-    avatar: "EW",
+    user: 'Emma Wilson',
+    action: 'Shared on social media',
+    time: '3 hours ago',
+    avatar: 'EW',
   },
 ];
 
@@ -135,11 +135,11 @@ const StatCard: React.FC<StatCardProps> = ({
   return (
     <Card
       sx={{
-        height: "100%",
+        height: '100%',
         boxShadow: 3,
-        transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
-        "&:hover": {
-          transform: "translateY(-4px)",
+        transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-4px)',
           boxShadow: 6,
         },
       }}
@@ -170,16 +170,16 @@ const StatCard: React.FC<StatCardProps> = ({
           </Avatar>
         </Box>
         <Box display="flex" alignItems="center" mt={2}>
-          {changeType === "positive" ? (
-            <ArrowUpward sx={{ color: "success.main", fontSize: 16 }} />
+          {changeType === 'positive' ? (
+            <ArrowUpward sx={{ color: 'success.main', fontSize: 16 }} />
           ) : (
-            <ArrowDownward sx={{ color: "error.main", fontSize: 16 }} />
+            <ArrowDownward sx={{ color: 'error.main', fontSize: 16 }} />
           )}
           <Typography
             variant="body2"
             sx={{
-              color: changeType === "positive" ? "success.main" : "error.main",
-              fontWeight: "fontWeightMedium",
+              color: changeType === 'positive' ? 'success.main' : 'error.main',
+              fontWeight: 'fontWeightMedium',
               ml: 0.5,
             }}
           >
@@ -217,7 +217,7 @@ const AnalyticsPage: React.FC = () => {
               Analytics Dashboard
             </Typography>
             <Box display="flex" alignItems="center" gap={1}>
-              <CalendarToday sx={{ fontSize: 16, color: "text.secondary" }} />
+              <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
               <Typography variant="body2" color="textSecondary">
                 Last updated: Today at 14:30
               </Typography>
@@ -231,7 +231,7 @@ const AnalyticsPage: React.FC = () => {
                 style={{
                   width: 8,
                   height: 8,
-                  borderRadius: "50%",
+                  borderRadius: '50%',
                   backgroundColor: theme.palette.success.main,
                 }}
               />
@@ -289,7 +289,7 @@ const AnalyticsPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Revenue Chart */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box
                 display="flex"
@@ -300,7 +300,7 @@ const AnalyticsPage: React.FC = () => {
                 <Typography variant="h6" fontWeight="fontWeightBold">
                   Revenue Overview
                 </Typography>
-                <MoreVert sx={{ color: "text.secondary" }} />
+                <MoreVert sx={{ color: 'text.secondary' }} />
               </Box>
               <Box sx={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -337,7 +337,7 @@ const AnalyticsPage: React.FC = () => {
 
         {/* Traffic Sources */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box
                 display="flex"
@@ -348,7 +348,7 @@ const AnalyticsPage: React.FC = () => {
                 <Typography variant="h6" fontWeight="fontWeightBold">
                   Traffic Sources
                 </Typography>
-                <MoreVert sx={{ color: "text.secondary" }} />
+                <MoreVert sx={{ color: 'text.secondary' }} />
               </Box>
               <Box sx={{ height: 200, mb: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -389,7 +389,7 @@ const AnalyticsPage: React.FC = () => {
                         sx={{
                           width: 12,
                           height: 12,
-                          borderRadius: "50%",
+                          borderRadius: '50%',
                           backgroundColor: item.color,
                           mr: 1,
                         }}
@@ -411,7 +411,7 @@ const AnalyticsPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Performance Trend */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box
                 display="flex"
@@ -422,7 +422,7 @@ const AnalyticsPage: React.FC = () => {
                 <Typography variant="h6" fontWeight="fontWeightBold">
                   Performance Trend
                 </Typography>
-                <MoreVert sx={{ color: "text.secondary" }} />
+                <MoreVert sx={{ color: 'text.secondary' }} />
               </Box>
               <Box sx={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -462,7 +462,7 @@ const AnalyticsPage: React.FC = () => {
 
         {/* Recent Activity */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box
                 display="flex"
@@ -473,9 +473,9 @@ const AnalyticsPage: React.FC = () => {
                 <Typography variant="h6" fontWeight="fontWeightBold">
                   Recent Activity
                 </Typography>
-                <MoreVert sx={{ color: "text.secondary" }} />
+                <MoreVert sx={{ color: 'text.secondary' }} />
               </Box>
-              <List sx={{ maxHeight: 300, overflow: "auto" }}>
+              <List sx={{ maxHeight: 300, overflow: 'auto' }}>
                 {recentActivities.map((activity) => (
                   <ListItem key={activity.id} sx={{ py: 1.5 }}>
                     <ListItemAvatar>
@@ -494,7 +494,7 @@ const AnalyticsPage: React.FC = () => {
                           >
                             {activity.action}
                           </Typography>
-                          {" — "}
+                          {' — '}
                           {activity.time}
                         </>
                       }
@@ -529,8 +529,8 @@ const AnalyticsPage: React.FC = () => {
                 sx={{
                   height: 10,
                   borderRadius: 5,
-                  backgroundColor: "grey.200",
-                  "& .MuiLinearProgress-bar": {
+                  backgroundColor: 'grey.200',
+                  '& .MuiLinearProgress-bar': {
                     backgroundColor: theme.palette.success.main,
                   },
                 }}
@@ -558,8 +558,8 @@ const AnalyticsPage: React.FC = () => {
                 sx={{
                   height: 10,
                   borderRadius: 5,
-                  backgroundColor: "grey.200",
-                  "& .MuiLinearProgress-bar": {
+                  backgroundColor: 'grey.200',
+                  '& .MuiLinearProgress-bar': {
                     backgroundColor: theme.palette.info.main,
                   },
                 }}
@@ -587,8 +587,8 @@ const AnalyticsPage: React.FC = () => {
                 sx={{
                   height: 10,
                   borderRadius: 5,
-                  backgroundColor: "grey.200",
-                  "& .MuiLinearProgress-bar": {
+                  backgroundColor: 'grey.200',
+                  '& .MuiLinearProgress-bar': {
                     backgroundColor: theme.palette.warning.main,
                   },
                 }}

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import type { CreateInvoiceDto } from '@crm/types';
@@ -9,12 +18,14 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  async create(
-    @Body() createInvoiceDto: CreateInvoiceDto,  @Req() req) {
+  async create(@Body() createInvoiceDto: CreateInvoiceDto, @Req() req) {
     try {
       const dealerId = req.user.dealerId; // Extracted from JWT token
-      const invoice = await this.invoiceService.create(createInvoiceDto, dealerId);
-      
+      const invoice = await this.invoiceService.create(
+        createInvoiceDto,
+        dealerId,
+      );
+
       return {
         success: true,
         message: 'Invoice created successfully',
@@ -37,7 +48,7 @@ export class InvoiceController {
     try {
       const dealerId = req.user.dealerId;
       const invoices = await this.invoiceService.findAll(dealerId);
-      
+
       return {
         success: true,
         message: 'Invoices retrieved successfully',
@@ -63,7 +74,7 @@ export class InvoiceController {
     try {
       const dealerId = req.user.dealerId;
       const invoice = await this.invoiceService.findOne(id, dealerId);
-      
+
       return {
         success: true,
         message: 'Invoice retrieved successfully',
@@ -89,8 +100,12 @@ export class InvoiceController {
   ): Promise<ApiResponse<InvoiceResponseDto>> {
     try {
       const dealerId = req.user.dealerId;
-      const invoice = await this.invoiceService.updateStatus(id, body.status, dealerId);
-      
+      const invoice = await this.invoiceService.updateStatus(
+        id,
+        body.status,
+        dealerId,
+      );
+
       return {
         success: true,
         message: 'Invoice status updated successfully',

@@ -230,7 +230,8 @@ export default function ChatWindow({
         </Avatar>
         <Box>
           <Typography variant="subtitle1" fontWeight="medium">
-            {leadName || (currentChatId ? `Lead #${currentChatId}` : 'Unknown User')}
+            {leadName ||
+              (currentChatId ? `Lead #${currentChatId}` : 'Unknown User')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {messages.length} message{messages.length !== 1 ? 's' : ''}

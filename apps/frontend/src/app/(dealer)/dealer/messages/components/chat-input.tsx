@@ -1,7 +1,14 @@
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import SendIcon from '@mui/icons-material/Send'
-import { Box, CircularProgress, IconButton, TextField, Tooltip, useTheme } from '@mui/material'
-import { useState } from 'react'
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import SendIcon from '@mui/icons-material/Send';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Tooltip,
+  useTheme,
+} from '@mui/material';
+import { useState } from 'react';
 
 interface ChatInputProps {
   onSend: (text: string) => void | Promise<void>;
@@ -16,8 +23,8 @@ export default function ChatInput({
   disabled = false,
   isSending = false,
 }: ChatInputProps) {
-  const [inputValue, setInputValue] = useState('')
-  const theme = useTheme()
+  const [inputValue, setInputValue] = useState('');
+  const theme = useTheme();
 
   const handleSend = async () => {
     const trimmedValue = inputValue.trim();
@@ -29,14 +36,14 @@ export default function ChatInput({
         console.error('Failed to send message:', error);
       }
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   return (
     <Box
@@ -134,5 +141,5 @@ export default function ChatInput({
         </span>
       </Tooltip>
     </Box>
-  )
+  );
 }

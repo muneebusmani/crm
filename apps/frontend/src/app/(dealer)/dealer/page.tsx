@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { Highlight, Notification, QuickAction, Task } from "@crm/types";
+import type { Highlight, Notification, QuickAction, Task } from '@crm/types';
 import {
   Add,
   ArrowForward,
@@ -12,7 +12,7 @@ import {
   Schedule,
   TrendingUp,
   Warning,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   alpha,
   Box,
@@ -31,113 +31,113 @@ import {
   ListItemText,
   Typography,
   useTheme,
-} from "@mui/material";
-import { useState } from "react";
+} from '@mui/material';
+import { useState } from 'react';
 
 const HomePage = () => {
   const theme = useTheme();
   const [notifications] = useState<Notification[]>([
     {
       id: 1,
-      title: "Quota Low",
-      description: "Only 3 leads remaining this month",
-      type: "warning",
-      time: "2 hours ago",
+      title: 'Quota Low',
+      description: 'Only 3 leads remaining this month',
+      type: 'warning',
+      time: '2 hours ago',
     },
     {
       id: 2,
-      title: "Renew Now",
-      description: "Your package expires in 5 days",
-      type: "info",
-      time: "1 day ago",
+      title: 'Renew Now',
+      description: 'Your package expires in 5 days',
+      type: 'info',
+      time: '1 day ago',
     },
     {
       id: 3,
-      title: "New Feature",
-      description: "Reporting dashboard now available",
-      type: "success",
-      time: "3 days ago",
+      title: 'New Feature',
+      description: 'Reporting dashboard now available',
+      type: 'success',
+      time: '3 days ago',
     },
   ]);
 
   const [tasks] = useState<Task[]>([
     {
       id: 1,
-      title: "Follow up with client",
-      dueDate: "Today, 3:00 PM",
-      priority: "high",
+      title: 'Follow up with client',
+      dueDate: 'Today, 3:00 PM',
+      priority: 'high',
     },
     {
       id: 2,
-      title: "Send monthly report",
-      dueDate: "Tomorrow",
-      priority: "medium",
+      title: 'Send monthly report',
+      dueDate: 'Tomorrow',
+      priority: 'medium',
     },
     {
       id: 3,
-      title: "Review new leads",
-      dueDate: "Tomorrow",
-      priority: "low",
+      title: 'Review new leads',
+      dueDate: 'Tomorrow',
+      priority: 'low',
     },
   ]);
 
   const quickActions: QuickAction[] = [
     {
-      title: "View Leads",
+      title: 'View Leads',
       icon: <People />,
-      color: "primary",
-      action: () => console.log("View Leads"),
+      color: 'primary',
+      action: () => console.log('View Leads'),
     },
     {
-      title: "Upgrade Package",
+      title: 'Upgrade Package',
       icon: <TrendingUp />,
-      color: "success",
-      action: () => console.log("Upgrade Package"),
+      color: 'success',
+      action: () => console.log('Upgrade Package'),
     },
     {
-      title: "Download Report",
+      title: 'Download Report',
       icon: <Download />,
-      color: "secondary",
-      action: () => console.log("Download Report"),
+      color: 'secondary',
+      action: () => console.log('Download Report'),
     },
     {
-      title: "New Campaign",
+      title: 'New Campaign',
       icon: <Add />,
-      color: "info",
-      action: () => console.log("New Campaign"),
+      color: 'info',
+      action: () => console.log('New Campaign'),
     },
   ];
 
   const highlights: Highlight[] = [
     {
-      title: "New Leads Today",
-      value: "5",
-      change: "+2 from yesterday",
-      changeType: "positive",
+      title: 'New Leads Today',
+      value: '5',
+      change: '+2 from yesterday',
+      changeType: 'positive',
       icon: <People sx={{ fontSize: 24 }} />,
-      color: "primary",
+      color: 'primary',
     },
     {
-      title: "Leads Remaining",
-      value: "12",
+      title: 'Leads Remaining',
+      value: '12',
       icon: <Notifications sx={{ fontSize: 24 }} />,
-      color: "warning",
+      color: 'warning',
     },
     {
-      title: "Conversion Rate",
-      value: "24%",
-      change: "+3% from last week",
-      changeType: "positive",
+      title: 'Conversion Rate',
+      value: '24%',
+      change: '+3% from last week',
+      changeType: 'positive',
       icon: <TrendingUp sx={{ fontSize: 24 }} />,
-      color: "success",
+      color: 'success',
     },
     {
-      title: "Revenue",
-      value: "$2,450",
-      change: "+12% this month",
-      changeType: "positive",
+      title: 'Revenue',
+      value: '$2,450',
+      change: '+12% this month',
+      changeType: 'positive',
       icon: <AttachMoney sx={{ fontSize: 24 }} />,
-      color: "secondary",
+      color: 'secondary',
     },
   ];
 
@@ -150,10 +150,10 @@ const HomePage = () => {
       {/* Greeting Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" fontWeight="fontWeightBold">
-          Welcome back,{" "}
+          Welcome back,{' '}
           <span style={{ color: theme.palette.primary.main }}>
             Ali Auto Garage
-          </span>{" "}
+          </span>{' '}
           👋
         </Typography>
         <Typography variant="subtitle1" color="textSecondary" sx={{ mt: 1 }}>
@@ -176,7 +176,7 @@ const HomePage = () => {
             endIcon={<Add />}
             variant="text"
             color="primary"
-            onClick={() => console.log("Add new action")}
+            onClick={() => console.log('Add new action')}
           >
             Add New
           </Button>
@@ -186,12 +186,12 @@ const HomePage = () => {
             <Grid key={action.title} size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 sx={{
-                  height: "100%",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease-in-out",
+                  height: '100%',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
                   border: `1px solid ${alpha(theme.palette[action.color].main, 0.1)}`,
-                  "&:hover": {
-                    transform: "translateY(-4px)",
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
                     boxShadow: 6,
                     border: `1px solid ${theme.palette[action.color].main}`,
                   },
@@ -203,7 +203,7 @@ const HomePage = () => {
                     <Box
                       sx={{
                         p: 1.5,
-                        borderRadius: "12px",
+                        borderRadius: '12px',
                         backgroundColor: alpha(
                           theme.palette[action.color].main,
                           0.1,
@@ -218,7 +218,7 @@ const HomePage = () => {
                       {action.title}
                     </Typography>
                     <ArrowForward
-                      sx={{ ml: "auto", color: "text.secondary" }}
+                      sx={{ ml: 'auto', color: 'text.secondary' }}
                     />
                   </Box>
                 </CardContent>
@@ -231,7 +231,7 @@ const HomePage = () => {
       <Grid container spacing={3}>
         {/* Today's Highlights */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h6" fontWeight="fontWeightBold" gutterBottom>
                 Today's Highlights
@@ -242,10 +242,10 @@ const HomePage = () => {
                     <Card
                       variant="outlined"
                       sx={{
-                        height: "100%",
-                        borderColor: "divider",
-                        transition: "all 0.2s ease-in-out",
-                        "&:hover": {
+                        height: '100%',
+                        borderColor: 'divider',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
                           borderColor: theme.palette[highlight.color].main,
                           backgroundColor: alpha(
                             theme.palette[highlight.color].main,
@@ -259,7 +259,7 @@ const HomePage = () => {
                           <Box
                             sx={{
                               p: 1,
-                              borderRadius: "8px",
+                              borderRadius: '8px',
                               backgroundColor: alpha(
                                 theme.palette[highlight.color].main,
                                 0.1,
@@ -286,16 +286,16 @@ const HomePage = () => {
                             label={highlight.change}
                             size="small"
                             color={
-                              highlight.changeType === "positive"
-                                ? "success"
-                                : "error"
+                              highlight.changeType === 'positive'
+                                ? 'success'
+                                : 'error'
                             }
                             variant="outlined"
                             sx={{
                               height: 20,
-                              borderRadius: "6px",
-                              ".MuiChip-label": {
-                                fontSize: "0.7rem",
+                              borderRadius: '6px',
+                              '.MuiChip-label': {
+                                fontSize: '0.7rem',
                               },
                             }}
                           />
@@ -323,7 +323,7 @@ const HomePage = () => {
                     height: 8,
                     borderRadius: 4,
                     backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                    "& .MuiLinearProgress-bar": {
+                    '& .MuiLinearProgress-bar': {
                       backgroundColor: theme.palette.primary.main,
                     },
                   }}
@@ -354,7 +354,7 @@ const HomePage = () => {
                     height: 8,
                     borderRadius: 4,
                     backgroundColor: alpha(theme.palette.success.main, 0.1),
-                    "& .MuiLinearProgress-bar": {
+                    '& .MuiLinearProgress-bar': {
                       backgroundColor: theme.palette.success.main,
                     },
                   }}
@@ -393,7 +393,7 @@ const HomePage = () => {
                       sx={{
                         backgroundColor: alpha(theme.palette.warning.main, 0.1),
                         color: theme.palette.warning.main,
-                        "&:hover": {
+                        '&:hover': {
                           backgroundColor: alpha(
                             theme.palette.warning.main,
                             0.2,
@@ -414,23 +414,23 @@ const HomePage = () => {
                             borderRadius: 1,
                             mb: 1,
                             backgroundColor:
-                              notification.type === "warning"
+                              notification.type === 'warning'
                                 ? alpha(theme.palette.warning.main, 0.1)
-                                : notification.type === "info"
+                                : notification.type === 'info'
                                   ? alpha(theme.palette.info.main, 0.1)
                                   : alpha(theme.palette.success.main, 0.1),
                             border: `1px solid ${
-                              notification.type === "warning"
+                              notification.type === 'warning'
                                 ? alpha(theme.palette.warning.main, 0.3)
-                                : notification.type === "info"
+                                : notification.type === 'info'
                                   ? alpha(theme.palette.info.main, 0.3)
                                   : alpha(theme.palette.success.main, 0.3)
                             }`,
-                            "&:hover": {
+                            '&:hover': {
                               backgroundColor:
-                                notification.type === "warning"
+                                notification.type === 'warning'
                                   ? alpha(theme.palette.warning.main, 0.2)
-                                  : notification.type === "info"
+                                  : notification.type === 'info'
                                     ? alpha(theme.palette.info.main, 0.2)
                                     : alpha(theme.palette.success.main, 0.2),
                             },
@@ -440,14 +440,14 @@ const HomePage = () => {
                             sx={{
                               minWidth: 36,
                               color:
-                                notification.type === "warning"
+                                notification.type === 'warning'
                                   ? theme.palette.warning.main
-                                  : notification.type === "info"
+                                  : notification.type === 'info'
                                     ? theme.palette.info.main
                                     : theme.palette.success.main,
                             }}
                           >
-                            {notification.type === "warning" ? (
+                            {notification.type === 'warning' ? (
                               <Warning />
                             ) : (
                               <Notifications />
@@ -494,7 +494,7 @@ const HomePage = () => {
                     fullWidth
                     variant="outlined"
                     sx={{ mt: 1 }}
-                    onClick={() => console.log("View all notifications")}
+                    onClick={() => console.log('View all notifications')}
                   >
                     View All Notifications
                   </Button>
@@ -520,7 +520,7 @@ const HomePage = () => {
                       sx={{
                         backgroundColor: alpha(theme.palette.info.main, 0.1),
                         color: theme.palette.info.main,
-                        "&:hover": {
+                        '&:hover': {
                           backgroundColor: alpha(theme.palette.info.main, 0.2),
                         },
                       }}
@@ -538,7 +538,7 @@ const HomePage = () => {
                           borderRadius: 1,
                           mb: 1,
                           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-                          "&:hover": {
+                          '&:hover': {
                             backgroundColor: alpha(
                               theme.palette.primary.main,
                               0.05,
@@ -551,11 +551,11 @@ const HomePage = () => {
                             sx={{
                               width: 12,
                               height: 12,
-                              borderRadius: "50%",
+                              borderRadius: '50%',
                               backgroundColor:
-                                task.priority === "high"
+                                task.priority === 'high'
                                   ? theme.palette.error.main
-                                  : task.priority === "medium"
+                                  : task.priority === 'medium'
                                     ? theme.palette.warning.main
                                     : theme.palette.success.main,
                             }}
@@ -576,13 +576,13 @@ const HomePage = () => {
                               display="flex"
                               alignItems="center"
                               mt={0.5}
-                              component={"span"}
+                              component={'span'}
                             >
                               <CalendarToday
                                 sx={{
                                   fontSize: 14,
                                   mr: 0.5,
-                                  color: "textSecondary",
+                                  color: 'textSecondary',
                                 }}
                               />
                               <Typography
@@ -599,18 +599,18 @@ const HomePage = () => {
                           label={task.priority}
                           size="small"
                           color={
-                            task.priority === "high"
-                              ? "error"
-                              : task.priority === "medium"
-                                ? "warning"
-                                : "success"
+                            task.priority === 'high'
+                              ? 'error'
+                              : task.priority === 'medium'
+                                ? 'warning'
+                                : 'success'
                           }
                           variant="outlined"
                           sx={{
                             height: 20,
-                            borderRadius: "6px",
-                            ".MuiChip-label": {
-                              fontSize: "0.65rem",
+                            borderRadius: '6px',
+                            '.MuiChip-label': {
+                              fontSize: '0.65rem',
                             },
                           }}
                         />
@@ -623,7 +623,7 @@ const HomePage = () => {
                     variant="contained"
                     startIcon={<Add />}
                     sx={{ mt: 1 }}
-                    onClick={() => console.log("Add new task")}
+                    onClick={() => console.log('Add new task')}
                   >
                     Add New Task
                   </Button>

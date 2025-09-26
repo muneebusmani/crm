@@ -45,7 +45,7 @@ export class LeadMessageController {
   @Get()
   async findAll(@Req() req) {
     const dealerId = req.user.id;
-    const result =  await this.leadMessageService.findAll(dealerId);
+    const result = await this.leadMessageService.findAll(dealerId);
     return this.buildResponse(result);
   }
 
