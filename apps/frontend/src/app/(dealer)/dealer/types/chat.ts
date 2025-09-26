@@ -2,7 +2,8 @@ export interface Message {
   id: string;
   text: string;
   sender: "user" | "other";
-  timestamp: Date;
+  timestamp: Date | string;
+  senderName?: string;
 }
 
 export type ChatContextType = {

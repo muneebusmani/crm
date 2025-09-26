@@ -1,292 +1,629 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { Box, TextField, IconButton } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import { get, post } from '@/lib/api'; // Added post import
+import type { Message } from "@dealer/types/chat";
+import { Box, CircularProgress, Typography, Button } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import Sidebar from "./chat-sidebar";
+import ChatWindow from "./chat-window";
+import { leadMessagesApi } from "@/services/lead-messages.service";
 
-// Message type
-type Message = {
+interface Chat {
   id: string;
-  text: string;
-  sender: 'user' | 'other';
-  timestamp: Date;
-  lead?: {
-    id: number;
-    name: string;
-    vehicle_model: string;
-  };
-  dealer?: {
-    id: number;
-    name: string;
-  };
-};
-
-type ApiMessage = {
-  id: number;
-  content: string;
-  createdAt: string;
-  lead: { id: number; name: string; vehicle_model: string };
-  dealer: { id: number; name: string };
-};
-
-type ApiResponse = {
-  data?: ApiMessage[];
-  success: boolean;
-};
-
-// Sidebar UI
-function Sidebar({
-  chats,
-  currentChatId,
-  onSelectChat,
-}: {
-  chats: {
-    id: string;
-    name: string;
-    lastMessage: string;
-    timestamp: string;
-    avatarUrl: string;
-  }[];
-  currentChatId: string | null;
-  onSelectChat: (id: string) => void;
-}) {
-  return (
-    <Box width="280px" bgcolor="#f3f4f6" p={2} overflow="auto">
-      {chats.map((chat) => (
-        <Box
-          key={chat.id}
-          onClick={() => onSelectChat(chat.id)}
-          p={2}
-          display="flex"
-          alignItems="center"
-          bgcolor={currentChatId === chat.id ? '#e5e7eb' : 'transparent'}
-          sx={{ cursor: 'pointer', borderRadius: '12px', mb: 1 }}
-        >
-          <img
-            src={chat.avatarUrl}
-            alt={chat.name}
-            style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 12 }}
-          />
-          <Box flex={1}>
-            <div style={{ fontWeight: 'bold' }}>{chat.name}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{chat.lastMessage}</div>
-          </Box>
-          <div style={{ fontSize: 10, color: '#9ca3af' }}>{chat.timestamp}</div>
-        </Box>
-      ))}
-    </Box>
-  );
+  name: string;
+  lastMessage: string;
+  timestamp: string;
+  avatarUrl: string;
 }
 
-// Chat window
-function ChatWindow({
-  messages,
-  onSend,
-  isLoading,
-}: {
-  messages: Message[];
-  onSend: (text: string) => void;
-  isLoading: boolean;
-}) {
-  const [input, setInput] = useState('');
-
-  const handleSend = () => {
-    if (input.trim() === '') return;
-    onSend(input);
-    setInput('');
-  };
-
-  return (
-    <Box flex={1} display="flex" flexDirection="column" bgcolor="white" borderLeft="1px solid #e5e7eb">
-      <Box flex={1} p={3} overflow="auto">
-        {messages.length === 0 ? (
-          <div style={{ color: '#9ca3af' }}>No messages yet</div>
-        ) : (
-          messages.map((msg) => (
-            <Box key={msg.id} mb={2} textAlign={msg.sender === 'user' ? 'right' : 'left'}>
-              <div
-                style={{
-                  display: 'inline-block',
-                  padding: '8px 12px',
-                  borderRadius: 12,
-                  backgroundColor: msg.sender === 'user' ? '#3f51b5' : '#e5e7eb',
-                  color: msg.sender === 'user' ? 'white' : 'black',
-                }}
-              >
-                {msg.text}
-              </div>
-              <div style={{ fontSize: 10, color: '#9ca3af' }}>{msg.timestamp.toLocaleString()}</div>
-            </Box>
-          ))
-        )}
-        {isLoading && <div style={{ color: '#9ca3af' }}>Bot is typing...</div>}
-      </Box>
-
-      <Box display="flex" p={2} borderTop="1px solid #e5e7eb">
-        <TextField
-          fullWidth
-          size="small"
-          value={input}
-          placeholder="Type a message..."
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        />
-        <IconButton onClick={handleSend} color="primary">
-          <SendIcon />
-        </IconButton>
-      </Box>
-    </Box>
-  );
-}
-
-// Main ChatApp
-export default function ChatApp({ initialLeadId }: { initialLeadId?: number }) {
-  const [chats, setChats] = useState<
-    { id: string; name: string; lastMessage: string; timestamp: string; avatarUrl: string }[]
-  >([]);
+export default function ChatStateProvider() {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch messages from API
+  // Load chats when the component mounts
   useEffect(() => {
-    async function fetchMessages() {
+    const loadChats = async () => {
       try {
-        const res: ApiResponse = await get(`/lead-messages/`);
-        if (res.success && Array.isArray(res.data)) {
-          const grouped: Record<string, Message[]> = {};
-          res.data.forEach((msg) => {
-            const chatId = String(msg.lead.id);
-            if (!grouped[chatId]) grouped[chatId] = [];
-            grouped[chatId].push({
-              id: String(msg.id),
-              text: msg.content,
-              sender: 'other',
-              timestamp: new Date(msg.createdAt),
-              lead: msg.lead,
-              dealer: msg.dealer,
-            });
-          });
+        setIsLoading(true);
 
-          setMessages(grouped);
+        console.log("Fetching all messages...");
+        // Fetch all messages to build the chat history
+        const response = await leadMessagesApi.getAll();
+        console.log("API Response:", response);
 
-          const chatList = Object.entries(grouped).map(([chatId, msgs]) => {
-            const lastMsg = msgs[msgs.length - 1];
-            return {
-              id: chatId,
-              name: lastMsg.lead?.name ?? 'Unknown Lead',
-              lastMessage: lastMsg.text,
-              timestamp: lastMsg.timestamp.toLocaleTimeString(),
-              avatarUrl: `https://ui-avatars.com/api/?name=${
-                lastMsg.lead?.name ?? 'Lead'
-              }&background=3f51b5&color=ffffff&type=png`,
-            };
-          });
+        // Handle case where response is not an array
+        if (!Array.isArray(response)) {
+          console.error("Invalid messages format:", response);
+          setChats([]);
+          return;
+        }
 
-          setChats(chatList);
+        const allMessages = response;
 
-          // If initialLeadId is provided, open that chat
-          if (initialLeadId) {
-            const targetChatId = String(initialLeadId);
-            if (grouped[targetChatId]) {
-              setCurrentChatId(targetChatId);
-              return;
+        // Group messages by lead ID
+        const chatsByLeadId = allMessages.reduce<
+          Record<string, typeof allMessages>
+        >((acc, message) => {
+          if (message.lead?.id) {
+            const leadId = message.lead.id.toString();
+            if (!acc[leadId]) {
+              acc[leadId] = [];
             }
+            acc[leadId].push(message);
           }
+          return acc;
+        }, {});
 
-          // Otherwise open first chat
-          if (chatList.length > 0 && !currentChatId) {
-            setCurrentChatId(chatList[0].id);
+        // Create chat objects for each lead
+        const chatList = Object.entries(chatsByLeadId).map(
+          ([leadId, messages]) => {
+            // Sort messages by timestamp (newest first)
+            const sortedMessages = [...messages].sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            );
+
+            const lastMessage = sortedMessages[0];
+            const leadName = lastMessage.lead?.name || `Lead #${leadId}`;
+            const safeLeadName =
+              typeof leadName === "string" ? leadName : `Lead #${leadId}`;
+
+            return {
+              id: leadId,
+              name: safeLeadName,
+              lastMessage:
+                lastMessage.content.length > 30
+                  ? `${lastMessage.content.substring(0, 30)}...`
+                  : lastMessage.content,
+              timestamp: lastMessage.createdAt
+                ? new Date(lastMessage.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+              avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                safeLeadName
+              )}&background=3f51b5&color=ffffff&type=png`,
+            };
           }
+        );
+
+        setChats(chatList);
+
+        // If there are chats, select the first one by default
+        // if (chatList.length > 0 && !currentChatId) {
+        //   setCurrentChatId(chatList[0].id);
+        // }
+      } catch (error) {
+        console.error("Failed to load chats:", error);
+        setChats([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadChats();
+  }, []); // Add currentChatId to dependencies to prevent re-fetching when it changes
+
+  // Load messages when the current chat changes
+  useEffect(() => {
+    if (!currentChatId) return;
+
+    let isMounted = true;
+    const loadMessages = async () => {
+      try {
+        setIsLoading(true);
+        const leadId = parseInt(currentChatId, 10);
+        if (Number.isNaN(leadId)) {
+          console.error("Invalid lead ID");
+          return;
+        }
+
+        console.log(`Loading messages for lead ${leadId}...`);
+
+        // Initialize with empty messages array for this chat
+        setMessages((prev) => ({
+          ...prev,
+          [currentChatId]: prev[currentChatId] || [],
+        }));
+
+        // Fetch messages from the API
+        const messages = await leadMessagesApi.getByLead(leadId);
+        console.log("Fetched messages from API:", messages);
+
+        // Only update state if the component is still mounted
+        if (!isMounted) return;
+
+        console.log("Messages format:", messages);
+
+        if (!Array.isArray(messages)) {
+          console.error("Invalid messages format:", messages);
+          return;
+        }
+
+        // Format messages using the API utility
+        const formattedMessages = messages.map((msg) => {
+          // Determine if the message is from the current user (dealer)
+          const isCurrentUser = msg.dealer?.id !== undefined; // Assuming dealer messages have dealer.id
+          return leadMessagesApi.formatMessage(msg, isCurrentUser);
+        });
+
+        console.log("Formatted messages:", formattedMessages);
+
+        // Sort messages by timestamp (oldest first)
+        formattedMessages.sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        setMessages((prev) => ({
+          ...prev,
+          [currentChatId]: formattedMessages,
+        }));
+
+        // Update the chat in the sidebar if it exists
+        if (formattedMessages.length > 0) {
+          setChats((prev) => {
+            const chatIndex = prev.findIndex(
+              (chat) => chat.id === currentChatId
+            );
+
+            if (chatIndex === -1) {
+              console.log("Chat not found in sidebar, adding new one");
+              const lastMessage =
+                formattedMessages[formattedMessages.length - 1];
+              return [
+                {
+                  id: currentChatId,
+                  name: `Lead #${currentChatId}`,
+                  lastMessage:
+                    lastMessage.text.length > 30
+                      ? `${lastMessage.text.substring(0, 30)}...`
+                      : lastMessage.text,
+                  timestamp: lastMessage.timestamp
+                    ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : new Date().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                  avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
+                },
+                ...prev,
+              ];
+            }
+
+            console.log("Updating existing chat in sidebar");
+            const lastMessage = formattedMessages[formattedMessages.length - 1];
+            const updatedChats = [...prev];
+            updatedChats[chatIndex] = {
+              ...updatedChats[chatIndex],
+              lastMessage:
+                lastMessage.text.length > 30
+                  ? `${lastMessage.text.substring(0, 30)}...`
+                  : lastMessage.text,
+              timestamp: lastMessage.timestamp
+                ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+            };
+
+            return updatedChats;
+          });
         }
       } catch (error) {
-        console.error('Failed to fetch lead-messages:', error);
+        console.error("Error loading messages:", error);
+        // Initialize with empty messages if there's an error
+        setMessages((prev) => {
+          const updated = {
+            ...prev,
+            [currentChatId]: [],
+          };
+          console.log("Error loading messages, reset to empty:", updated);
+          return updated;
+        });
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    }
+    };
 
-    fetchMessages();
-  }, [currentChatId, initialLeadId]);
+    loadMessages();
 
-  // Add message to current chat
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [currentChatId]);
+
   const addMessage = useCallback(
     async (text: string) => {
-      if (!currentChatId) return;
+      if (!currentChatId || !text.trim()) {
+        console.log("No current chat ID or empty message");
+        return;
+      }
 
-      const userMessage: Message = {
-        id: Date.now().toString(),
+      const leadId = parseInt(currentChatId, 10);
+      if (isNaN(leadId)) {
+        console.error("Invalid lead ID:", currentChatId);
+        return;
+      }
+
+      const tempMessageId = `temp-${Date.now()}`;
+      const now = new Date();
+
+      // Create a temporary message with a unique ID
+      const tempMessage: Message = {
+        id: tempMessageId,
         text,
-        sender: 'user',
-        timestamp: new Date(),
+        sender: "user",
+        timestamp: now,
+        senderName: "You",
       };
 
-      // Add user message to UI immediately
+      console.log("Adding temporary message:", tempMessage);
+
+      // Update UI optimistically
       setMessages((prev) => {
-        const newMessages = [...(prev[currentChatId] || []), userMessage];
-        return { ...prev, [currentChatId]: newMessages };
+        const currentMessages = prev[currentChatId] || [];
+        const updatedMessages = {
+          ...prev,
+          [currentChatId]: [...currentMessages, tempMessage],
+        };
+        console.log("Updated messages state:", updatedMessages);
+        return updatedMessages;
       });
 
-      setIsLoading(true);
-
       try {
-        // Send POST request to lead-messages API
-        const response = await post('/lead-messages', {
-          leadId: parseInt(currentChatId),
+        console.log("Sending message to server...");
+        const createdMessage = await leadMessagesApi.create({
           content: text,
+          leadId,
         });
 
-        console.log('Message sent successfully:', response);
+        console.log("Server response for create message:", createdMessage);
 
-        // Simulate bot response (remove this if your API handles bot responses)
-        setTimeout(() => {
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            text: `You said: "${text}". I'm just a demo bot! 😊`,
-            sender: 'other',
-            timestamp: new Date(),
-          };
-          setMessages((prev) => {
-            const newMessages = [...(prev[currentChatId] || []), botMessage];
-            return { ...prev, [currentChatId]: newMessages };
-          });
-          setIsLoading(false);
-        }, 1500);
+        if (!createdMessage) {
+          throw new Error("No valid response from server");
+        }
 
-      } catch (error) {
-        console.error('Failed to send message:', error);
-        setIsLoading(false);
-        
-        // Optionally show error message to user
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: 'Failed to send message. Please try again.',
-          sender: 'other',
-          timestamp: new Date(),
-        };
+        // Format the server response
+        const serverMessage = leadMessagesApi.formatMessage(
+          createdMessage,
+          true
+        );
+        console.log("Formatted server message:", serverMessage);
+
+        // Update the message in the UI with the server response
         setMessages((prev) => {
-          const newMessages = [...(prev[currentChatId] || []), errorMessage];
-          return { ...prev, [currentChatId]: newMessages };
+          const currentMessages = prev[currentChatId] || [];
+          const messageIndex = currentMessages.findIndex(
+            (m) => m.id === tempMessageId
+          );
+
+          const updatedMessages = {
+            ...prev,
+            [currentChatId]:
+              messageIndex === -1
+                ? [...currentMessages, serverMessage]
+                : currentMessages.map((msg, idx) =>
+                    idx === messageIndex ? serverMessage : msg
+                  ),
+          };
+
+          console.log(
+            "Updated messages after server response:",
+            updatedMessages
+          );
+          return updatedMessages;
         });
+
+        // Update the chat in the sidebar
+        setChats((prev) => {
+          const chatIndex = prev.findIndex((chat) => chat.id === currentChatId);
+          if (chatIndex === -1) {
+            console.log("Chat not found in sidebar, adding new one");
+            return [
+              {
+                id: currentChatId,
+                name: `Lead #${currentChatId}`,
+                lastMessage:
+                  text.length > 30 ? `${text.substring(0, 30)}...` : text,
+                timestamp: now.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
+              },
+              ...prev,
+            ];
+          }
+
+          console.log("Updating existing chat in sidebar");
+          const updatedChats = [...prev];
+          updatedChats[chatIndex] = {
+            ...updatedChats[chatIndex],
+            lastMessage:
+              text.length > 30 ? `${text.substring(0, 30)}...` : text,
+            timestamp: now.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+
+          // Move the updated chat to the top
+          const [updatedChat] = updatedChats.splice(chatIndex, 1);
+          return [updatedChat, ...updatedChats];
+        });
+      } catch (error) {
+        console.error("Failed to send message:", error);
+
+        // Remove the temporary message on error
+        setMessages((prev) => {
+          const currentMessages = prev[currentChatId] || [];
+          const filteredMessages = currentMessages.filter(
+            (m) => m.id !== tempMessageId
+          );
+
+          const updatedMessages = {
+            ...prev,
+            [currentChatId]: filteredMessages,
+          };
+
+          console.log(
+            "Removed temporary message after error:",
+            updatedMessages
+          );
+          return updatedMessages;
+        });
+
+        // Show error to the user
+        alert(
+          `Failed to send message: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
       }
     },
     [currentChatId]
   );
 
-  // Function to open a chat by leadId programmatically
-  const openLeadChat = (leadId: number) => {
-    const chatId = String(leadId);
-    if (messages[chatId]) setCurrentChatId(chatId);
-    else console.warn('No messages for this lead');
-  };
+  const handleAttach = useCallback(() => {
+    alert("Attachment feature not implemented yet.");
+  }, []);
+
+  const handleSelectChat = useCallback(
+    async (chatId: string) => {
+      console.log("Chat selected:", chatId);
+
+      // Don't do anything if we're already on this chat
+      if (chatId === currentChatId) {
+        return;
+      }
+
+      try {
+        // Update the current chat ID first to show loading state
+        setCurrentChatId(chatId);
+
+        // Initialize with empty messages array for this chat if it doesn't exist
+        setMessages((prev) => ({
+          ...prev,
+          [chatId]: prev[chatId] || [],
+        }));
+
+        // Load messages for the selected chat
+        const leadId = parseInt(chatId, 10);
+        if (Number.isNaN(leadId)) {
+          console.error("Invalid lead ID:", chatId);
+          return;
+        }
+
+        console.log("Fetching messages for lead:", leadId);
+        const messages = await leadMessagesApi.getByLead(leadId);
+
+        if (!Array.isArray(messages)) {
+          console.error("Expected messages to be an array, got:", messages);
+          return;
+        }
+
+        console.log("Raw messages from API:", messages);
+
+        // Get current user ID from localStorage or context
+        let currentUserId: number | null = null;
+        try {
+          const userData = localStorage.getItem("user");
+          if (userData) {
+            const user = JSON.parse(userData);
+            currentUserId = user?.id || null;
+          }
+        } catch (error) {
+          console.error("Error getting current user:", error);
+        }
+
+        // Format messages using the API utility with proper error handling
+        const formattedMessages = messages
+          .map((msg) => {
+            try {
+              if (!msg) return null;
+
+              // Determine if the message is from the current user
+              const isCurrentUser = msg.dealer?.id === currentUserId;
+
+              return leadMessagesApi.formatMessage(msg, isCurrentUser);
+            } catch (error) {
+              console.error("Error formatting message:", error, msg);
+              return null;
+            }
+          })
+          .filter((msg): msg is Message => msg !== null);
+
+        console.log("Formatted messages:", formattedMessages);
+
+        // Sort messages by timestamp (oldest first)
+        const sortedMessages = [...formattedMessages].sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        // Update the messages state
+        setMessages((prev) => ({
+          ...prev,
+          [chatId]: sortedMessages,
+        }));
+      } catch (error) {
+        console.error("Error loading messages for chat:", chatId, error);
+
+        // Ensure we have at least an empty array for this chat
+        setMessages((prev) => ({
+          ...prev,
+          [chatId]: [],
+        }));
+      }
+    },
+    [currentChatId]
+  );
+
+  const handleStartNewChat = useCallback(
+    (leadId: string) => {
+      // Clean the leadId (remove any non-numeric characters)
+      const cleanLeadId = leadId.replace(/\D/g, "");
+
+      if (!cleanLeadId) {
+        console.error("Invalid lead ID");
+        return;
+      }
+
+      // Check if the chat already exists
+      const existingChat = chats.find((chat) => chat.id === cleanLeadId);
+
+      if (existingChat) {
+        // If it exists, just switch to it
+        setCurrentChatId(cleanLeadId);
+        return;
+      }
+
+      // Create a new chat and switch to it
+      setCurrentChatId(cleanLeadId);
+
+      // Add a placeholder chat to the sidebar
+      setChats((prev) => [
+        {
+          id: cleanLeadId,
+          name: `Lead #${cleanLeadId}`,
+          lastMessage: "No messages yet",
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          avatarUrl: `https://ui-avatars.com/api/?name=Lead+${cleanLeadId}&background=3f51b5&color=ffffff&type=png`,
+        },
+        ...prev,
+      ]);
+
+      // Initialize with empty messages for this chat if it doesn't exist
+      setMessages((prev) => ({
+        ...prev,
+        [cleanLeadId]: [],
+      }));
+
+      // Focus the message input after a short delay to ensure it's rendered
+      setTimeout(() => {
+        const messageInput = document.querySelector(
+          'textarea[aria-label="Message"]'
+        ) as HTMLTextAreaElement;
+        messageInput?.focus();
+      }, 100);
+    },
+    [chats]
+  );
+
+  if (isLoading && chats.length === 0) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          width: "100%",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <Box display="flex" height="100vh" bgcolor="#f9fafb">
-      <Sidebar chats={chats} onSelectChat={setCurrentChatId} currentChatId={currentChatId} />
-      <ChatWindow
-        messages={currentChatId ? messages[currentChatId] || [] : []}
-        onSend={addMessage}
-        isLoading={isLoading}
+    <Box
+      sx={{
+        display: "flex",
+        padding: 0,
+        margin: 0,
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      <Sidebar
+        chats={chats}
+        currentChatId={currentChatId || undefined}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleStartNewChat}
       />
+      {currentChatId ? (
+        <ChatWindow
+          messages={messages[currentChatId] || []}
+          onSend={addMessage}
+          isLoading={isLoading}
+          onAttach={handleAttach}
+          currentChatId={currentChatId}
+          leadName={chats.find((chat) => chat.id === currentChatId)?.name}
+        />
+      ) : (
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "background.default",
+            p: 3,
+            textAlign: "center",
+          }}
+        >
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              No chat selected
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Select an existing chat or start a new one
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => {
+                const newLeadId = Math.floor(Math.random() * 1000).toString();
+                handleStartNewChat(newLeadId);
+              }}
+              sx={{ mt: 2 }}
+            >
+              Start New Chat
+            </Button>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }
