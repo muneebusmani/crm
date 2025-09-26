@@ -30,4 +30,6 @@ export interface Lead {
   assigned_to?: string;
   follow_up_date?: Date;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
