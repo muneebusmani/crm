@@ -8,6 +8,9 @@ import { CreateInvoiceDto, InvoiceResponse, InvoiceStatus, LeadStatus } from '@c
 import { Dealer, User } from 'src/user/entities';
 import { CustomError } from 'src/common/custom-error';
 import { DealerLead } from 'src/user/entities/dealer-lead.entity';
+import { MailerService } from '@nestjs-modules/mailer';
+import { PdfService } from 'src/Pdf/pdf-service';
+import { BankDetails } from 'src/bank-details/entities/bank-details.entity';
 
 
 @Injectable()
@@ -27,6 +30,13 @@ export class InvoiceService {
 
     @InjectRepository(DealerLead)
     private readonly dealerLeadRepository: Repository<DealerLead>,
+
+     @InjectRepository(BankDetails)
+    private readonly bankDetailsRepository: Repository<BankDetails>,
+
+     private readonly mailService: MailerService,
+
+ 
   
   ) {}
 
@@ -76,7 +86,7 @@ export class InvoiceService {
 
     const savedInvoice = await this.invoiceRepository.save(invoice);
 
-    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+  
     // Create invoice items
     const invoiceItems = createInvoiceDto.items.map(item => 
       this.invoiceItemRepository.create({
@@ -91,6 +101,39 @@ export class InvoiceService {
 
     await this.invoiceItemRepository.save(invoiceItems);
 
+    const bankDetails = await this.bankDetailsRepository.findOne({
+      where: { user: { id: dealerId } },
+      relations: ['user'],
+    });
+    console.log(bankDetails);
+      //create data for PDF
+      const invoiceData = {
+      invoiceNumber: savedInvoice.invoiceNumber,
+      date: savedInvoice.date,
+      lead: {
+        name: lead.name,
+        email: lead.email
+      },
+      dealer: {
+        name: dealer.name,
+        email: dealer.email,
+      },
+      items: invoiceItems,
+      subTotal,
+      taxAmount: savedInvoice.taxAmount,
+      grandTotal: savedInvoice.grandTotal,
+      bank: bankDetails || null,
+    };
+
+    this.mailService.sendMail({
+        to: lead.email, // 👈 you must have dealer.email field
+        subject: `Invoice #${invoice.invoiceNumber}`,
+        template: 'invoice-pdf', // file: templates/quotation.hbs
+        context: {
+          invoiceData
+        },
+      });
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
     // Return complete invoice
     return invoice;
   }
