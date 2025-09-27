@@ -60,7 +60,7 @@ export default function ChatInput({
     >
       <Tooltip title="Attach file">
         <span>
-<Tooltip title="Attach file">
+          <Tooltip title="Attach file">
             <span>
               <IconButton
                 onClick={onAttach}
