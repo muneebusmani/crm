@@ -1,5 +1,11 @@
 // src/leads/dto/create-lead.dto.ts
-import { IsOptional, IsString, IsEmail, IsPhoneNumber, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEmail,
+  IsPhoneNumber,
+  IsDateString,
+} from 'class-validator';
 
 export class CreateLeadDto {
   @IsOptional()

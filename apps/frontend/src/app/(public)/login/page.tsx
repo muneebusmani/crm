@@ -5,16 +5,16 @@ import {
   CssBaseline,
   TextField,
   Typography,
-} from "@mui/material";
-import Image from "next/image";
-import { loginAction } from "@/actions/loginAction";
+} from '@mui/material';
+import Image from 'next/image';
+import { loginAction } from '@/actions/loginAction';
 
 const Logo = () => (
   <Box
     sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
       mb: 4,
     }}
   >
@@ -23,7 +23,7 @@ const Logo = () => (
       alt="Engine Finders Logo"
       width={180}
       height={180}
-      style={{ objectFit: "contain" }}
+      style={{ objectFit: 'contain' }}
     />
   </Box>
 );
@@ -34,13 +34,13 @@ export default function LoginPage() {
       <CssBaseline />
       <Box
         sx={{
-          minHeight: "100vh",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "relative",
+          minHeight: '100vh',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
         }}
       >
         {/* Background Image */}
@@ -48,14 +48,14 @@ export default function LoginPage() {
           src="/images/garage_background_1.jpg" // Placeholder background image
           alt="Garage background"
           fill
-          style={{ objectFit: "cover" }}
+          style={{ objectFit: 'cover' }}
           priority
         />
 
         {/* Overlay to darken background slightly */}
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
@@ -65,13 +65,13 @@ export default function LoginPage() {
         />
 
         {/* Login Card */}
-        <Container maxWidth="xl" sx={{ position: "relative", zIndex: 2 }}>
+        <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 2 }}>
           <Box
             sx={{
               p: 4,
               borderRadius: 2,
               boxShadow: 24,
-              bgcolor: "white",
+              bgcolor: 'white',
               maxWidth: 400,
             }}
           >

@@ -30,7 +30,7 @@ export class AuthController {
     const { user, accessToken } = await this.authService.login(dto);
     console.log(user);
     return {
-      data: user,
+      user,
       accessToken,
     };
   }
@@ -42,7 +42,7 @@ export class AuthController {
   async register(@Body() dto: RegisterDto): Promise<Register> {
     const { user, accessToken } = await this.authService.register(dto);
     return {
-      data : user,
+      user,
       accessToken,
     };
   }

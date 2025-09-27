@@ -11,7 +11,7 @@ import {
   Info as InfoIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import ChatIcon from "@mui/icons-material/Chat";
+import ChatIcon from '@mui/icons-material/Chat';
 
 import {
   Alert,
@@ -39,14 +39,14 @@ import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
-import { useRouter } from "next/navigation";  // ✅ App Router hook
+import { useRouter } from 'next/navigation'; // ✅ App Router hook
 
 const LeadsTable: React.FC = () => {
-   const router = useRouter();
-    const handleOpenChat = (leadId: number) => {
-      router.push(`/dealer/messages?leadId=${leadId}`);
-    };
- 
+  const router = useRouter();
+  const handleOpenChat = (leadId: number) => {
+    router.push(`/dealer/messages?leadId=${leadId}`);
+  };
+
   const theme = useTheme();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -184,29 +184,34 @@ const LeadsTable: React.FC = () => {
         setSelectedLead(lead);
         setOpenEmailDialog(true);
         break;
-        
+
       case 'edit':
         setSelectedLead(lead);
         setOpenEditDialog(true);
         break;
-        
+
       case 'info': {
         // Set the selected lead with basic info
         setSelectedLead(lead);
         setOpenInfoDialog(true);
-        
+
         // Load detailed info in the background
-        if (!lead.email || !lead.vehicle_brand) { // Only fetch if we don't have basic details
+        if (!lead.email || !lead.vehicle_brand) {
+          // Only fetch if we don't have basic details
           try {
             setIsInfoDialogLoading(true);
             const detailedLead = await fetchLeadById(lead.id!);
             if (detailedLead) {
-              setSelectedLead(prev => ({
+              setSelectedLead((prev) => ({
                 ...prev,
                 ...detailedLead,
                 // Preserve any existing fields that might be missing in the detailed response
-                ...(prev?.name && !detailedLead.name ? { name: prev.name } : {}),
-                ...(prev?.email && !detailedLead.email ? { email: prev.email } : {}),
+                ...(prev?.name && !detailedLead.name
+                  ? { name: prev.name }
+                  : {}),
+                ...(prev?.email && !detailedLead.email
+                  ? { email: prev.email }
+                  : {}),
               }));
             }
           } catch (error) {
@@ -217,7 +222,7 @@ const LeadsTable: React.FC = () => {
         }
         break;
       }
-      
+
       default:
         break;
     }
@@ -524,7 +529,6 @@ const LeadsTable: React.FC = () => {
                         onClick={() => handleLeadDelete(lead.id!)}
                         title="Delete"
                       >
-                     
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>

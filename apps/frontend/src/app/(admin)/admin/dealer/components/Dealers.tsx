@@ -1703,8 +1703,9 @@ import { type ChangeEvent, useEffect, useState } from 'react';
 import AddDealerDialog from './AddDealerDialog';
 import type { Dealer } from '@crm/types';
 import * as api from '@/lib/api';
+import axios from 'axios';
 
-const Dealers = () => {
+const Dealers = ({ token }: { token: string }) => {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [dealers, setDealers] = useState<Dealer[]>([]);
@@ -1791,14 +1792,15 @@ const Dealers = () => {
       formData.append('contactEmail', data.contactEmail);
       if (data.tierId) formData.append('tierId', data.tierId.toString());
 
-      const { data: newDealer } = await api.post(
-        '/dealers',
+      const { data: newDealer } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/dealers`,
         formData,
-        //   {
-        //   headers: {
-        //     "Content-Type": "multipart/form-data",
-        //   },
-        // }
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token} `,
+          },
+        },
       );
 
       setDealers([...(dealers as any), newDealer as any]);
@@ -2007,7 +2009,7 @@ const Dealers = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: 5 }}>
       {/* Top Controls */}
       <Box
         sx={{

@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common'
-import { ActivityLogService } from 'src/activity-log/activity-log.service'
+import { Injectable } from '@nestjs/common';
+import { ActivityLogService } from 'src/activity-log/activity-log.service';
 
 @Injectable()
 export class ActivityLogger {
@@ -18,6 +18,6 @@ export class ActivityLogger {
       entity,
       entity_id: entityId,
       description,
-    })
+    });
   }
 }

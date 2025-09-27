@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { AttachFile, Close, Message } from "@mui/icons-material";
+import { AttachFile, Close, Message } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -18,8 +18,8 @@ import {
   TextField,
   Typography,
   useTheme,
-} from "@mui/material";
-import { useState } from "react";
+} from '@mui/material';
+import { useState } from 'react';
 
 interface LeadMessageDialogProps {
   open: boolean;
@@ -43,8 +43,8 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
   onMessageSent,
 }) => {
   const theme = useTheme();
-  const [message, setMessage] = useState("");
-  const [channel, setChannel] = useState("sms");
+  const [message, setMessage] = useState('');
+  const [channel, setChannel] = useState('sms');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
 
@@ -59,7 +59,7 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
     // Simulate sending delay
     setTimeout(() => {
       setIsSending(false);
-      setMessage("");
+      setMessage('');
       setAttachments([]);
       onClose();
     }, 1500);
@@ -81,12 +81,12 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
       <DialogTitle>
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Message color="primary" />
             <Typography variant="h6">Send Message to {lead.name}</Typography>
           </Box>
@@ -101,7 +101,7 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
       <DialogContent>
         <Box sx={{ py: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
-            Recipient:{" "}
+            Recipient:{' '}
             <strong>
               {lead.name} ({lead.phone})
             </strong>
@@ -139,7 +139,7 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
               <Typography variant="subtitle2" gutterBottom>
                 Attachments:
               </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {attachments.map((file, index) => (
                   <Chip
                     key={file.name}
@@ -172,8 +172,8 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              <strong>Message Preview:</strong>{" "}
-              {message || "No message content"}
+              <strong>Message Preview:</strong>{' '}
+              {message || 'No message content'}
             </Typography>
             {attachments.length > 0 && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -196,10 +196,10 @@ const LeadMessageDialog: React.FC<LeadMessageDialogProps> = ({
           startIcon={<Message />}
           sx={{
             backgroundColor: theme.palette.primary.main,
-            "&:hover": { backgroundColor: theme.palette.primary.dark },
+            '&:hover': { backgroundColor: theme.palette.primary.dark },
           }}
         >
-          {isSending ? "Sending..." : "Send Message"}
+          {isSending ? 'Sending...' : 'Send Message'}
         </Button>
       </DialogActions>
     </Dialog>

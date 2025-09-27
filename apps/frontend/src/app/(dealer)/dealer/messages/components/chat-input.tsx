@@ -1,11 +1,20 @@
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import SendIcon from '@mui/icons-material/Send'
-import { Box, CircularProgress, IconButton, TextField, Tooltip, useTheme } from '@mui/material'
-import { useState } from 'react'
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import SendIcon from '@mui/icons-material/Send';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Tooltip,
+  useTheme,
+} from '@mui/material';
+import { useState } from 'react';
 
 interface ChatInputProps {
   onSend: (text: string) => void | Promise<void>;
   onAttach: () => void;
+  onRequestQuote: () => void;
   disabled?: boolean;
   isSending?: boolean;
 }
@@ -13,11 +22,12 @@ interface ChatInputProps {
 export default function ChatInput({
   onSend,
   onAttach,
+  onRequestQuote,
   disabled = false,
   isSending = false,
 }: ChatInputProps) {
-  const [inputValue, setInputValue] = useState('')
-  const theme = useTheme()
+  const [inputValue, setInputValue] = useState('');
+  const theme = useTheme();
 
   const handleSend = async () => {
     const trimmedValue = inputValue.trim();
@@ -29,14 +39,14 @@ export default function ChatInput({
         console.error('Failed to send message:', error);
       }
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   return (
     <Box
@@ -50,19 +60,40 @@ export default function ChatInput({
     >
       <Tooltip title="Attach file">
         <span>
-          <IconButton
-            onClick={onAttach}
-            disabled={disabled || isSending}
-            sx={{
-              color: theme.palette.text.secondary,
-              marginRight: 1,
-              '&:disabled': {
-                opacity: 0.5,
-              },
-            }}
-          >
-            <AttachFileIcon />
-          </IconButton>
+<Tooltip title="Attach file">
+            <span>
+              <IconButton
+                onClick={onAttach}
+                disabled={disabled || isSending}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  marginRight: 1,
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                }}
+              >
+                <AttachFileIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Send Quotation">
+            <span>
+              <IconButton
+                onClick={onRequestQuote}
+                disabled={disabled || isSending}
+                sx={{
+                  color: theme.palette.success.main,
+                  marginRight: 1,
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                }}
+              >
+                <RequestQuoteIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
         </span>
       </Tooltip>
 
@@ -134,5 +165,5 @@ export default function ChatInput({
         </span>
       </Tooltip>
     </Box>
-  )
+  );
 }

@@ -1,5 +1,11 @@
 import { UserType, UserStatus } from '@crm/types';
-import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('user')
 export class User {
@@ -25,7 +31,7 @@ export class User {
   })
   type!: UserType;
 
-    @Column({
+  @Column({
     type: 'enum',
     enum: UserStatus,
     default: UserStatus.ACTIVE,
@@ -42,7 +48,6 @@ export class User {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   resetPasswordToken!: string | null;
-
 
   @Column({ type: 'timestamptz', nullable: true })
   resetPasswordExpires!: Date | null;

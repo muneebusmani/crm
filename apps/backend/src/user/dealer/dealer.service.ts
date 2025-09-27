@@ -5,7 +5,7 @@ import {
   type UpdateUserDto,
   type CreateQuotationDto,
   type UpdateQuotationDto,
-  UserType
+  UserType,
 } from '@crm/types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,7 +14,7 @@ import { Repository } from 'typeorm';
 import { DealerTier } from '../entities/dealer-tier.entity';
 import { User } from '../entities/user.entity';
 import { Quotation } from '../../user/entities/quotation.entity';
-import { Dealer } from '../../user/entities/dealer.entity';  // 👈 direct import is fine, but relation must be wrapped
+import { Dealer } from '../../user/entities/dealer.entity'; // 👈 direct import is fine, but relation must be wrapped
 
 import { CustomError } from 'src/common/custom-error';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -27,7 +27,6 @@ import type { Multer } from 'multer';
 import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 
-
 @Injectable()
 export class DealerService {
   constructor(
@@ -38,8 +37,6 @@ export class DealerService {
 
     @InjectRepository(Lead)
     private leadRepository: Repository<Lead>,
-
-
 
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
@@ -54,12 +51,13 @@ export class DealerService {
     private leadMessageRepository: Repository<LeadMessage>,
 
     private readonly mailService: MailerService,
-    private readonly configService: ConfigService,   // 👈 inject here
+    private readonly configService: ConfigService, // 👈 inject here
+  ) {}
 
-
-  ) { }
-
-  async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
+  async createDealer(
+    dto: Omit<CreateDealerDto, 'logo'>,
+    logoFile?: Multer.File,
+  ) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     // Save user
@@ -77,7 +75,7 @@ export class DealerService {
       // Make filename URL-safe
       const ext = extname(logoFile.originalname); // e.g., .jpeg
       const baseName = basename(logoFile.originalname, ext) // removes extension
-        .replace(/\s+/g, '-')     // replace spaces
+        .replace(/\s+/g, '-') // replace spaces
         .replace(/[^\w\-]/g, ''); // remove special chars
 
       const filename = `${Date.now()}-${baseName}${ext}`; // Add extension once
@@ -97,7 +95,9 @@ export class DealerService {
     // Handle dealer tier
     let dealerTier: DealerTier | null = null;
     if (dto.tierId) {
-      dealerTier = await this.dealerTierRepository.findOne({ where: { id: dto.tierId } });
+      dealerTier = await this.dealerTierRepository.findOne({
+        where: { id: dto.tierId },
+      });
     }
 
     // Save dealer
@@ -195,7 +195,8 @@ export class DealerService {
     if (dto.owner !== undefined) updateDealer.owner = dto.owner;
     if (dto.location !== undefined) updateDealer.location = dto.location;
     if (dto.website !== undefined) updateDealer.website = dto.website;
-    if (dto.contactEmail !== undefined) updateDealer.contactEmail = dto.contactEmail;
+    if (dto.contactEmail !== undefined)
+      updateDealer.contactEmail = dto.contactEmail;
     if (dto.tierId !== undefined) updateDealer.tierId = dto.tierId;
     updateDealer['logo'] = logoUrl;
 
@@ -209,7 +210,6 @@ export class DealerService {
       relations: ['dealer', 'dealer.tier'],
     });
   }
-
 
   async deleteDealer(id: number) {
     const user = await this.userRepository.findOne({
@@ -230,25 +230,28 @@ export class DealerService {
 
   async createQuotation(dto: CreateQuotationDto, delaerId: number) {
     try {
-
-      const dealer = await this.userRepository.findOne({ where: { id: delaerId } });
+      const dealer = await this.userRepository.findOne({
+        where: { id: delaerId },
+      });
       if (!dealer) {
         throw new Error('Dealer not found');
       }
-      const lead = await this.leadRepository.findOne({ where: { id: dto.leadId } });
+      const lead = await this.leadRepository.findOne({
+        where: { id: dto.leadId },
+      });
       if (!lead) {
         throw new Error('Lead not found');
       }
 
-        const quotation = this.quotationRepository.create({
-          engineCodeName : lead.engine_code,
-          dealershipName : dealer.name,
-          quotationPrice : dto.quotationPrice,
-          message : dto.message,
-          subject : dto.subject,
-          dealer,
-          lead,
-        });
+      const quotation = this.quotationRepository.create({
+        engineCodeName: lead.engine_code,
+        dealershipName: dealer.name,
+        quotationPrice: dto.quotationPrice,
+        message: dto.message,
+        subject: dto.subject,
+        dealer,
+        lead,
+      });
 
       const result = await this.quotationRepository.save(quotation);
       this.mailService.sendMail({
@@ -260,21 +263,26 @@ export class DealerService {
           engineCodeName: result.engineCodeName,
           quotationId: result.id,
           quotationPrice: result.quotationPrice,
-          message: result.message
+          message: result.message,
         },
       });
-      await this.ensureDealerLead(dto.leadId, delaerId!, LeadStatus.QUOTATION_SENT);
+      await this.ensureDealerLead(
+        dto.leadId,
+        delaerId!,
+        LeadStatus.QUOTATION_SENT,
+      );
       await this.leadMessage(lead.id, dealer.id, dto.message);
       return result;
-    }
-    catch (error: unknown) {
+    } catch (error: unknown) {
       throw new CustomError('Unable to create lead' + error);
     }
   }
 
   async forgotPassword(email: string) {
-    const dealer = await this.userRepository.findOne({ where: { email: email, type: UserType.DEALER } });
-    if (!dealer) throw new NotFoundException("Dealer not found"); // don't reveal
+    const dealer = await this.userRepository.findOne({
+      where: { email: email, type: UserType.DEALER },
+    });
+    if (!dealer) throw new NotFoundException('Dealer not found'); // don't reveal
     try {
       const token = crypto.randomBytes(32).toString('hex');
       dealer.resetPasswordToken = token;
@@ -283,7 +291,7 @@ export class DealerService {
 
       const resetLink = `${this.configService.get('FRONTEND_URL')}/reset-password/${token}`;
       this.mailService.sendMail({
-        to: "alamhamza873@gmail.com",
+        to: 'alamhamza873@gmail.com',
         subject: 'Reset your password',
         template: 'forgot-password', // templates/forgot-password.hbs
         context: {
@@ -292,8 +300,7 @@ export class DealerService {
         },
       });
       return dealer;
-    }
-    catch (error: unknown) {
+    } catch (error: unknown) {
       throw new CustomError('Unable to forgot password');
     }
   }
@@ -307,8 +314,11 @@ export class DealerService {
         },
       });
 
-
-      if (!dealer || !dealer.resetPasswordExpires || dealer.resetPasswordExpires < new Date()) {
+      if (
+        !dealer ||
+        !dealer.resetPasswordExpires ||
+        dealer.resetPasswordExpires < new Date()
+      ) {
         throw new Error('Invalid or expired token');
       }
 
@@ -316,8 +326,7 @@ export class DealerService {
       dealer.resetPasswordToken = null;
       dealer.resetPasswordExpires = null;
       return await this.userRepository.save(dealer);
-    }
-    catch (error: unknown) {
+    } catch (error: unknown) {
       throw new CustomError('Unable to reset password');
     }
   }
@@ -342,7 +351,11 @@ export class DealerService {
    * Ensure dealer_leads pivot entry exists for dealer+lead.
    * If not, create it with status=open.
    */
-  private async ensureDealerLead(leadId: number, dealerId: number, status: string) {
+  private async ensureDealerLead(
+    leadId: number,
+    dealerId: number,
+    status: string,
+  ) {
     // check if already exists
 
     const existing = await this.dealerLeadRepository.findOne({
@@ -350,12 +363,12 @@ export class DealerService {
       relations: ['dealer', 'lead'],
     });
 
-
     if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOneBy({ id: dealerId });
-    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+    if (!dealer)
+      throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
@@ -370,33 +383,29 @@ export class DealerService {
     return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
   }
 
-
-   private async leadMessage(leadId: number, dealerId: number, content: string) {
+  private async leadMessage(leadId: number, dealerId: number, content: string) {
     // check if already exists
 
     const existing = await this.leadMessageRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }},
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
       relations: ['dealer', 'lead'],
     });
-
 
     if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOneBy({ id: dealerId });
-    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+    if (!dealer)
+      throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
-   const message = this.leadMessageRepository.create({
-        content: content,
-        dealer,
-        lead,
-      });
-      return await  this.leadMessageRepository.save(message);
+    const message = this.leadMessageRepository.create({
+      content: content,
+      dealer,
+      lead,
+    });
+    return await this.leadMessageRepository.save(message);
   }
-
-
-
 }
