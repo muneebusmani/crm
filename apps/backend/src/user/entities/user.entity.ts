@@ -59,4 +59,7 @@ export class User {
   @OneToMany('LeadMessage', 'dealer')
   messages!: any[];
 
+  @OneToMany('BankDetails', 'user')
+  bankDetails!: any[];
+
 }

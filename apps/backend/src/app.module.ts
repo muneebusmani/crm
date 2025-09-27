@@ -13,6 +13,7 @@ import { LeadMessageModule } from './leads-messages/lead-message.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
 import { InvoiceModule } from './invoices/invocie.module';
+import { BankDeatil } from './bank-details/bank-detail.module';
 
 @Module({
   imports: [
@@ -42,7 +43,8 @@ import { InvoiceModule } from './invoices/invocie.module';
     ActivityLogModule,
     LeadMessageModule,
     AnalyticsModule,
-    InvoiceModule
+    InvoiceModule,
+    BankDeatil
   ],
   controllers: [AppController],
   providers: [
