@@ -135,7 +135,7 @@ COPY --from=builder /app/apps/frontend/.next/static ./.next/static
 COPY --from=builder /app/apps/frontend/public ./public
 
 EXPOSE 3000
-CMD ["node", "apps/frontend/server.js"]
+CMD ["node", "server.js"]
 
 
 # --- backend runtime ---
