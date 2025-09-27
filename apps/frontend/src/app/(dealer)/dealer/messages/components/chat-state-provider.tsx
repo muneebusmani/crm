@@ -1,15 +1,13 @@
-"use client";
+'use client';
 
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { leadMessagesApi } from "@/services/lead-messages.service";
-import { leadsApi } from "@/services/leads.service";
-import type { Message } from "@dealer/types/chat";
-
-import ChatWindow from "./chat-window";
-import Sidebar from "./chat-sidebar";
+import type { Message } from '@dealer/types/chat';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { leadMessagesApi } from '@/services/lead-messages.service';
+import { leadsApi } from '@/services/leads.service';
+import Sidebar from './chat-sidebar';
+import ChatWindow from './chat-window';
 
 interface Chat {
   id: string;
@@ -19,9 +17,13 @@ interface Chat {
   avatarUrl: string;
 }
 
-export default function ChatStateProvider() {
+export default function ChatStateProvider({
+  dealerName,
+}: {
+  dealerName: string;
+}) {
   const searchParams = useSearchParams();
-  const leadIdParam = searchParams?.get("leadId");
+  const leadIdParam = searchParams?.get('leadId');
 
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [chats, setChats] = useState<Chat[]>([]);
@@ -39,7 +41,7 @@ export default function ChatStateProvider() {
         const leadId = parseInt(leadIdParam, 10);
 
         if (Number.isNaN(leadId)) {
-          console.error("Invalid lead ID in URL:", leadIdParam);
+          console.error('Invalid lead ID in URL:', leadIdParam);
           return;
         }
 
@@ -60,19 +62,19 @@ export default function ChatStateProvider() {
           const leadName = lead?.name || `Lead #${leadId}`;
           const vehicleInfo = [lead?.vehicle_brand, lead?.vehicle_model]
             .filter(Boolean)
-            .join(" ");
+            .join(' ');
 
           // Add the chat to the sidebar
           const newChat = {
             id: leadIdParam,
             name: leadName,
-            lastMessage: vehicleInfo || "No messages yet",
+            lastMessage: vehicleInfo || 'No messages yet',
             timestamp: new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
+              hour: '2-digit',
+              minute: '2-digit',
             }),
             avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              leadName
+              leadName,
             )}&background=3f51b5&color=ffffff&type=png`,
           };
 
@@ -81,21 +83,21 @@ export default function ChatStateProvider() {
         } catch (error: unknown) {
           if (error instanceof Error) {
             console.warn(
-              `Lead with ID ${leadId} not found, creating chat with minimal info: ${error.message}`
+              `Lead with ID ${leadId} not found, creating chat with minimal info: ${error.message}`,
             );
           } else {
             console.warn(
-              `Lead with ID ${leadId} not found, creating chat with minimal info`
+              `Lead with ID ${leadId} not found, creating chat with minimal info`,
             );
           }
           // Create a basic chat entry even if we can't fetch lead details
           const newChat = {
             id: leadIdParam,
             name: `Lead #${leadId}`,
-            lastMessage: "No messages yet",
+            lastMessage: 'No messages yet',
             timestamp: new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
+              hour: '2-digit',
+              minute: '2-digit',
             }),
             avatarUrl: `https://ui-avatars.com/api/?name=Lead+${leadId}&background=3f51b5&color=ffffff&type=png`,
           };
@@ -105,7 +107,7 @@ export default function ChatStateProvider() {
         }
       } catch (error: unknown) {
         if (error instanceof Error) {
-          console.error("Error handling lead parameter:", error.message);
+          console.error('Error handling lead parameter:', error.message);
         }
       } finally {
         setHasCheckedLeadParam(true);
@@ -122,14 +124,12 @@ export default function ChatStateProvider() {
       try {
         setIsLoading(true);
 
-        console.log("Fetching all messages...");
         // Fetch all messages to build the chat history
         const response = await leadMessagesApi.getAll();
-        console.log("API Response:", response);
 
         // Handle case where response is not an array
         if (!Array.isArray(response)) {
-          console.error("Invalid messages format:", response);
+          console.error('Invalid messages format:', response);
           setChats([]);
           return;
         }
@@ -157,13 +157,13 @@ export default function ChatStateProvider() {
             const sortedMessages = [...messages].sort(
               (a, b) =>
                 new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
+                new Date(a.createdAt).getTime(),
             );
 
             const lastMessage = sortedMessages[0];
             const leadName = lastMessage.lead?.name || `Lead #${leadId}`;
             const safeLeadName =
-              typeof leadName === "string" ? leadName : `Lead #${leadId}`;
+              typeof leadName === 'string' ? leadName : `Lead #${leadId}`;
 
             return {
               id: leadId,
@@ -174,18 +174,18 @@ export default function ChatStateProvider() {
                   : lastMessage.content,
               timestamp: lastMessage.createdAt
                 ? new Date(lastMessage.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })
                 : new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                    hour: '2-digit',
+                    minute: '2-digit',
                   }),
               avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                safeLeadName
+                safeLeadName,
               )}&background=3f51b5&color=ffffff&type=png`,
             };
-          }
+          },
         );
 
         setChats(chatList);
@@ -195,7 +195,7 @@ export default function ChatStateProvider() {
         //   setCurrentChatId(chatList[0].id);
         // }
       } catch (error: unknown) {
-        console.error("Failed to load chats:", error);
+        console.error('Failed to load chats:', error);
         setChats([]);
       } finally {
         setIsLoading(false);
@@ -215,11 +215,9 @@ export default function ChatStateProvider() {
         setIsLoading(true);
         const leadId = parseInt(currentChatId, 10);
         if (Number.isNaN(leadId)) {
-          console.error("Invalid lead ID");
+          console.error('Invalid lead ID');
           return;
         }
-
-        console.log(`Loading messages for lead ${leadId}...`);
 
         // Initialize with empty messages array for this chat
         setMessages((prev) => ({
@@ -229,15 +227,12 @@ export default function ChatStateProvider() {
 
         // Fetch messages from the API
         const messages = await leadMessagesApi.getByLead(leadId);
-        console.log("Fetched messages from API:", messages);
 
         // Only update state if the component is still mounted
         if (!isMounted) return;
 
-        console.log("Messages format:", messages);
-
         if (!Array.isArray(messages)) {
-          console.error("Invalid messages format:", messages);
+          console.error('Invalid messages format:', messages);
           return;
         }
 
@@ -248,12 +243,10 @@ export default function ChatStateProvider() {
           return leadMessagesApi.formatMessage(msg, isCurrentUser);
         });
 
-        console.log("Formatted messages:", formattedMessages);
-
         // Sort messages by timestamp (oldest first)
         formattedMessages.sort(
           (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
 
         setMessages((prev) => ({
@@ -261,7 +254,7 @@ export default function ChatStateProvider() {
           [currentChatId]: formattedMessages,
         }));
       } catch (error) {
-        console.error("Error loading messages:", error);
+        console.error('Error loading messages:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -277,39 +270,69 @@ export default function ChatStateProvider() {
   }, [currentChatId]);
 
   const handleAttach = useCallback(() => {
-    alert("Attachment feature not implemented yet.");
+    // TODO: Implement file attachment functionality
+    console.log('Attach file clicked');
   }, []);
 
   // Handle sending a new message
-  const handleSendMessage = useCallback(async (text: string) => {
-    if (!currentChatId || !text.trim()) return;
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!currentChatId) return;
 
-    try {
-      const leadId = parseInt(currentChatId, 10);
-      if (Number.isNaN(leadId)) {
-        console.error("Invalid lead ID");
-        return;
+      // Create a temporary message for optimistic update
+      const tempId = `temp-${Date.now()}`;
+      const tempMessage: Message = {
+        id: tempId,
+        content,
+        sender: 'user',
+        createdAt: new Date().toISOString(),
+        type: 'message',
+        senderName: 'You',
+      };
+
+      // Optimistically update the UI
+      setMessages((prev) => ({
+        ...prev,
+        [currentChatId]: [...(prev[currentChatId] || []), tempMessage],
+      }));
+
+      try {
+        // Send the message to the server
+        const response = await leadMessagesApi.create({
+          content,
+          leadId: parseInt(currentChatId, 10),
+        });
+
+        // Replace the temporary message with the server response
+        setMessages((prev) => {
+          const currentMessages = prev[currentChatId] || [];
+          const updatedMessages = currentMessages.map((msg) =>
+            msg.id === tempId
+              ? leadMessagesApi.formatMessage(response, true)
+              : msg,
+          );
+          return {
+            ...prev,
+            [currentChatId]: updatedMessages,
+          };
+        });
+      } catch (error) {
+        console.error('Error sending message:', error);
+        // Revert optimistic update on error
+        setMessages((prev) => ({
+          ...prev,
+          [currentChatId]: (prev[currentChatId] || []).filter(
+            (msg) => msg.id !== tempId,
+          ),
+        }));
+        // TODO: Show error to user
       }
-
-      // Use the create method to send a new message
-      await leadMessagesApi.create({
-        leadId,
-        content: text,
-        isFromDealer: true,
-      });
-
-      // The message will be added to the UI through the WebSocket or by refreshing the messages
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      // Show error to the user
-      alert("Failed to send message. Please try again.");
-    }
-  }, [currentChatId]);
+    },
+    [currentChatId],
+  );
 
   const handleSelectChat = useCallback(
     async (chatId: string) => {
-      console.log("Chat selected:", chatId);
-
       // Don't do anything if we're already on this chat
       if (chatId === currentChatId) {
         return;
@@ -328,30 +351,27 @@ export default function ChatStateProvider() {
         // Load messages for the selected chat
         const leadId = parseInt(chatId, 10);
         if (Number.isNaN(leadId)) {
-          console.error("Invalid lead ID:", chatId);
+          console.error('Invalid lead ID:', chatId);
           return;
         }
 
-        console.log("Fetching messages for lead:", leadId);
         const messages = await leadMessagesApi.getByLead(leadId);
 
         if (!Array.isArray(messages)) {
-          console.error("Expected messages to be an array, got:", messages);
+          console.error('Expected messages to be an array, got:', messages);
           return;
         }
-
-        console.log("Raw messages from API:", messages);
 
         // Get current user ID from localStorage or context
         let currentUserId: number | null = null;
         try {
-          const userData = localStorage.getItem("user");
+          const userData = localStorage.getItem('user');
           if (userData) {
             const user = JSON.parse(userData);
             currentUserId = user?.id || null;
           }
         } catch (error) {
-          console.error("Error getting current user:", error);
+          console.error('Error getting current user:', error);
         }
 
         // Format messages using the API utility with proper error handling
@@ -365,18 +385,16 @@ export default function ChatStateProvider() {
 
               return leadMessagesApi.formatMessage(msg, isCurrentUser);
             } catch (error) {
-              console.error("Error formatting message:", error, msg);
+              console.error('Error formatting message:', error, msg);
               return null;
             }
           })
           .filter((msg): msg is Message => msg !== null);
 
-        console.log("Formatted messages:", formattedMessages);
-
-        // Sort messages by timestamp (oldest first)
+        // Sort messages by createdAt (oldest first)
         const sortedMessages = [...formattedMessages].sort(
           (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
 
         // Update the messages state
@@ -385,7 +403,7 @@ export default function ChatStateProvider() {
           [chatId]: sortedMessages,
         }));
       } catch (error) {
-        console.error("Error loading messages for chat:", chatId, error);
+        console.error('Error loading messages for chat:', chatId, error);
 
         // Ensure we have at least an empty array for this chat
         setMessages((prev) => ({
@@ -394,7 +412,7 @@ export default function ChatStateProvider() {
         }));
       }
     },
-    [currentChatId]
+    [currentChatId],
   );
 
   const handleStartNewChat = useCallback(
@@ -405,13 +423,13 @@ export default function ChatStateProvider() {
         email?: string;
         vehicle_brand?: string;
         vehicle_model?: string;
-      }
+      },
     ) => {
       // Clean the leadId (remove any non-numeric characters)
-      const cleanLeadId = leadId.replace(/\D/g, "");
+      const cleanLeadId = leadId.replace(/\D/g, '');
 
       if (!cleanLeadId) {
-        console.error("Invalid lead ID");
+        console.error('Invalid lead ID');
         return;
       }
 
@@ -431,20 +449,20 @@ export default function ChatStateProvider() {
       const leadName = leadData?.name || `Lead #${cleanLeadId}`;
       const vehicleInfo = [leadData?.vehicle_brand, leadData?.vehicle_model]
         .filter(Boolean)
-        .join(" ");
+        .join(' ');
 
       // Add a placeholder chat to the sidebar
       setChats((prev) => [
         {
           id: cleanLeadId,
           name: leadName,
-          lastMessage: vehicleInfo || "No messages yet",
+          lastMessage: vehicleInfo || 'No messages yet',
           timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: '2-digit',
+            minute: '2-digit',
           }),
           avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            leadName
+            leadName,
           )}&background=3f51b5&color=ffffff&type=png`,
         },
         ...prev,
@@ -459,23 +477,23 @@ export default function ChatStateProvider() {
       // Focus the message input after a short delay to ensure it's rendered
       setTimeout(() => {
         const messageInput = document.querySelector(
-          'textarea[aria-label="Message"]'
+          'textarea[aria-label="Message"]',
         ) as HTMLTextAreaElement;
         messageInput?.focus();
       }, 100);
     },
-    [chats]
+    [chats],
   );
 
   if (isLoading && chats.length === 0) {
     return (
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          width: "100%",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          width: '100%',
         }}
       >
         <CircularProgress />
@@ -486,11 +504,11 @@ export default function ChatStateProvider() {
   return (
     <Box
       sx={{
-        display: "flex",
+        display: 'flex',
         padding: 0,
         margin: 0,
-        width: "100%",
-        height: "100%",
+        width: '100%',
+        height: '100%',
       }}
     >
       <Sidebar
@@ -510,18 +528,19 @@ export default function ChatStateProvider() {
           }}
           currentChatId={currentChatId}
           leadName={chats.find((chat) => chat.id === currentChatId)?.name}
+          dealerName={dealerName}
         />
       ) : (
         <Box
           sx={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "background.default",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'background.default',
             p: 3,
-            textAlign: "center",
+            textAlign: 'center',
           }}
         >
           <Box>

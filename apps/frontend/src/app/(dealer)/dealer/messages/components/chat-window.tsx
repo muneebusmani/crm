@@ -21,6 +21,7 @@ interface ChatWindowProps {
   onRequestQuote: () => void;
   currentChatId?: string | null;
   leadName?: string;
+  dealerName: string;
 }
 
 export default function ChatWindow({
@@ -31,11 +32,14 @@ export default function ChatWindow({
   onRequestQuote,
   currentChatId,
   leadName,
+  dealerName,
 }: ChatWindowProps) {
-  console.log('Rendering ChatWindow with messages:', messages);
+  console.log('messages object in chat window ===>', messages);
   const [isSending, setIsSending] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
-  const [quotationStatus, setQuotationStatus] = useState<Record<string, 'pending' | 'accepted' | 'rejected'>>({});
+  const [quotationStatus, setQuotationStatus] = useState<
+    Record<string, 'pending' | 'accepted' | 'rejected'>
+  >({});
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -50,19 +54,25 @@ export default function ChatWindow({
     }
   }, [messages, scrollToBottom]);
 
-  const handleQuotationSent = (quotation: Omit<QuotationMessage, 'id' | 'timestamp' | 'sender' | 'type' | 'senderName'>) => {
+  const handleQuotationSent = (
+    quotation: Omit<
+      QuotationMessage,
+      'id' | 'timestamp' | 'sender' | 'type' | 'senderName'
+    >,
+  ) => {
     // The quotation will be added to the messages array by the parent component
-    console.log('Quotation sent successfully', quotation);
   };
 
-  const handleQuoteAction = (messageId: string, action: 'accept' | 'reject') => {
-    setQuotationStatus(prev => ({
+  const handleQuoteAction = (
+    messageId: string,
+    action: 'accept' | 'reject',
+  ) => {
+    setQuotationStatus((prev) => ({
       ...prev,
-      [messageId]: action === 'accept' ? 'accepted' : 'rejected'
+      [messageId]: action === 'accept' ? 'accepted' : 'rejected',
     }));
-    
+
     // Here you would typically make an API call to update the quotation status
-    console.log(`Quotation ${messageId} ${action}ed`);
   };
 
   const handleSend = async (text: string) => {
@@ -77,7 +87,9 @@ export default function ChatWindow({
           const parsed = JSON.parse(text);
           if (parsed.type === 'quotation') {
             // If it's a quotation, send it as a formatted message
-            await onSend(`[Quotation] ${parsed.subject}: $${parsed.price?.toFixed(2) || '0.00'}`);
+            await onSend(
+              `[Quotation] ${parsed.subject}: $${parsed.price?.toFixed(2) || '0.00'}`,
+            );
             return;
           }
         } catch {
@@ -270,22 +282,48 @@ export default function ChatWindow({
         }}
       >
         {messages.map((message) => {
-          // Add status to quotation messages if it exists in our local state
-          const messageWithStatus = message.type === 'quotation' 
-            ? { 
-                ...message, 
-                status: quotationStatus[message.id] || message.status 
-              } 
-            : message;
-            
-          return (
-            <MessageBubble
-              key={message.id}
-              message={messageWithStatus}
-              isOwnMessage={message.sender === 'user'}
-              onQuoteAction={message.type === 'quotation' ? handleQuoteAction : undefined}
-            />
-          );
+          if (message.type === 'quotation') {
+            // Handle quotation messages
+            const quotationMessage = message as QuotationMessage;
+            const formattedMessage: QuotationMessage = {
+              ...quotationMessage,
+              status:
+                quotationStatus[message.id] ||
+                quotationMessage.status ||
+                'pending',
+              subject: quotationMessage.subject || 'Quotation',
+              message:
+                quotationMessage.message || quotationMessage.content || '',
+            };
+
+            return (
+              <MessageBubble
+                key={formattedMessage.id}
+                message={formattedMessage}
+                isOwnMessage={formattedMessage.sender === 'user'}
+                dealerName={dealerName}
+                onQuoteAction={handleQuoteAction}
+              />
+            );
+          } else {
+            // Handle regular text messages
+            const textMessage = message as Message;
+            const messageWithText = textMessage as Message & { text?: string };
+            const formattedMessage = {
+              ...textMessage,
+              content: textMessage.content || messageWithText.text || '',
+            };
+
+            return (
+              <MessageBubble
+                key={formattedMessage.id}
+                message={formattedMessage}
+                isOwnMessage={formattedMessage.sender === 'user'}
+                dealerName={dealerName}
+                onQuoteAction={undefined}
+              />
+            );
+          }
         })}
         {isLoading && (
           <Box
@@ -318,7 +356,7 @@ export default function ChatWindow({
           isSending={isSending}
           disabled={!currentChatId}
         />
-        
+
         {currentChatId && (
           <QuotationDialog
             open={showQuotationDialog}
@@ -326,17 +364,17 @@ export default function ChatWindow({
             leadId={parseInt(currentChatId, 10)}
             onQuotationSent={(quotation) => {
               handleQuotationSent(quotation);
-              // Create a formatted message for the chat
-              const messageToSend: Message = {
-                id: `quotation-${Date.now()}`,
+              // Create a properly typed message for the chat
+              const messageToSend: Omit<QuotationMessage, 'id'> = {
                 type: 'quotation',
+                content: `Quotation: ${quotation.subject}\n${quotation.message}\nPrice: $${quotation.price.toFixed(2)}`,
+                createdAt: new Date().toISOString(),
                 sender: 'user',
-                timestamp: new Date(),
-                senderName: 'You',
+                senderName: dealerName,
                 status: 'pending',
+                price: quotation.price,
                 subject: quotation.subject,
                 message: quotation.message,
-                price: quotation.price
               };
               onSend(JSON.stringify(messageToSend));
             }}

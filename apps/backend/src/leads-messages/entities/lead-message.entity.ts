@@ -20,6 +20,9 @@ export class LeadMessage {
   @ManyToOne('Lead', 'messages', { eager: true })
   lead!: any;
 
+  @Column({ default: 'message' })
+  type!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }
