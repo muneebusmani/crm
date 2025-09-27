@@ -1,5 +1,5 @@
 // Define types based on backend implementation
-import type { Message } from '@dealer/types/chat';
+import type { Message, QuotationMessage } from '@dealer/types/chat';
 import { get, post, put, del } from '@/lib/api';
 
 // Define the base URL for lead messages
@@ -24,6 +24,7 @@ interface LeadMessage {
   content: string;
   leadId: number;
   dealerId?: number;
+  type: string;
   lead?: {
     id: number;
     [key: string]: unknown;
@@ -72,8 +73,6 @@ async function handleResponse<T>(
   response: ApiResponse<T>,
   allowNoData = false,
 ): Promise<T> {
-  console.log('Handling response:', response);
-
   if (!response) {
     console.error('No response received');
     throw new Error('No response received from server');
@@ -118,12 +117,9 @@ export const leadMessagesApi = {
   // Get all messages for a specific lead
   getByLead: async (leadId: number): Promise<LeadMessage[]> => {
     try {
-      console.log(`Fetching messages for lead ${leadId}...`);
       const response = await get<ApiResponse<LeadMessage[]>>(
         `${LEAD_MESSAGES_BASE}/${leadId}`,
       );
-
-      console.log('Raw API response for getByLead:', response);
 
       // Handle case where response is already an array
       if (Array.isArray(response)) {
@@ -150,10 +146,9 @@ export const leadMessagesApi = {
   // Get all messages (admin function)
   getAll: async (): Promise<LeadMessage[]> => {
     try {
-      console.log('Fetching all messages from:', LEAD_MESSAGES_BASE);
       const response =
         await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
-      console.log('Raw API response:', response);
+      console.log('Get All Response ===>', response);
 
       // If the response is already an array, return it directly
       if (Array.isArray(response)) {
@@ -194,8 +189,6 @@ export const leadMessagesApi = {
     createMessageData: CreateLeadMessageDto,
   ): Promise<LeadMessage> => {
     try {
-      console.log('Sending message data:', createMessageData);
-
       const response = await post<CreateMessageResponse, CreateLeadMessageDto>(
         LEAD_MESSAGES_BASE,
         createMessageData,
@@ -205,8 +198,6 @@ export const leadMessagesApi = {
           },
         },
       );
-
-      console.log('Response from server create:', response);
 
       if (!response) {
         throw new Error('No response from server');
@@ -228,6 +219,7 @@ export const leadMessagesApi = {
           dealer?: { id: number };
           createdAt?: string;
           updatedAt?: string;
+          type: string;
         };
 
         // Verify the required fields exist
@@ -253,6 +245,7 @@ export const leadMessagesApi = {
           dealer: messageData.dealer
             ? { id: messageData.dealer.id }
             : undefined,
+          type: messageData.type,
           createdAt: messageData.createdAt ?? new Date().toISOString(),
           updatedAt: messageData.updatedAt ?? new Date().toISOString(),
         };
@@ -298,7 +291,12 @@ export const leadMessagesApi = {
     isCurrentUser: boolean,
   ): Message => {
     // Create a safe message object with defaults
-    const safeMessage = message || ({} as LeadMessage);
+    const safeMessage: LeadMessage & {
+      type?: string;
+      price?: number;
+      status?: 'pending' | 'accepted' | 'rejected';
+      subject?: string;
+    } = message || ({} as LeadMessage);
 
     // Generate a default ID if none exists
     const messageId = safeMessage.id?.toString() || `temp-${Date.now()}`;
@@ -329,13 +327,33 @@ export const leadMessagesApi = {
       senderName = isCurrentUser ? 'You' : 'Customer';
     }
 
-    return {
+    const createdAt = formattedTimestamp.toISOString();
+    const createdAt2 = formattedTimestamp.toLocaleTimeString();
+    console.log('created at ===>', createdAt2);
+    // Create a base message object with required fields
+    const baseMessage: Message = {
       id: messageId,
-      text: messageText,
+      content: messageText,
       sender: isCurrentUser ? 'user' : 'other',
-      timestamp: formattedTimestamp,
+      createdAt,
       senderName,
+      type: 'message',
     };
+
+    // If this is a quotation message, include additional fields
+    if (safeMessage.type === 'quotation') {
+      const quotationMessage: QuotationMessage = {
+        ...baseMessage,
+        type: 'quotation',
+        price: safeMessage.price || 0,
+        status: safeMessage.status || 'pending',
+        subject: safeMessage.subject || 'Quotation',
+        message: messageText,
+      };
+      return quotationMessage;
+    }
+
+    return baseMessage;
   },
 
   // Format chat list item from lead data

@@ -1,22 +1,41 @@
 export interface MessageBase {
   id: string;
-  type: 'text' | 'quotation';
+  // The actual content of the message
+  content: string;
+  // The type of message
+  type: 'message' | 'quotation';
+  // When the message was created
+  createdAt: string | Date;
+  // Who sent the message (dealer or lead)
   sender: 'user' | 'other';
-  timestamp: Date | string;
+  // Optional sender name
   senderName?: string;
+  // Additional fields for quotations
+  price?: number;
+  status?: 'pending' | 'accepted' | 'rejected';
+  // Original message data from API
+  dealer?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  lead?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export interface TextMessage extends MessageBase {
-  type: 'text';
-  text: string;
+  type: 'message';
 }
 
-export interface QuotationMessage extends MessageBase {
+export interface QuotationMessage {
   type: 'quotation';
+  price: number;
+  status: 'pending' | 'accepted' | 'rejected';
   subject: string;
   message: string;
-  price: number;
-  status?: 'pending' | 'accepted' | 'rejected';
 }
 
 export type Message = TextMessage | QuotationMessage;

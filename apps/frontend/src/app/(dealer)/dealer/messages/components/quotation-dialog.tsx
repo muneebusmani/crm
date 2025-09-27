@@ -9,7 +9,7 @@ interface QuotationDialogProps {
   open: boolean;
   onClose: () => void;
   leadId: number;
-  onQuotationSent: (quotation: Omit<QuotationMessage, 'id' | 'timestamp' | 'sender' | 'type' | 'senderName'>) => void;
+  onQuotationSent: (quotation: Omit<QuotationMessage, 'id' | 'type' | 'timestamp' | 'sender' | 'senderName'>) => void;
 }
 
 export default function QuotationDialog({ open, onClose, leadId, onQuotationSent }: QuotationDialogProps) {
@@ -30,12 +30,18 @@ export default function QuotationDialog({ open, onClose, leadId, onQuotationSent
         message,
         quotationPrice: parseFloat(price),
       });
-      onQuotationSent({
+      
+      const quotationData = {
+        content: `Quotation: ${subject}\n${message}\nPrice: $${parseFloat(price).toFixed(2)}`,
         subject,
         message,
         price: parseFloat(price),
-        status: 'pending',
-      });
+        status: 'pending' as const,
+        createdAt: new Date().toISOString(),
+        // These will be added by the parent component
+      };
+      
+      onQuotationSent(quotationData);
       onClose();
     } catch (error) {
       console.error('Failed to send quotation:', error);
