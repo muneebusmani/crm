@@ -1,11 +1,13 @@
 "use client";
 
-import type { Message } from "@dealer/types/chat";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { leadMessagesApi } from "@/services/lead-messages.service";
 import { leadsApi } from "@/services/leads.service";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import type { Message } from "@dealer/types/chat";
+
 import ChatWindow from "./chat-window";
 import Sidebar from "./chat-sidebar";
 
@@ -76,10 +78,16 @@ export default function ChatStateProvider() {
 
           setChats((prev) => [newChat, ...prev]);
           setCurrentChatId(leadIdParam);
-        } catch (error) {
-          console.warn(
-            `Lead with ID ${leadId} not found, creating chat with minimal info`
-          );
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            console.warn(
+              `Lead with ID ${leadId} not found, creating chat with minimal info: ${error.message}`
+            );
+          } else {
+            console.warn(
+              `Lead with ID ${leadId} not found, creating chat with minimal info`
+            );
+          }
           // Create a basic chat entry even if we can't fetch lead details
           const newChat = {
             id: leadIdParam,
@@ -95,8 +103,10 @@ export default function ChatStateProvider() {
           setChats((prev) => [newChat, ...prev]);
           setCurrentChatId(leadIdParam);
         }
-      } catch (error) {
-        console.error("Error handling lead parameter:", error);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Error handling lead parameter:", error.message);
+        }
       } finally {
         setHasCheckedLeadParam(true);
         setIsLoading(false);
@@ -184,7 +194,7 @@ export default function ChatStateProvider() {
         // if (chatList.length > 0 && !currentChatId) {
         //   setCurrentChatId(chatList[0].id);
         // }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Failed to load chats:", error);
         setChats([]);
       } finally {
@@ -234,7 +244,7 @@ export default function ChatStateProvider() {
         // Format messages using the API utility
         const formattedMessages = messages.map((msg) => {
           // Determine if the message is from the current user (dealer)
-          const isCurrentUser = msg.dealer?.id !== undefined; // Assuming dealer messages have dealer.id
+          const isCurrentUser = msg.dealer?.id !== undefined;
           return leadMessagesApi.formatMessage(msg, isCurrentUser);
         });
 
@@ -250,75 +260,8 @@ export default function ChatStateProvider() {
           ...prev,
           [currentChatId]: formattedMessages,
         }));
-
-        // Update the chat in the sidebar if it exists
-        if (formattedMessages.length > 0) {
-          setChats((prev) => {
-            const chatIndex = prev.findIndex(
-              (chat) => chat.id === currentChatId
-            );
-
-            if (chatIndex === -1) {
-              console.log("Chat not found in sidebar, adding new one");
-              const lastMessage =
-                formattedMessages[formattedMessages.length - 1];
-              return [
-                {
-                  id: currentChatId,
-                  name: `Lead #${currentChatId}`,
-                  lastMessage:
-                    lastMessage.text.length > 30
-                      ? `${lastMessage.text.substring(0, 30)}...`
-                      : lastMessage.text,
-                  timestamp: lastMessage.timestamp
-                    ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : new Date().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }),
-                  avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
-                },
-                ...prev,
-              ];
-            }
-
-            console.log("Updating existing chat in sidebar");
-            const lastMessage = formattedMessages[formattedMessages.length - 1];
-            const updatedChats = [...prev];
-            updatedChats[chatIndex] = {
-              ...updatedChats[chatIndex],
-              lastMessage:
-                lastMessage.text.length > 30
-                  ? `${lastMessage.text.substring(0, 30)}...`
-                  : lastMessage.text,
-              timestamp: lastMessage.timestamp
-                ? new Date(lastMessage.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-            };
-
-            return updatedChats;
-          });
-        }
       } catch (error) {
         console.error("Error loading messages:", error);
-        // Initialize with empty messages if there's an error
-        setMessages((prev) => {
-          const updated = {
-            ...prev,
-            [currentChatId]: [],
-          };
-          console.log("Error loading messages, reset to empty:", updated);
-          return updated;
-        });
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -328,167 +271,40 @@ export default function ChatStateProvider() {
 
     loadMessages();
 
-    // Cleanup function to prevent state updates after unmount
     return () => {
       isMounted = false;
     };
   }, [currentChatId]);
 
-  const addMessage = useCallback(
-    async (text: string) => {
-      if (!currentChatId || !text.trim()) {
-        console.log("No current chat ID or empty message");
-        return;
-      }
-
-      const leadId = parseInt(currentChatId, 10);
-      if (Number.isNaN(leadId)) {
-        console.error("Invalid lead ID:", currentChatId);
-        return;
-      }
-
-      const tempMessageId = `temp-${Date.now()}`;
-      const now = new Date();
-
-      // Create a temporary message with a unique ID
-      const tempMessage: Message = {
-        id: tempMessageId,
-        text,
-        sender: "user",
-        timestamp: now,
-        senderName: "You",
-      };
-
-      console.log("Adding temporary message:", tempMessage);
-
-      // Update UI optimistically
-      setMessages((prev) => {
-        const currentMessages = prev[currentChatId] || [];
-        const updatedMessages = {
-          ...prev,
-          [currentChatId]: [...currentMessages, tempMessage],
-        };
-        console.log("Updated messages state:", updatedMessages);
-        return updatedMessages;
-      });
-
-      try {
-        console.log("Sending message to server...");
-        const createdMessage = await leadMessagesApi.create({
-          content: text,
-          leadId,
-        });
-
-        console.log("Server response for create message:", createdMessage);
-
-        if (!createdMessage) {
-          throw new Error("No valid response from server");
-        }
-
-        // Format the server response
-        const serverMessage = leadMessagesApi.formatMessage(
-          createdMessage,
-          true
-        );
-        console.log("Formatted server message:", serverMessage);
-
-        // Update the message in the UI with the server response
-        setMessages((prev) => {
-          const currentMessages = prev[currentChatId] || [];
-          const messageIndex = currentMessages.findIndex(
-            (m) => m.id === tempMessageId
-          );
-
-          const updatedMessages = {
-            ...prev,
-            [currentChatId]:
-              messageIndex === -1
-                ? [...currentMessages, serverMessage]
-                : currentMessages.map((msg, idx) =>
-                    idx === messageIndex ? serverMessage : msg
-                  ),
-          };
-
-          console.log(
-            "Updated messages after server response:",
-            updatedMessages
-          );
-          return updatedMessages;
-        });
-
-        // Update the chat in the sidebar
-        setChats((prev) => {
-          const chatIndex = prev.findIndex((chat) => chat.id === currentChatId);
-          if (chatIndex === -1) {
-            console.log("Chat not found in sidebar, adding new one");
-            return [
-              {
-                id: currentChatId,
-                name: `Lead #${currentChatId}`,
-                lastMessage:
-                  text.length > 30 ? `${text.substring(0, 30)}...` : text,
-                timestamp: now.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                avatarUrl: `https://ui-avatars.com/api/?name=Lead+${currentChatId}&background=3f51b5&color=ffffff&type=png`,
-              },
-              ...prev,
-            ];
-          }
-
-          console.log("Updating existing chat in sidebar");
-          const updatedChats = [...prev];
-          updatedChats[chatIndex] = {
-            ...updatedChats[chatIndex],
-            lastMessage:
-              text.length > 30 ? `${text.substring(0, 30)}...` : text,
-            timestamp: now.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-
-          // Move the updated chat to the top
-          const [updatedChat] = updatedChats.splice(chatIndex, 1);
-          return [updatedChat, ...updatedChats];
-        });
-      } catch (error) {
-        console.error("Failed to send message:", error);
-
-        // Remove the temporary message on error
-        setMessages((prev) => {
-          const currentMessages = prev[currentChatId] || [];
-          const filteredMessages = currentMessages.filter(
-            (m) => m.id !== tempMessageId
-          );
-
-          const updatedMessages = {
-            ...prev,
-            [currentChatId]: filteredMessages,
-          };
-
-          console.log(
-            "Removed temporary message after error:",
-            updatedMessages
-          );
-          return updatedMessages;
-        });
-
-        // Show error to the user
-        alert(
-          `Failed to send message: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-      }
-    },
-    [currentChatId]
-  );
-
   const handleAttach = useCallback(() => {
     alert("Attachment feature not implemented yet.");
   }, []);
+
+  // Handle sending a new message
+  const handleSendMessage = useCallback(async (text: string) => {
+    if (!currentChatId || !text.trim()) return;
+
+    try {
+      const leadId = parseInt(currentChatId, 10);
+      if (Number.isNaN(leadId)) {
+        console.error("Invalid lead ID");
+        return;
+      }
+
+      // Use the create method to send a new message
+      await leadMessagesApi.create({
+        leadId,
+        content: text,
+        isFromDealer: true,
+      });
+
+      // The message will be added to the UI through the WebSocket or by refreshing the messages
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      // Show error to the user
+      alert("Failed to send message. Please try again.");
+    }
+  }, [currentChatId]);
 
   const handleSelectChat = useCallback(
     async (chatId: string) => {
@@ -686,7 +502,7 @@ export default function ChatStateProvider() {
       {currentChatId ? (
         <ChatWindow
           messages={messages[currentChatId] || []}
-          onSend={addMessage}
+          onSend={handleSendMessage}
           isLoading={isLoading}
           onAttach={handleAttach}
           onRequestQuote={() => {

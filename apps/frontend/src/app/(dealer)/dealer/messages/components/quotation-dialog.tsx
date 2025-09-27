@@ -1,32 +1,21 @@
-"use client";
+'use client';
 
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  TextField,
-  Box,
-} from "@mui/material";
-import { useState } from "react";
-import { dealersApi } from "@/services/dealers.service";
+import { Button, Dialog, DialogContent, DialogTitle, TextField, Box } from '@mui/material';
+import { useState } from 'react';
+import { dealersApi } from '@/services/dealers.service';
+import type { QuotationMessage } from '@dealer/types/chat';
 
 interface QuotationDialogProps {
   open: boolean;
   onClose: () => void;
   leadId: number;
-  onQuotationSent: () => void;
+  onQuotationSent: (quotation: Omit<QuotationMessage, 'id' | 'timestamp' | 'sender' | 'type' | 'senderName'>) => void;
 }
 
-export default function QuotationDialog({
-  open,
-  onClose,
-  leadId,
-  onQuotationSent,
-}: QuotationDialogProps) {
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [price, setPrice] = useState("");
+export default function QuotationDialog({ open, onClose, leadId, onQuotationSent }: QuotationDialogProps) {
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [price, setPrice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,10 +30,15 @@ export default function QuotationDialog({
         message,
         quotationPrice: parseFloat(price),
       });
-      onQuotationSent();
+      onQuotationSent({
+        subject,
+        message,
+        price: parseFloat(price),
+        status: 'pending',
+      });
       onClose();
     } catch (error) {
-      console.error("Failed to send quotation:", error);
+      console.error('Failed to send quotation:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -83,12 +77,10 @@ export default function QuotationDialog({
             required
             inputProps={{
               min: 0,
-              step: "0.01",
+              step: '0.01',
             }}
           />
-          <Box
-            sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2 }}
-          >
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
@@ -98,7 +90,7 @@ export default function QuotationDialog({
               color="primary"
               disabled={isSubmitting || !subject || !message || !price}
             >
-              {isSubmitting ? "Sending..." : "Send Quotation"}
+              {isSubmitting ? 'Sending...' : 'Send Quotation'}
             </Button>
           </Box>
         </form>
