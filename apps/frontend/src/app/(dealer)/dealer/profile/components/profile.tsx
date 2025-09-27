@@ -1,7 +1,6 @@
 'use client';
 import type { Dealer } from '@crm/types';
 import { Close, LocationOn, Person, Settings, Web } from '@mui/icons-material';
-import BankDetailsSection from './BankDetailsSection';
 import {
   Avatar,
   Box,
@@ -18,8 +17,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import BankDetailsSection from './BankDetailsSection';
 
 // biome-ignore lint/suspicious/noExplicitAny: <any>
 const Profile = ({ id }: { id: any }) => {
@@ -352,9 +352,6 @@ const Profile = ({ id }: { id: any }) => {
               </Box>
             </CardContent>
           </Card>
-          <Box sx={{ mt: 3 }}>
-            <BankDetailsSection />
-          </Box>
         </Grid>
 
         {/* RIGHT COLUMN */}
