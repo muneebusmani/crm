@@ -291,7 +291,7 @@ export class DealerService {
 
       const resetLink = `${this.configService.get('FRONTEND_URL')}/reset-password/${token}`;
       this.mailService.sendMail({
-        to: 'alamhamza873@gmail.com',
+        to: email,
         subject: 'Reset your password',
         template: 'forgot-password', // templates/forgot-password.hbs
         context: {

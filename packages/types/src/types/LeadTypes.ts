@@ -1,6 +1,6 @@
 export enum LeadStatus {
   OPEN = "OPEN",
-  QUOTATION_SENT = "SENT",
-  CLOSE = "CLOSE",
+  QUOTATION_SENT = "QUOTED",
+  CLOSE = "WON",
   CONTACT = "CONTACT"
 }

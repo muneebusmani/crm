@@ -13,9 +13,10 @@ import { InvoiceService } from './invoice.service'
 import { DealerLead } from 'src/user/entities/dealer-lead.entity'
 import { PdfService } from 'src/Pdf/pdf-service'
 import { BankDetails } from 'src/bank-details/entities/bank-details.entity'
+import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Lead, Invoice, InvoiceItem, Dealer, User, DealerLead, BankDetails]), CustomMailerModule], // 👈 registers LeadRepository
+  imports: [TypeOrmModule.forFeature([Lead, Invoice, InvoiceItem, Dealer, User, DealerLead, BankDetails, LeadMessage]), CustomMailerModule], // 👈 registers LeadRepository
    controllers: [InvoiceController],
     providers: [InvoiceService],
     exports: [InvoiceService],

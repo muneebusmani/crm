@@ -16,6 +16,7 @@ import { DealerLead } from 'src/user/entities/dealer-lead.entity';
 import { MailerService } from '@nestjs-modules/mailer';
 import { PdfService } from 'src/Pdf/pdf-service';
 import { BankDetails } from 'src/bank-details/entities/bank-details.entity';
+import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 
 
 @Injectable()
@@ -38,6 +39,9 @@ export class InvoiceService {
 
      @InjectRepository(BankDetails)
     private readonly bankDetailsRepository: Repository<BankDetails>,
+
+    @InjectRepository(LeadMessage)
+    private readonly leadMessageRepository: Repository<LeadMessage>,
 
      private readonly mailService: MailerService,
 
@@ -110,7 +114,7 @@ export class InvoiceService {
       where: { user: { id: dealerId } },
       relations: ['user'],
     });
-    console.log(bankDetails);
+
       //create data for PDF
       const invoiceData = {
       invoiceNumber: savedInvoice.invoiceNumber,
@@ -139,6 +143,7 @@ export class InvoiceService {
         },
       });
     await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+    await this.leadMessage(lead.id, dealer.id,  JSON.stringify(invoiceData));
     // Return complete invoice
     return invoice;
   }
@@ -231,5 +236,32 @@ private async ensureDealerLead(leadId: number, dealerId: number, status: string)
     const count = await this.invoiceRepository.count();
     const nextNumber = count + 1;
     return `#VL${nextNumber.toString().padStart(7, '0')}`;
+  }
+
+
+   private async leadMessage(leadId: number, dealerId: number, content: string) {
+    // check if already exists
+
+    const existing = await this.leadMessageRepository.findOne({
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
+      relations: ['dealer', 'lead'],
+    });
+
+    if (existing) return existing; // already linked
+
+    // fetch dealer + lead (only ids needed)
+    const dealer = await this.userRepository.findOneBy({ id: dealerId });
+    if (!dealer)
+      throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+
+    const lead = await this.leadRepository.findOneBy({ id: leadId });
+    if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+    const message = this.leadMessageRepository.create({
+      content: content,
+      dealer,
+      lead
+    });
+    return await this.leadMessageRepository.save(message);
   }
 }
