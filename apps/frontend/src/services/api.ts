@@ -20,7 +20,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add a response interceptor to handle errors
@@ -33,7 +33,7 @@ api.interceptors.response.use(
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
       console.error('API Error:', error.response.data);
-      
+
       // Handle 401 Unauthorized
       if (error.response.status === 401) {
         // Redirect to login or refresh token
@@ -46,9 +46,9 @@ api.interceptors.response.use(
       // Something happened in setting up the request that triggered an Error
       console.error('Request setup error:', error.message);
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
