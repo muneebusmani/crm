@@ -28,7 +28,7 @@ async function attachToken<T>(
 }
 
 // READ METHODS
-export async function get<T>(
+export async function get<T = any>(
   path: string,
   options?: RequestConfig<T>,
   skipAuth = false,
@@ -36,7 +36,7 @@ export async function get<T>(
   return http.get<T>(path, await attachToken(options, skipAuth));
 }
 
-export async function del<T>(
+export async function del<T = any>(
   path: string,
   options?: RequestConfig<T>,
   skipAuth = false,
@@ -46,7 +46,7 @@ export async function del<T>(
   >;
 }
 
-export async function head<T>(
+export async function head<T = any>(
   path: string,
   options?: RequestConfig<T>,
   skipAuth = false,
@@ -56,7 +56,7 @@ export async function head<T>(
   >;
 }
 
-export async function options<T>(
+export async function options<T = any>(
   path: string,
   options?: RequestConfig<T>,
   skipAuth = false,
@@ -67,7 +67,7 @@ export async function options<T>(
 }
 
 // WRITE METHODS
-export async function post<R, B>(
+export async function post<R = any, B = any>(
   path: string,
   body?: B,
   options?: RequestConfig<B>,
@@ -80,7 +80,7 @@ export async function post<R, B>(
   ) as Promise<ApiResponse<R>>;
 }
 
-export async function put<R, B>(
+export async function put<R = any, B = any>(
   path: string,
   body?: B,
   options?: RequestConfig<B>,
@@ -93,7 +93,7 @@ export async function put<R, B>(
   ) as Promise<ApiResponse<R>>;
 }
 
-export async function patch<R, B>(
+export async function patch<R = any, B = any>(
   path: string,
   body?: B,
   options?: RequestConfig<B>,

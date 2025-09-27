@@ -11,17 +11,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   Grid,
   IconButton,
   TextField,
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type React from 'react';
-import { useEffect, useState } from 'react';
-import * as api from '@/lib/api';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import BankDetailsSection from './BankDetailsSection';
 
 // biome-ignore lint/suspicious/noExplicitAny: <any>
 const Profile = ({ id }: { id: any }) => {
@@ -256,7 +254,7 @@ const Profile = ({ id }: { id: any }) => {
       {/* </Box> */}
 
       {/* MAIN GRID */}
-      <Grid container spacing={3}>
+      <Grid spacing={3}>
         {/* LEFT COLUMN */}
         <Grid size={{ xs: 12, md: 4 }}>
           {/* <Card sx={{ mb: 2 }}> */}
@@ -396,6 +394,10 @@ const Profile = ({ id }: { id: any }) => {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
+                      sx={{
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
                     >
                       {profileData.website}
                     </Typography>
@@ -405,44 +407,10 @@ const Profile = ({ id }: { id: any }) => {
             </CardContent>
           </Card>
 
-          {/* Recent Activity (unchanged) */}
-          <Card>
-            <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 2,
-                }}
-              >
-                <Typography variant="h6">Recent Activity</Typography>
-                <Box>
-                  <Button size="small">Today</Button>
-                  <Button size="small">Weekly</Button>
-                  <Button size="small">Monthly</Button>
-                </Box>
-              </Box>
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'start', mb: 2 }}>
-                <Avatar
-                  src="/static/images/avatar/jacqueline.jpg"
-                  alt="Jacqueline Steve"
-                />
-                <Box>
-                  <Typography variant="subtitle2">Jacqueline Steve</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Updated product catalog at 05:16 PM
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-                Bought Something
-              </Typography>
-            </CardContent>
-          </Card>
+          {/* Bank Details Section */}
+          <Box sx={{ mt: 3 }}>
+            <BankDetailsSection />
+          </Box>
         </Grid>
       </Grid>
 
@@ -578,19 +546,14 @@ const Profile = ({ id }: { id: any }) => {
                 />
               </Grid>
             </Grid>
+            <DialogActions>
+              <Button onClick={handleCloseEditDialog}>Cancel</Button>
+              <Button type="submit" variant="contained" color="primary">
+                Save Changes
+              </Button>
+            </DialogActions>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
       </Dialog>
     </Box>
   );
