@@ -1,6 +1,7 @@
-import type { Message } from '@dealer/types/chat';
-import { Box, Paper, styled, Typography } from '@mui/material';
+import type { Message, TextMessage, QuotationMessage } from '@dealer/types/chat';
+import { Box, Paper, styled, Typography, Button, Chip } from '@mui/material';
 import Image from 'next/image';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 
 const Bubble = styled(Paper, {
   shouldForwardProp: (prop) => prop !== 'isUser',
@@ -28,11 +29,13 @@ const Timestamp = styled(Typography)(({ theme }) => ({
 interface MessageBubbleProps {
   message: Message;
   isOwnMessage?: boolean;
+  onQuoteAction?: (messageId: string, action: 'accept' | 'reject') => void;
 }
 
 export default function MessageBubble({
   message,
   isOwnMessage = false,
+  onQuoteAction,
 }: MessageBubbleProps) {
   const formatTime = (date: Date | string): string => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -49,7 +52,7 @@ export default function MessageBubble({
   };
 
   // Use the sender from the message or default to 'User'
-  const senderName = isOwnMessage ? 'You' : message.sender || 'User';
+  const senderName = isOwnMessage ? 'You' : message.senderName || 'User';
   const avatarUrl = getAvatarUrl(senderName);
 
   return (
@@ -99,25 +102,76 @@ export default function MessageBubble({
                   ? '0 2px 8px rgba(63, 81, 181, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.1)',
               },
+              minWidth: message.type === 'quotation' ? '250px' : 'auto',
             }}
           >
-            <Typography
-              variant="body2"
-              sx={{
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                '& a': {
-                  color: isOwnMessage ? '#90caf9' : 'primary.main',
-                  textDecoration: 'underline',
-                  '&:hover': {
-                    textDecoration: 'none',
+            {message.type === 'quotation' ? (
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
+                  <RequestQuoteIcon fontSize="small" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                    {(message as QuotationMessage).subject}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ mb: 1.5 }}>
+                  {(message as QuotationMessage).message}
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" color="primary">
+                    ${(message as QuotationMessage).price.toFixed(2)}
+                  </Typography>
+                  {(message as QuotationMessage).status && (
+                    <Chip 
+                      label={(message as QuotationMessage).status?.toUpperCase()} 
+                      size="small"
+                      color={
+                        (message as QuotationMessage).status === 'accepted' ? 'success' : 
+                        (message as QuotationMessage).status === 'rejected' ? 'error' : 'default'
+                      }
+                      sx={{ ml: 1 }}
+                    />
+                  )}
+                </Box>
+                {!isOwnMessage && !(message as QuotationMessage).status && onQuoteAction && (
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'flex-end' }}>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      color="error"
+                      onClick={() => onQuoteAction(message.id, 'reject')}
+                    >
+                      Reject
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      color="primary"
+                      onClick={() => onQuoteAction(message.id, 'accept')}
+                    >
+                      Accept
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              <Typography
+                variant="body2"
+                sx={{
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  color: isOwnMessage ? 'common.white' : 'text.primary',
+                  '& a': {
+                    color: isOwnMessage ? '#90caf9' : 'primary.main',
+                    textDecoration: 'underline',
+                    '&:hover': {
+                      textDecoration: 'none',
+                    },
                   },
-                },
-              }}
-              dangerouslySetInnerHTML={{
-                __html: message.text.replace(/\n/g, '<br />'),
-              }}
-            />
+                }}
+              >
+                {(message as TextMessage).text}
+              </Typography>
+            )}
             <Timestamp
               sx={{
                 mt: 0.5,

@@ -125,7 +125,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/apps/frontend/.next/standalone ./
+# COPY --from=builder /app/apps/frontend/.next/standalone/apps/frontend/.env.production ./
+COPY --from=builder /app/apps/frontend/.next/standalone/apps/frontend/package.json ./
+COPY --from=builder /app/apps/frontend/.next/standalone/apps/frontend/server.js ./
+COPY --from=builder /app/apps/frontend/.next/standalone/apps/frontend/.env.production ./
+COPY --from=builder /app/apps/frontend/.next/standalone/apps/frontend/.next ./.next
+COPY --from=builder /app/apps/frontend/.next/standalone/node_modules ./node_modules
 COPY --from=builder /app/apps/frontend/.next/static ./.next/static
 COPY --from=builder /app/apps/frontend/public ./public
 
