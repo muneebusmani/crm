@@ -71,4 +71,3 @@ export class InvoiceItem {
   @CreateDateColumn()
   createdAt!: Date;
 }
-

@@ -1,14 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { InvoiceItem } from './entities/invoice-item.entity';
 import { Invoice } from './entities/invoice.entity';
 import { CreateInvoiceDto, InvoiceStatus } from '@crm/types';
-
-
-
-
 
 @Injectable()
 export class InvoiceService {
@@ -21,14 +22,19 @@ export class InvoiceService {
     private readonly leadRepository: Repository<Lead>,
   ) {}
 
-  async create(createInvoiceDto: CreateInvoiceDto, dealerId: string): Promise<Invoice> {
+  async create(
+    createInvoiceDto: CreateInvoiceDto,
+    dealerId: string,
+  ): Promise<Invoice> {
     // Verify lead exists and belongs to dealer
     const lead = await this.leadRepository.findOne({
       where: { id: createInvoiceDto.leadId, dealerId },
     });
 
     if (!lead) {
-      throw new NotFoundException('Lead not found or does not belong to this dealer');
+      throw new NotFoundException(
+        'Lead not found or does not belong to this dealer',
+      );
     }
 
     // Generate unique invoice number
@@ -36,8 +42,8 @@ export class InvoiceService {
 
     // Calculate totals
     const subTotal = createInvoiceDto.items.reduce(
-      (sum, item) => sum + (item.unitPrice * item.quantity), 
-      0
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0,
     );
     const totalAmount = subTotal + createInvoiceDto.taxAmount;
 
@@ -56,7 +62,7 @@ export class InvoiceService {
     const savedInvoice = await this.invoiceRepository.save(invoice);
 
     // Create invoice items
-    const invoiceItems = createInvoiceDto.items.map(item => 
+    const invoiceItems = createInvoiceDto.items.map((item) =>
       this.invoiceItemRepository.create({
         invoiceId: savedInvoice.id,
         productName: item.productName,
@@ -64,7 +70,7 @@ export class InvoiceService {
         unitPrice: item.unitPrice,
         quantity: item.quantity,
         totalPrice: item.unitPrice * item.quantity,
-      })
+      }),
     );
 
     await this.invoiceItemRepository.save(invoiceItems);
@@ -73,7 +79,11 @@ export class InvoiceService {
     return this.findOne(savedInvoice.id, dealerId);
   }
 
-  async findAll(dealerId: string, page: number = 1, limit: number = 10): Promise<{
+  async findAll(
+    dealerId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
     data: Invoice[];
     total: number;
     page: number;
@@ -110,7 +120,11 @@ export class InvoiceService {
     return invoice;
   }
 
-  async updateStatus(id: string, status: InvoiceStatus, dealerId: string): Promise<Invoice> {
+  async updateStatus(
+    id: string,
+    status: InvoiceStatus,
+    dealerId: string,
+  ): Promise<Invoice> {
     const invoice = await this.invoiceRepository.findOne({
       where: { id, dealerId },
     });
@@ -120,11 +134,19 @@ export class InvoiceService {
     }
 
     // Business logic for status transitions
-    if (invoice.status === InvoiceStatus.CANCELLED && status !== InvoiceStatus.PENDING) {
-      throw new BadRequestException('Cannot change status of cancelled invoice');
+    if (
+      invoice.status === InvoiceStatus.CANCELLED &&
+      status !== InvoiceStatus.PENDING
+    ) {
+      throw new BadRequestException(
+        'Cannot change status of cancelled invoice',
+      );
     }
 
-    if (invoice.status === InvoiceStatus.PAID && status === InvoiceStatus.CANCELLED) {
+    if (
+      invoice.status === InvoiceStatus.PAID &&
+      status === InvoiceStatus.CANCELLED
+    ) {
       throw new BadRequestException('Cannot cancel paid invoice');
     }
 
@@ -167,18 +189,25 @@ export class InvoiceService {
       paidAmountResult,
     ] = await Promise.all([
       this.invoiceRepository.count({ where: { dealerId } }),
-      this.invoiceRepository.createQueryBuilder('invoice')
+      this.invoiceRepository
+        .createQueryBuilder('invoice')
         .select('SUM(invoice.totalAmount)', 'sum')
         .where('invoice.dealerId = :dealerId', { dealerId })
         .getRawOne(),
-      this.invoiceRepository.count({ where: { dealerId, status: InvoiceStatus.PENDING } }),
-      this.invoiceRepository.count({ where: { dealerId, status: InvoiceStatus.PAID } }),
-      this.invoiceRepository.createQueryBuilder('invoice')
+      this.invoiceRepository.count({
+        where: { dealerId, status: InvoiceStatus.PENDING },
+      }),
+      this.invoiceRepository.count({
+        where: { dealerId, status: InvoiceStatus.PAID },
+      }),
+      this.invoiceRepository
+        .createQueryBuilder('invoice')
         .select('SUM(invoice.totalAmount)', 'sum')
         .where('invoice.dealerId = :dealerId', { dealerId })
         .andWhere('invoice.status = :status', { status: InvoiceStatus.PENDING })
         .getRawOne(),
-      this.invoiceRepository.createQueryBuilder('invoice')
+      this.invoiceRepository
+        .createQueryBuilder('invoice')
         .select('SUM(invoice.totalAmount)', 'sum')
         .where('invoice.dealerId = :dealerId', { dealerId })
         .andWhere('invoice.status = :status', { status: InvoiceStatus.PAID })

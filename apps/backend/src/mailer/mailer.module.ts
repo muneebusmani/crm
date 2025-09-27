@@ -1,9 +1,9 @@
-import { join } from "path";
-import { MailerModule } from "@nestjs-modules/mailer";
-import { HandlebarsAdapter } from "@nestjs-modules/mailer/dist/adapters/handlebars.adapter";
-import { Global, Module } from "@nestjs/common";
-import { MailerService } from "./mailer.service";
-import { ConfigService, ConfigModule } from "@nestjs/config";
+import { join } from 'path';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { Global, Module } from '@nestjs/common';
+import { MailerService } from './mailer.service';
+import { ConfigService, ConfigModule } from '@nestjs/config';
 
 @Global()
 @Module({
@@ -13,17 +13,17 @@ import { ConfigService, ConfigModule } from "@nestjs/config";
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         transport: {
-          service: "gmail",
+          service: 'gmail',
           auth: {
-            user: configService.get<string>("MAIL_USER"), // ✅ injected properly
-            pass: configService.get<string>("MAIL_PASS"),
+            user: configService.get<string>('MAIL_USER'), // ✅ injected properly
+            pass: configService.get<string>('MAIL_PASS'),
           },
         },
         defaults: {
           from: '"CRM Quotation System" <no-reply@crm.com>',
         },
         template: {
-          dir: join(process.cwd(), "src/templates"), // ✅ path for templates
+          dir: join(process.cwd(), 'src/templates'), // ✅ path for templates
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,

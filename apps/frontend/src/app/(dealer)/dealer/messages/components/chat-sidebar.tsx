@@ -1,5 +1,5 @@
-import SearchIcon from "@mui/icons-material/Search";
-import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
@@ -18,11 +18,11 @@ import {
   Divider,
   Avatar,
   InputBase,
-} from "@mui/material";
-import { useState, useEffect, useCallback } from "react";
-import SidebarChatItem from "./sidebar-chat-item";
-import { leadsApi } from "@/services/leads.service";
-import type { Lead } from "@crm/types";
+} from '@mui/material';
+import { useState, useEffect, useCallback } from 'react';
+import SidebarChatItem from './sidebar-chat-item';
+import { leadsApi } from '@/services/leads.service';
+import type { Lead } from '@crm/types';
 
 interface ChatItem {
   id: string;
@@ -36,12 +36,15 @@ interface SidebarProps {
   chats: ChatItem[];
   currentChatId?: string | null;
   onSelectChat: (id: string) => void;
-  onNewChat: (leadId: string, leadData?: {
-    name?: string;
-    email?: string;
-    vehicle_brand?: string;
-    vehicle_model?: string;
-  }) => void;
+  onNewChat: (
+    leadId: string,
+    leadData?: {
+      name?: string;
+      email?: string;
+      vehicle_brand?: string;
+      vehicle_model?: string;
+    },
+  ) => void;
 }
 
 export default function Sidebar({
@@ -63,7 +66,9 @@ export default function Sidebar({
       setIsLoadingLeads(true);
       const leads = await leadsApi.getUncontacted();
       // Ensure all leads have a valid ID
-      const validLeads = leads.filter((lead): lead is Lead => Boolean(lead?.id));
+      const validLeads = leads.filter((lead): lead is Lead =>
+        Boolean(lead?.id),
+      );
       setUncontactedLeads(validLeads);
     } catch (error) {
       console.error('Error loading uncontacted leads:', error);
@@ -92,7 +97,7 @@ export default function Sidebar({
         name: lead.name,
         email: lead.email as string,
         vehicle_brand: lead.vehicle_brand,
-        vehicle_model: lead.vehicle_model
+        vehicle_model: lead.vehicle_model,
       });
       handleClose();
       setIsAddingChat(false);
@@ -103,11 +108,11 @@ export default function Sidebar({
     <Box
       sx={{
         width: 320,
-        height: "100vh",
+        height: '100vh',
         backgroundColor: theme.palette.background.paper,
         borderRight: `1px solid ${theme.palette.divider}`,
-        display: "flex",
-        flexDirection: "column",
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Header */}
@@ -115,9 +120,9 @@ export default function Sidebar({
         sx={{
           padding: theme.spacing(2),
           borderBottom: `1px solid ${theme.palette.divider}`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <Typography variant="h6" fontWeight="bold">
@@ -144,18 +149,20 @@ export default function Sidebar({
               fullWidth
               variant="outlined"
               onClick={handleClick}
-              endIcon={open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              endIcon={
+                open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
+              }
               disabled={isLoadingLeads}
-              sx={{ 
+              sx={{
                 justifyContent: 'space-between',
                 textTransform: 'none',
-                mb: 1
+                mb: 1,
               }}
             >
               {isLoadingLeads ? 'Loading leads...' : 'Select Lead'}
               {isLoadingLeads && <CircularProgress size={20} sx={{ ml: 1 }} />}
             </Button>
-            
+
             <Menu
               anchorEl={anchorEl}
               open={open}
@@ -170,23 +177,25 @@ export default function Sidebar({
               {uncontactedLeads.length === 0 ? (
                 <Box sx={{ p: 2, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
-                    {isLoadingLeads ? 'Loading...' : 'No uncontacted leads found'}
+                    {isLoadingLeads
+                      ? 'Loading...'
+                      : 'No uncontacted leads found'}
                   </Typography>
                 </Box>
               ) : (
                 uncontactedLeads.map((lead) => (
-                  <MenuItem 
-                    key={lead.id} 
+                  <MenuItem
+                    key={lead.id}
                     onClick={() => handleSelectLead(lead)}
                     sx={{ py: 1.5 }}
                   >
                     <ListItemIcon>
-                      <Avatar 
+                      <Avatar
                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name || `Lead ${lead.id}`)}&background=3f51b5&color=ffffff`}
                         sx={{ width: 32, height: 32, fontSize: '0.875rem' }}
                       />
                     </ListItemIcon>
-                    <ListItemText 
+                    <ListItemText
                       primary={lead.name || `Lead #${lead.id}`}
                       secondary={`${lead.vehicle_brand || ''} ${lead.vehicle_model || ''}`.trim()}
                       primaryTypographyProps={{
@@ -202,9 +211,9 @@ export default function Sidebar({
                 ))
               )}
             </Menu>
-            
+
             <Divider sx={{ my: 1 }} />
-            
+
             <Button
               size="small"
               color="inherit"
@@ -230,8 +239,8 @@ export default function Sidebar({
       >
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             backgroundColor: theme.palette.action.hover,
             borderRadius: 1,
             px: 1,
@@ -243,15 +252,15 @@ export default function Sidebar({
           </IconButton>
           <InputBase
             placeholder="Search chats..."
-            sx={{ ml: 1, flex: 1, fontSize: "0.875rem" }}
+            sx={{ ml: 1, flex: 1, fontSize: '0.875rem' }}
           />
         </Box>
       </Box>
 
       {/* Chat List */}
-      <Box sx={{ flex: 1, overflowY: "auto" }}>
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
         {chats.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: "center" }}>
+          <Box sx={{ p: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               No chats yet. Start a new chat with a lead.
             </Typography>

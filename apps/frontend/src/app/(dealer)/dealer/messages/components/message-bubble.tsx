@@ -30,10 +30,16 @@ interface MessageBubbleProps {
   isOwnMessage?: boolean;
 }
 
-export default function MessageBubble({ message, isOwnMessage = false }: MessageBubbleProps) {
+export default function MessageBubble({
+  message,
+  isOwnMessage = false,
+}: MessageBubbleProps) {
   const formatTime = (date: Date | string): string => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return dateObj.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   // Generate avatar URL based on sender name
@@ -47,10 +53,10 @@ export default function MessageBubble({ message, isOwnMessage = false }: Message
   const avatarUrl = getAvatarUrl(senderName);
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
         width: '100%',
         alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
         mb: 1.5,
@@ -62,7 +68,7 @@ export default function MessageBubble({ message, isOwnMessage = false }: Message
           flexDirection: isOwnMessage ? 'row-reverse' : 'row',
           alignItems: 'flex-start',
           maxWidth: '85%',
-          gap: 1
+          gap: 1,
         }}
       >
         <Box
@@ -83,21 +89,21 @@ export default function MessageBubble({ message, isOwnMessage = false }: Message
           />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-          <Bubble 
+          <Bubble
             isUser={isOwnMessage}
             elevation={1}
             sx={{
               transition: 'all 0.2s ease',
               '&:hover': {
-                boxShadow: isOwnMessage 
-                  ? '0 2px 8px rgba(63, 81, 181, 0.3)' 
-                  : '0 2px 8px rgba(0, 0, 0, 0.1)'
-              }
+                boxShadow: isOwnMessage
+                  ? '0 2px 8px rgba(63, 81, 181, 0.3)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.1)',
+              },
             }}
           >
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
                 '& a': {
@@ -108,14 +114,16 @@ export default function MessageBubble({ message, isOwnMessage = false }: Message
                   },
                 },
               }}
-              dangerouslySetInnerHTML={{ 
-                __html: message.text.replace(/\n/g, '<br />')
-              }} 
+              dangerouslySetInnerHTML={{
+                __html: message.text.replace(/\n/g, '<br />'),
+              }}
             />
-            <Timestamp 
-              sx={{ 
+            <Timestamp
+              sx={{
                 mt: 0.5,
-                color: isOwnMessage ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
+                color: isOwnMessage
+                  ? 'rgba(255, 255, 255, 0.7)'
+                  : 'text.secondary',
                 textAlign: 'right',
               }}
             >

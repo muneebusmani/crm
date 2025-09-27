@@ -1,7 +1,7 @@
 // AddDealerDialog.tsx
-import React, { useEffect, useState } from "react";
-import LogoUpload from "./LogoUpload";
-import CloseIcon from "@mui/icons-material/Close";
+import React, { useEffect, useState } from 'react';
+import LogoUpload from './LogoUpload';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Avatar,
   Box,
@@ -19,11 +19,10 @@ import {
   TextField,
   Typography,
   useTheme,
-} from "@mui/material";
-import { Dealer } from "@crm/types";
+} from '@mui/material';
+import { Dealer } from '@crm/types';
 
 // Your Dealer type
-
 
 interface AddDealerDialogProps {
   open: boolean;
@@ -52,7 +51,7 @@ interface DealerFormData {
   password: string;
   owner: string;
   location: string;
-  logo: string;        // preview URL
+  logo: string; // preview URL
   logoFile: File | null;
   website: string;
   contactEmail: string;
@@ -69,16 +68,16 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
   const theme = useTheme();
 
   const [formData, setFormData] = useState<DealerFormData>({
-    name: "",
-    email: "",
-    username: "",
-    password: "",
-    owner: "",
-    location: "",
-    logo: "",       // preview URL
+    name: '',
+    email: '',
+    username: '',
+    password: '',
+    owner: '',
+    location: '',
+    logo: '', // preview URL
     logoFile: null, // actual file
-    website: "",
-    contactEmail: "",
+    website: '',
+    contactEmail: '',
     tierId: 1,
   });
 
@@ -89,10 +88,10 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         name: initialData.name,
         email: initialData.email,
         username: initialData.username,
-        password: "",
+        password: '',
         owner: initialData.owner,
         location: initialData.location,
-        logo: initialData.logo || "",
+        logo: initialData.logo || '',
         logoFile: null, // fallback
         website: initialData.website,
         contactEmail: initialData.contactEmail,
@@ -100,23 +99,23 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
       });
     } else {
       setFormData({
-        name: "",
-        email: "",
-        username: "",
-        password: "",
-        owner: "",
-        location: "",
-        logo: "",
+        name: '',
+        email: '',
+        username: '',
+        password: '',
+        owner: '',
+        location: '',
+        logo: '',
         logoFile: null,
-        website: "",
-        contactEmail: "",
+        website: '',
+        contactEmail: '',
         tierId: 1,
       });
     }
   }, [initialData, isEditing]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -150,15 +149,15 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
     >
       <DialogTitle
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           padding: theme.spacing(2),
           borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Typography variant="h6" component="div">
-          {isEditing ? "Edit Dealer" : "Add Dealer"}
+          {isEditing ? 'Edit Dealer' : 'Add Dealer'}
         </Typography>
         <IconButton onClick={onClose}>
           <CloseIcon />
@@ -166,13 +165,15 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ padding: theme.spacing(3) }}>
-        <Box sx={{ display: "flex", justifyContent: "center", marginBottom: 3 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', marginBottom: 3 }}
+        >
           <LogoUpload
             value={formData.logo}
             onChange={(file, previewUrl) =>
               setFormData((prev) => ({
                 ...prev,
-                logo: previewUrl || "",
+                logo: previewUrl || '',
                 logoFile: file,
               }))
             }
@@ -290,12 +291,14 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         </form>
       </DialogContent>
 
-      <DialogActions sx={{ padding: theme.spacing(2), justifyContent: "flex-end" }}>
+      <DialogActions
+        sx={{ padding: theme.spacing(2), justifyContent: 'flex-end' }}
+      >
         <Button onClick={onClose} variant="outlined">
           Close
         </Button>
         <Button onClick={handleSubmit} variant="contained" color="primary">
-          {isEditing ? "Update Dealer" : "Add Dealer"}
+          {isEditing ? 'Update Dealer' : 'Add Dealer'}
         </Button>
       </DialogActions>
     </Dialog>

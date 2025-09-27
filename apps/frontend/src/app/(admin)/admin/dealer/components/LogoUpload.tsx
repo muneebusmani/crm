@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Avatar, Box } from "@mui/material";
-import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
+import { useState } from 'react';
+import { Avatar, Box } from '@mui/material';
+import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 
 interface LogoUploadProps {
   value?: string;
@@ -29,8 +29,8 @@ export default function LogoUpload({ value, onChange }: LogoUploadProps) {
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
+        display: 'flex',
+        justifyContent: 'center',
         marginBottom: 3,
       }}
     >
@@ -47,10 +47,10 @@ export default function LogoUpload({ value, onChange }: LogoUploadProps) {
           sx={{
             width: 100,
             height: 100,
-            cursor: "pointer",
-            border: "2px dashed",
-            borderColor: "divider",
-            "&:hover": { borderColor: "primary.main" },
+            cursor: 'pointer',
+            border: '2px dashed',
+            borderColor: 'divider',
+            '&:hover': { borderColor: 'primary.main' },
           }}
         >
           {!preview && <AddAPhotoIcon fontSize="large" />}

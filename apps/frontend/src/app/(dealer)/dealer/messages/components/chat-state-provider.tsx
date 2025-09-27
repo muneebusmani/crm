@@ -19,8 +19,8 @@ interface Chat {
 
 export default function ChatStateProvider() {
   const searchParams = useSearchParams();
-  const leadIdParam = searchParams?.get('leadId');
-  
+  const leadIdParam = searchParams?.get("leadId");
+
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,19 +31,19 @@ export default function ChatStateProvider() {
   useEffect(() => {
     const handleLeadParam = async () => {
       if (!leadIdParam || hasCheckedLeadParam) return;
-      
+
       try {
         setIsLoading(true);
         const leadId = parseInt(leadIdParam, 10);
-        
+
         if (Number.isNaN(leadId)) {
-          console.error('Invalid lead ID in URL:', leadIdParam);
+          console.error("Invalid lead ID in URL:", leadIdParam);
           return;
         }
 
         // Check if we already have a chat with this lead
-        const existingChat = chats.find(chat => chat.id === leadIdParam);
-        
+        const existingChat = chats.find((chat) => chat.id === leadIdParam);
+
         if (existingChat) {
           // Chat already exists, just select it
           setCurrentChatId(leadIdParam);
@@ -53,11 +53,13 @@ export default function ChatStateProvider() {
         try {
           // Try to fetch lead details
           const lead = await leadsApi.getOne(leadId);
-          
+
           // Generate a display name for the lead
           const leadName = lead?.name || `Lead #${leadId}`;
-          const vehicleInfo = [lead?.vehicle_brand, lead?.vehicle_model].filter(Boolean).join(' ');
-          
+          const vehicleInfo = [lead?.vehicle_brand, lead?.vehicle_model]
+            .filter(Boolean)
+            .join(" ");
+
           // Add the chat to the sidebar
           const newChat = {
             id: leadIdParam,
@@ -67,13 +69,17 @@ export default function ChatStateProvider() {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              leadName
+            )}&background=3f51b5&color=ffffff&type=png`,
           };
-          
-          setChats(prev => [newChat, ...prev]);
+
+          setChats((prev) => [newChat, ...prev]);
           setCurrentChatId(leadIdParam);
         } catch (error) {
-          console.warn(`Lead with ID ${leadId} not found, creating chat with minimal info`);
+          console.warn(
+            `Lead with ID ${leadId} not found, creating chat with minimal info`
+          );
           // Create a basic chat entry even if we can't fetch lead details
           const newChat = {
             id: leadIdParam,
@@ -85,18 +91,18 @@ export default function ChatStateProvider() {
             }),
             avatarUrl: `https://ui-avatars.com/api/?name=Lead+${leadId}&background=3f51b5&color=ffffff&type=png`,
           };
-          
-          setChats(prev => [newChat, ...prev]);
+
+          setChats((prev) => [newChat, ...prev]);
           setCurrentChatId(leadIdParam);
         }
       } catch (error) {
-        console.error('Error handling lead parameter:', error);
+        console.error("Error handling lead parameter:", error);
       } finally {
         setHasCheckedLeadParam(true);
         setIsLoading(false);
       }
     };
-    
+
     handleLeadParam();
   }, [leadIdParam, hasCheckedLeadParam, chats]);
 
@@ -576,7 +582,15 @@ export default function ChatStateProvider() {
   );
 
   const handleStartNewChat = useCallback(
-    (leadId: string, leadData?: { name?: string; email?: string; vehicle_brand?: string; vehicle_model?: string }) => {
+    (
+      leadId: string,
+      leadData?: {
+        name?: string;
+        email?: string;
+        vehicle_brand?: string;
+        vehicle_model?: string;
+      }
+    ) => {
       // Clean the leadId (remove any non-numeric characters)
       const cleanLeadId = leadId.replace(/\D/g, "");
 
@@ -599,8 +613,10 @@ export default function ChatStateProvider() {
 
       // Generate a display name for the lead
       const leadName = leadData?.name || `Lead #${cleanLeadId}`;
-      const vehicleInfo = [leadData?.vehicle_brand, leadData?.vehicle_model].filter(Boolean).join(' ');
-      
+      const vehicleInfo = [leadData?.vehicle_brand, leadData?.vehicle_model]
+        .filter(Boolean)
+        .join(" ");
+
       // Add a placeholder chat to the sidebar
       setChats((prev) => [
         {
@@ -611,7 +627,9 @@ export default function ChatStateProvider() {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            leadName
+          )}&background=3f51b5&color=ffffff&type=png`,
         },
         ...prev,
       ]);
@@ -661,7 +679,7 @@ export default function ChatStateProvider() {
     >
       <Sidebar
         chats={chats}
-        currentChatId={currentChatId || undefined}
+        currentChatId={currentChatId}
         onSelectChat={handleSelectChat}
         onNewChat={handleStartNewChat}
       />
@@ -671,6 +689,9 @@ export default function ChatStateProvider() {
           onSend={addMessage}
           isLoading={isLoading}
           onAttach={handleAttach}
+          onRequestQuote={() => {
+            // This will be handled by the ChatWindow component
+          }}
           currentChatId={currentChatId}
           leadName={chats.find((chat) => chat.id === currentChatId)?.name}
         />

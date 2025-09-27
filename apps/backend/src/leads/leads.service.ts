@@ -1,11 +1,11 @@
-import type { ApiResponse, CreateLeadDto, UpdateLeadDto } from '@crm/types'
-import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { ActivityLogger } from 'src/common/activity-log.subscriber'
-import { Repository } from 'typeorm'
-import { CustomError } from '../common/custom-error'
-import { AppLogger } from '../common/logger.service'
-import { Lead } from './entities/lead.entity'
+import type { ApiResponse, CreateLeadDto, UpdateLeadDto } from '@crm/types';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ActivityLogger } from 'src/common/activity-log.subscriber';
+import { Repository } from 'typeorm';
+import { CustomError } from '../common/custom-error';
+import { AppLogger } from '../common/logger.service';
+import { Lead } from './entities/lead.entity';
 
 @Injectable()
 export class LeadsService {
@@ -18,8 +18,8 @@ export class LeadsService {
 
   async create(createLeadDto: CreateLeadDto): Promise<Lead> {
     try {
-      const lead = this.leadRepo.create(createLeadDto)
-      const result = await this.leadRepo.save(lead)
+      const lead = this.leadRepo.create(createLeadDto);
+      const result = await this.leadRepo.save(lead);
 
       await this.activityLogger.log(
         0,
@@ -27,49 +27,45 @@ export class LeadsService {
         'Lead',
         result.id.toString(),
         `Created lead (${result.vehicle_model})`,
-      )
+      );
 
-      return result // return raw entity
+      return result; // return raw entity
     } catch (error: unknown) {
       this.logger.error(
         'Failed to create lead',
         error instanceof Error ? error.stack : '',
         'LeadsService',
-      )
-      throw new CustomError('Unable to create lead')
+      );
+      throw new CustomError('Unable to create lead');
     }
   }
 
-async findAll(
-  dealerId: number,
-): Promise<Lead[]> {
-  try {
-    const leads = await this.leadRepo.find({
-      where: { is_deleted: false },
-      relations: ["dealerLeads", "dealerLeads.dealer"],
-    });
+  async findAll(dealerId: number): Promise<Lead[]> {
+    try {
+      const leads = await this.leadRepo.find({
+        where: { is_deleted: false },
+        relations: ['dealerLeads', 'dealerLeads.dealer'],
+      });
 
-    return leads.map((lead) => {
-      const dealerLead = lead.dealerLeads
-        .filter((dl) => dl.dealer.id === dealerId)
-        .slice(-1)[0];
+      return leads.map((lead) => {
+        const dealerLead = lead.dealerLeads
+          .filter((dl) => dl.dealer.id === dealerId)
+          .slice(-1)[0];
 
-      return {
-        ...lead,
-        status: dealerLead ? dealerLead.status : lead.status,
-      };
-    });
+        return {
+          ...lead,
+          status: dealerLead ? dealerLead.status : lead.status,
+        };
+      });
     } catch (error: unknown) {
       this.logger.error(
-        "Failed to fetch leads",
-        error instanceof Error ? error.stack : "",
-        "LeadsService",
+        'Failed to fetch leads',
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
       );
-      throw new CustomError("Unable to fetch leads");
+      throw new CustomError('Unable to fetch leads');
     }
-}
-
-
+  }
 
   async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {
@@ -86,64 +82,64 @@ async findAll(
         'Failed to fetch leads',
         error instanceof Error ? error.stack : '',
         'LeadsService',
-      )
-      throw new CustomError('Unable to fetch leads')
+      );
+      throw new CustomError('Unable to fetch leads');
     }
   }
 
-   async getLeadById(id: number, dealerId: number): Promise<Lead> {
+  async getLeadById(id: number, dealerId: number): Promise<Lead> {
     try {
       const lead = await this.leadRepo.findOne({
         relations: ['dealerLeads', 'dealerLeads.dealer', 'dealerLeads.lead'],
         where: {
           dealerLeads: {
-            dealer: { id: dealerId},
-            lead :  {id : id}
+            dealer: { id: dealerId },
+            lead: { id: id },
           },
         },
       });
-      if (!lead) throw new CustomError(`Lead with ID ${id} not found`, 404)
-      return lead
+      if (!lead) throw new CustomError(`Lead with ID ${id} not found`, 404);
+      return lead;
     } catch (error: unknown) {
       this.logger.error(
         `Failed to fetch lead ${id}`,
         error instanceof Error ? error.stack : '',
         'LeadsService',
-      )
-      if (error instanceof CustomError) throw error
-      throw new CustomError('Unable to fetch lead')
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to fetch lead');
     }
   }
 
   async findOne(id: number): Promise<Lead> {
     try {
-      const lead = await this.leadRepo.findOneBy({ id })
-      if (!lead) throw new CustomError(`Lead with ID ${id} not found`, 404)
-      return lead
+      const lead = await this.leadRepo.findOneBy({ id });
+      if (!lead) throw new CustomError(`Lead with ID ${id} not found`, 404);
+      return lead;
     } catch (error: unknown) {
       this.logger.error(
         `Failed to fetch lead ${id}`,
         error instanceof Error ? error.stack : '',
         'LeadsService',
-      )
-      if (error instanceof CustomError) throw error
-      throw new CustomError('Unable to fetch lead')
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to fetch lead');
     }
   }
 
   async update(id: number, updateLeadDto: UpdateLeadDto) {
     try {
-      const lead = await this.findOne(id) // will throw CustomError if not found
-      const updated = Object.assign(lead, updateLeadDto)
-      return await this.leadRepo.save(updated)
+      const lead = await this.findOne(id); // will throw CustomError if not found
+      const updated = Object.assign(lead, updateLeadDto);
+      return await this.leadRepo.save(updated);
     } catch (error: unknown) {
       this.logger.error(
         `Failed to update lead ${id}`,
         error instanceof Error ? error.stack : '',
         'LeadsService',
-      )
-      if (error instanceof CustomError) throw error
-      throw new CustomError('Unable to update lead')
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to update lead');
     }
   }
 
@@ -151,18 +147,18 @@ async findAll(
     try {
       const lead = await this.leadRepo.findOneBy({ id });
       if (!lead) {
-        throw new CustomError("Lead not found!", 404);
+        throw new CustomError('Lead not found!', 404);
       }
       lead.is_deleted = true;
       this.leadRepo.save(lead); // better than lead.save()
-      } catch (error: unknown) {
-        this.logger.error(
-          `Failed to delete lead ${id}`,
-          error instanceof Error ? error.stack : '',
-          'LeadsService',
-        )
-      if (error instanceof CustomError) throw error
-      throw new CustomError('Unable to delete lead')
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to delete lead ${id}`,
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to delete lead');
     }
   }
 }
