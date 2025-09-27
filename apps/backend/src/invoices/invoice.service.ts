@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { InvoiceItem } from './entities/invoice-item.entity';
 import { Invoice } from './entities/invoice.entity';
-import { CreateInvoiceDto, InvoiceResponse, InvoiceStatus, LeadStatus } from '@crm/types';
+import { CreateInvoiceDto, InvoiceResponse, InvoiceStatus, LeadMessageType, LeadStatus } from '@crm/types';
 import { Dealer, User } from 'src/user/entities';
 import { CustomError } from 'src/common/custom-error';
 import { DealerLead } from 'src/user/entities/dealer-lead.entity';
@@ -143,7 +143,7 @@ export class InvoiceService {
         },
       });
     await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
-    await this.leadMessage(lead.id, dealer.id,  JSON.stringify(invoiceData));
+    await this.leadMessage(lead.id, dealer.id,  JSON.stringify(invoiceData), LeadMessageType.INVOICE);
     // Return complete invoice
     return invoice;
   }
@@ -239,7 +239,7 @@ private async ensureDealerLead(leadId: number, dealerId: number, status: string)
   }
 
 
-   private async leadMessage(leadId: number, dealerId: number, content: string) {
+   private async leadMessage(leadId: number, dealerId: number, content: string, type : string) {
     // check if already exists
 
     const existing = await this.leadMessageRepository.findOne({
@@ -260,7 +260,8 @@ private async ensureDealerLead(leadId: number, dealerId: number, status: string)
     const message = this.leadMessageRepository.create({
       content: content,
       dealer,
-      lead
+      lead,
+      type : type
     });
     return await this.leadMessageRepository.save(message);
   }

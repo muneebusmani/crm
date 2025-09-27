@@ -2,6 +2,7 @@ export * from './types/User';
 export * from './types/Lead';
 export * from './types/Api';
 export * from './types/Dealer';
+export * from './types/LeadMessageType';
 export * from './types/UserStatus';
 export * from './types/Quotation';
 export * from './types/Invoice';
