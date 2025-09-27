@@ -40,6 +40,7 @@
 //   updatedAt!: Date;
 // }
 // invoice.entity.ts
+import { InvoiceStatus } from '@crm/types';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -47,6 +48,8 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity('invoices')
@@ -57,14 +60,19 @@ export class Invoice {
   @Column({ unique: true })
   invoiceNumber!: string;
 
+  @Column()
+  grandTotal!: number;
+
   @Column('timestamp')
   date!: Date;
 
-  @Column()
-  leadId!: string;
+  @ManyToOne('User', 'invoices') // belongsTo Dealer (User)
+  @JoinColumn({ name: 'userId' })
+  dealer!: any;
 
-  @Column()
-  dealerId!: string;
+  @ManyToOne('Lead', 'invoices') // belongsTo Lead
+  @JoinColumn({ name: 'leadId' })
+  lead!: any;
 
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   subTotal!: number;
@@ -75,7 +83,7 @@ export class Invoice {
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   totalAmount!: number;
 
-  status!: string; // keep your InvoiceStatus type elsewhere
+  status!: InvoiceStatus; // keep your InvoiceStatus type elsewhere
 
   @OneToMany('InvoiceItem', 'invoice', { cascade: true, eager: true })
   items!: any[]; // use `any[]` for string-based relation

@@ -68,4 +68,5 @@ export class AdminController {
     const user = await this.adminService.suspendDealer(id);
     return this.buildResponse(user);
   }
+
 }

@@ -14,16 +14,16 @@ import { User } from './user.entity';
 @Unique(['userId'])
 export class Admin {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  userId: number;
+  userId!: number;
 
   @Column({ nullable: true })
-  roleId: number;
+  roleId!: number;
 
   @Column()
-  role: string;
+  role!: string;
 
   @OneToOne(
     () => User,
@@ -31,7 +31,7 @@ export class Admin {
   )
 
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user!: User;
 
   @ManyToOne(
     () => AdminRole,
@@ -39,5 +39,5 @@ export class Admin {
     { nullable: true },
   )
   @JoinColumn({ name: 'roleId' })
-  adminRole: AdminRole;
+  adminRole!: AdminRole;
 }

@@ -1,4 +1,4 @@
-import type { CreateLeadMessageDto, UpdateLeadMessageDto } from '@crm/types';
+import { LeadStatus, type CreateLeadMessageDto, type UpdateLeadMessageDto } from '@crm/types';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -7,6 +7,7 @@ import { Lead } from 'src/leads/entities/lead.entity';
 import { User } from 'src/user/entities';
 import { Repository } from 'typeorm';
 import { LeadMessage } from './entities/lead-message.entity';
+import { DealerLead } from 'src/user/entities/dealer-lead.entity';
 @Injectable()
 export class LeadMessageService {
   private readonly logger = new Logger(LeadMessageService.name);
@@ -17,6 +18,10 @@ export class LeadMessageService {
     private readonly dealerRepo: Repository<User>,
     @InjectRepository(Lead)
     private readonly leadRepo: Repository<Lead>,
+
+    @InjectRepository(DealerLead)
+    private readonly dealerLeadRepository: Repository<DealerLead>,
+    
 
     private readonly mailService: MailerService,
   ) {}
@@ -49,6 +54,7 @@ export class LeadMessageService {
         },
       };
       this.mailService.sendMail(emailtoSend);
+       await this.ensureDealerLead(lead.id, dealer.id!, LeadStatus.CONTACT);
       return await this.leadMessageRepo.save(message);
     } catch (error: unknown) {
       const errorMessage =
@@ -161,5 +167,33 @@ export class LeadMessageService {
       );
       throw new CustomError(`Unable to fetch lead messages: ${errorMessage}`);
     }
+  }
+
+  private async ensureDealerLead(leadId: number, dealerId: number, status: string) {
+    // check if already exists
+
+    const existing = await this.dealerLeadRepository.findOne({
+      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
+      relations: ['dealer', 'lead'],
+    });
+
+
+    if (existing) return existing; // already linked
+
+    // fetch dealer + lead (only ids needed)
+    const dealer = await this.dealerRepo.findOneBy({ id: dealerId });
+    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+
+    const lead = await this.leadRepo.findOneBy({ id: leadId });
+    if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+    // create new pivot entry
+    const dealerLead = this.dealerLeadRepository.create({
+      dealer,
+      lead,
+      status: status,
+    });
+
+    return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
   }
 }

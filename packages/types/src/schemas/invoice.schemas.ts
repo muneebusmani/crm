@@ -10,7 +10,7 @@ export const CreateInvoiceItemSchema = z.object({
 export type CreateInvoiceItemDto = z.infer<typeof CreateInvoiceItemSchema>;
 
 export const CreateInvoiceSchema = z.object({
-  leadId: z.string().uuid('Invalid lead ID format'),
+  leadId: z.number('Invalid lead ID format'),
   date: z
     .string()
     .datetime('Invalid date format')

@@ -9,6 +9,7 @@ import { CustomMailerModule } from 'src/mailer/mailer.module';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { DealerLead } from '../entities/dealer-lead.entity';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
+import { BankDetails } from '../../bank-details/entities/bank-details.entity';
 
 @Module({
   imports: [

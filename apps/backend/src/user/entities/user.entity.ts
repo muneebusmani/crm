@@ -58,6 +58,13 @@ export class User {
   @OneToMany('Quotation', 'dealer') // 'Quotation' is the target, 'dealer' is property in Quotation
   quotations!: any[];
 
+  @OneToMany('invoices', 'dealer') // 'Quotation' is the target, 'dealer' is property in Quotation
+  invoices!: any[];
+
   @OneToMany('LeadMessage', 'dealer')
   messages!: any[];
+
+  @OneToMany('BankDetails', 'user')
+  bankDetails!: any[];
+
 }
