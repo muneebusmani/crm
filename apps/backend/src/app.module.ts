@@ -12,6 +12,7 @@ import { LeadsModule } from './leads/leads.module';
 import { LeadMessageModule } from './leads-messages/lead-message.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
+import { InvoiceModule } from './invoices/invocie.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { DealerModule } from './user/dealer/dealer.module';
     ActivityLogModule,
     LeadMessageModule,
     AnalyticsModule,
+    InvoiceModule
   ],
   controllers: [AppController],
   providers: [

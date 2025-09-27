@@ -107,6 +107,10 @@ export class Lead {
   @OneToMany('Quotation', 'lead')
   quotations!: any[];
 
+  
+  @OneToMany('invoices', 'lead') // 'Quotation' is the target, 'dealer' is property in Quotation
+  invoices!: any[];
+
   // ✅ Auto timestamps for analytics
   @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date

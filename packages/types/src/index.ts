@@ -4,6 +4,7 @@ export * from './types/Api';
 export * from './types/Dealer';
 export * from './types/UserStatus';
 export * from './types/Quotation';
+export * from './types/Invoice';
 export * from './types/UserStatus';
 export * from './types/LeadTypes';
 export * from './types/InvoiceStatus';

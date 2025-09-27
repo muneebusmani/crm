@@ -1,4 +1,4 @@
-import {
+import  {
   type ApiResponse,
   type CreateLeadDto,
   CreateLeadSchema,
@@ -43,7 +43,7 @@ export class LeadsController {
       return { error: message, success: false }
     }
   }
-  
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(CreateLeadSchema))

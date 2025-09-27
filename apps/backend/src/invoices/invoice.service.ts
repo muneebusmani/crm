@@ -4,32 +4,53 @@ import { Repository } from 'typeorm';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { InvoiceItem } from './entities/invoice-item.entity';
 import { Invoice } from './entities/invoice.entity';
-import { CreateInvoiceDto, InvoiceStatus } from '@crm/types';
-
-
-
+import { CreateInvoiceDto, InvoiceResponse, InvoiceStatus, LeadStatus } from '@crm/types';
+import { Dealer, User } from 'src/user/entities';
+import { CustomError } from 'src/common/custom-error';
+import { DealerLead } from 'src/user/entities/dealer-lead.entity';
 
 
 @Injectable()
 export class InvoiceService {
   constructor(
+    @InjectRepository(Lead)
+    private readonly leadRepository: Repository<Lead>,
     @InjectRepository(Invoice)
     private readonly invoiceRepository: Repository<Invoice>,
     @InjectRepository(InvoiceItem)
     private readonly invoiceItemRepository: Repository<InvoiceItem>,
-    @InjectRepository(Lead)
-    private readonly leadRepository: Repository<Lead>,
+    @InjectRepository(Dealer)
+    private readonly dealerRespository: Repository<Dealer>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(DealerLead)
+    private readonly dealerLeadRepository: Repository<DealerLead>,
+  
   ) {}
 
-  async create(createInvoiceDto: CreateInvoiceDto, dealerId: string): Promise<Invoice> {
+  async create(createInvoiceDto: CreateInvoiceDto, dealerId: number): Promise<Invoice> {
     // Verify lead exists and belongs to dealer
-    const lead = await this.leadRepository.findOne({
-      where: { id: createInvoiceDto.leadId, dealerId },
+     const lead = await this.leadRepository.findOne({
+      where: {
+        id: createInvoiceDto.leadId,
+        is_deleted: false,
+        dealerLeads: {
+          dealer: { id: dealerId }, // 👈 filter by nested relation
+        },
+      },
+      relations: ["dealerLeads", "dealerLeads.dealer"],
     });
 
     if (!lead) {
       throw new NotFoundException('Lead not found or does not belong to this dealer');
     }
+
+     const dealer = await this.userRepository.findOne({ where: { id: dealerId } });
+      if (!dealer) {
+        throw new Error('Dealer not found');
+      }
 
     // Generate unique invoice number
     const invoiceNumber = await this.generateInvoiceNumber();
@@ -45,16 +66,17 @@ export class InvoiceService {
     const invoice = this.invoiceRepository.create({
       invoiceNumber,
       date: createInvoiceDto.date,
-      leadId: createInvoiceDto.leadId,
-      dealerId,
+      lead: lead,
+      dealer: dealer,
       subTotal,
       taxAmount: createInvoiceDto.taxAmount,
-      totalAmount,
+      grandTotal: totalAmount,
       status: InvoiceStatus.PENDING,
     });
 
     const savedInvoice = await this.invoiceRepository.save(invoice);
 
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
     // Create invoice items
     const invoiceItems = createInvoiceDto.items.map(item => 
       this.invoiceItemRepository.create({
@@ -70,36 +92,50 @@ export class InvoiceService {
     await this.invoiceItemRepository.save(invoiceItems);
 
     // Return complete invoice
-    return this.findOne(savedInvoice.id, dealerId);
+    return invoice;
   }
 
-  async findAll(dealerId: string, page: number = 1, limit: number = 10): Promise<{
-    data: Invoice[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const [invoices, total] = await this.invoiceRepository.findAndCount({
-      where: { dealerId },
-      relations: ['lead', 'items'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
+ async findAll(dealerId: string): Promise<Invoice[]> {
+  return this.invoiceRepository.find({
+    where: { dealer: { id: dealerId } },
+    relations: ['dealer', 'leads', 'items'],
+    order: { createdAt: 'DESC' },
+  });
+}
+
+
+private async ensureDealerLead(leadId: number, dealerId: number, status: string) {
+    // check if already exists
+
+    const existing = await this.dealerLeadRepository.findOne({
+      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
+      relations: ['dealer', 'lead'],
     });
 
-    return {
-      data: invoices,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+
+    if (existing) return existing; // already linked
+   
+    // fetch dealer + lead (only ids needed)
+    const dealer = await this.userRepository.findOneBy({ id: dealerId });
+    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+
+    const lead = await this.leadRepository.findOneBy({ id: leadId });
+    if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+    // create new pivot entry
+    const dealerLead = await this.dealerLeadRepository.create({
+      dealer,
+      lead,
+      status: status,
+    });
+
+    return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
   }
+
 
   async findOne(id: string, dealerId: string): Promise<Invoice> {
     const invoice = await this.invoiceRepository.findOne({
-      where: { id, dealerId },
+      where: {dealer : {id : dealerId}},
       relations: ['lead', 'items', 'dealer'],
     });
 
@@ -110,9 +146,9 @@ export class InvoiceService {
     return invoice;
   }
 
-  async updateStatus(id: string, status: InvoiceStatus, dealerId: string): Promise<Invoice> {
+  async updateStatus(id: string, status: InvoiceStatus, dealerId: number): Promise<Invoice> {
     const invoice = await this.invoiceRepository.findOne({
-      where: { id, dealerId },
+      where: { dealer : { id, dealerId }},
     });
 
     if (!invoice) {
@@ -131,69 +167,9 @@ export class InvoiceService {
     invoice.status = status;
     await this.invoiceRepository.save(invoice);
 
-    return this.findOne(id, dealerId);
+    return invoice;
   }
 
-  async delete(id: string, dealerId: string): Promise<void> {
-    const invoice = await this.invoiceRepository.findOne({
-      where: { id, dealerId },
-    });
-
-    if (!invoice) {
-      throw new NotFoundException('Invoice not found');
-    }
-
-    if (invoice.status === InvoiceStatus.PAID) {
-      throw new BadRequestException('Cannot delete paid invoice');
-    }
-
-    await this.invoiceRepository.remove(invoice);
-  }
-
-  async getInvoiceStats(dealerId: string): Promise<{
-    totalInvoices: number;
-    totalAmount: number;
-    pendingInvoices: number;
-    paidInvoices: number;
-    pendingAmount: number;
-    paidAmount: number;
-  }> {
-    const [
-      totalInvoices,
-      totalAmountResult,
-      pendingInvoices,
-      paidInvoices,
-      pendingAmountResult,
-      paidAmountResult,
-    ] = await Promise.all([
-      this.invoiceRepository.count({ where: { dealerId } }),
-      this.invoiceRepository.createQueryBuilder('invoice')
-        .select('SUM(invoice.totalAmount)', 'sum')
-        .where('invoice.dealerId = :dealerId', { dealerId })
-        .getRawOne(),
-      this.invoiceRepository.count({ where: { dealerId, status: InvoiceStatus.PENDING } }),
-      this.invoiceRepository.count({ where: { dealerId, status: InvoiceStatus.PAID } }),
-      this.invoiceRepository.createQueryBuilder('invoice')
-        .select('SUM(invoice.totalAmount)', 'sum')
-        .where('invoice.dealerId = :dealerId', { dealerId })
-        .andWhere('invoice.status = :status', { status: InvoiceStatus.PENDING })
-        .getRawOne(),
-      this.invoiceRepository.createQueryBuilder('invoice')
-        .select('SUM(invoice.totalAmount)', 'sum')
-        .where('invoice.dealerId = :dealerId', { dealerId })
-        .andWhere('invoice.status = :status', { status: InvoiceStatus.PAID })
-        .getRawOne(),
-    ]);
-
-    return {
-      totalInvoices,
-      totalAmount: Number(totalAmountResult?.sum || 0),
-      pendingInvoices,
-      paidInvoices,
-      pendingAmount: Number(pendingAmountResult?.sum || 0),
-      paidAmount: Number(paidAmountResult?.sum || 0),
-    };
-  }
 
   private async generateInvoiceNumber(): Promise<string> {
     const count = await this.invoiceRepository.count();
