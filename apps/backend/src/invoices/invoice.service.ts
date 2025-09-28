@@ -17,6 +17,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { PdfService } from 'src/Pdf/pdf-service';
 import { BankDetails } from 'src/bank-details/entities/bank-details.entity';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
+import { LeadsGateway } from 'src/leads/leads.gateway';
 
 
 @Injectable()
@@ -43,9 +44,9 @@ export class InvoiceService {
     @InjectRepository(LeadMessage)
     private readonly leadMessageRepository: Repository<LeadMessage>,
 
-     private readonly mailService: MailerService,
+    private readonly mailService: MailerService,
 
- 
+    private readonly leadsGateway: LeadsGateway,
   
   ) {}
 
@@ -181,9 +182,11 @@ private async ensureDealerLead(leadId: number, dealerId: number, status: string)
       lead,
       status: status,
     });
-
-    return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
-  }
+    lead.status = status;
+    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    this.leadsGateway.emitUpdateLead(lead);
+    return result;
+  } 
 
 
   async findOne(id: string, dealerId: string): Promise<Invoice> {

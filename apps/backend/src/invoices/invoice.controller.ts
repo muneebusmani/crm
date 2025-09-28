@@ -31,7 +31,7 @@ export class InvoiceController {
   @Post()
   async create(
     @Body() createInvoiceDto: CreateInvoiceDto,  @Req() req) : Promise<ApiResponse<InvoiceResponse>> {
-      const dealerId = req.user.dealerId; // Extracted from JWT token
+      const dealerId = req.user.id; // Extracted from JWT token
       const invoice = await this.invoiceService.create(createInvoiceDto, dealerId);
       return this.buildResponse(invoice);
   }
