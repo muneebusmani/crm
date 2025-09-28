@@ -10,7 +10,12 @@ import {
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import type { ApiResponse, CreateInvoiceDto, InvoiceResponse, InvoiceStatus } from '@crm/types';
+import type {
+  ApiResponse,
+  CreateInvoiceDto,
+  InvoiceResponse,
+  InvoiceStatus,
+} from '@crm/types';
 import { CustomError } from 'src/common/custom-error';
 
 @Controller('invoices')
@@ -20,48 +25,52 @@ export class InvoiceController {
 
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
     try {
-      return { data, success: true }
+      return { data, success: true };
     } catch (error) {
       const message =
-        error instanceof CustomError ? error.message : 'Internal server error'
-      return { error: message, success: false }
+        error instanceof CustomError ? error.message : 'Internal server error';
+      return { error: message, success: false };
     }
   }
 
   @Post()
   async create(
-    @Body() createInvoiceDto: CreateInvoiceDto,  @Req() req) : Promise<ApiResponse<InvoiceResponse>> {
-      const dealerId = req.user.dealerId; // Extracted from JWT token
-      const invoice = await this.invoiceService.create(createInvoiceDto, dealerId);
-      return this.buildResponse(invoice);
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Req() req,
+  ): Promise<ApiResponse<InvoiceResponse>> {
+    const dealerId = req.user.dealerId; // Extracted from JWT token
+    const invoice = await this.invoiceService.create(
+      createInvoiceDto,
+      dealerId,
+    );
+    return this.buildResponse(invoice);
   }
 
   @Get()
-  async findAll(@Req() req: any):Promise<ApiResponse<InvoiceResponse[]>> {
-    
-      const dealerId = req.user.dealerId;
-      const invoices = await this.invoiceService.findAll(dealerId);
-      
-         const data: InvoiceResponse[] = (await invoices).map((invoice) => ({
-          id: invoice.id,
-          lead: invoice.lead, // ✅ careful with relation naming
-          date: invoice.date,
-          items: invoice.items.map((item) => ({
-            id: item.id,
-            productName: item.productName,
-            productDetails: item.productDetails,
-            unitPrice: item.unitPrice,
-            quantity: item.quantity,
-            total: item.unitPrice * item.quantity,
-          })),
-          taxAmount: invoice.taxAmount,
-          subTotal: invoice.subTotal,
-          grandTotal: invoice.totalAmount,
-          status: invoice.status,
-          createdAt: invoice.createdAt,
-          updatedAt: invoice.updatedAt,
-        }));
-      return this.buildResponse(data);
+  async findAll(@Req() req: any): Promise<ApiResponse<InvoiceResponse[]>> {
+    const dealerId = req.user.dealerId;
+    const invoices = await this.invoiceService.findAll(dealerId);
+
+    const data: InvoiceResponse[] = (await invoices).map((invoice) => ({
+      id: invoice.id,
+      lead: invoice.lead, // ✅ careful with relation naming
+      date: invoice.date,
+      items: invoice.items.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        productDetails: item.productDetails,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        total: item.unitPrice * item.quantity,
+      })),
+      taxAmount: invoice.taxAmount,
+      subTotal: invoice.subTotal,
+      grandTotal: invoice.totalAmount,
+      status: invoice.status,
+      createdAt: invoice.createdAt,
+      updatedAt: invoice.updatedAt,
+    }));
+    return this.buildResponse(data);
   }
 
   @Get(':id')
@@ -69,9 +78,9 @@ export class InvoiceController {
     @Param('id') id: string,
     @Req() req: any,
   ): Promise<ApiResponse<InvoiceResponse>> {
-      const dealerId = req.user.dealerId;
-      const invoice = await this.invoiceService.findOne(id, dealerId);
-      return this.buildResponse(invoice);
+    const dealerId = req.user.dealerId;
+    const invoice = await this.invoiceService.findOne(id, dealerId);
+    return this.buildResponse(invoice);
   }
 
   @Patch(':id/status')
@@ -80,10 +89,12 @@ export class InvoiceController {
     @Body() body: { status: InvoiceStatus },
     @Req() req: any,
   ): Promise<ApiResponse<InvoiceResponse>> {
-    
-      const dealerId = req.user.dealerId;
-      const invoice = await this.invoiceService.updateStatus(id, body.status, dealerId);
-      return this.buildResponse(invoice);
-    
+    const dealerId = req.user.dealerId;
+    const invoice = await this.invoiceService.updateStatus(
+      id,
+      body.status,
+      dealerId,
+    );
+    return this.buildResponse(invoice);
   }
 }

@@ -1,24 +1,22 @@
 import type { Message, QuotationMessage } from '@dealer/types/chat';
+import { Person } from '@mui/icons-material';
 import {
+  Avatar,
   Box,
   CircularProgress,
+  Paper,
   Typography,
   useTheme,
-  Paper,
-  Avatar,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import QuotationDialog from './quotation-dialog';
 import ChatInput from './chat-input';
 import MessageBubble from './message-bubble';
-import { Person } from '@mui/icons-material';
+import QuotationDialog from './quotation-dialog';
 
 interface ChatWindowProps {
   messages: Message[];
   onSend: (text: string) => void;
   isLoading: boolean;
-  onAttach: () => void;
-  onRequestQuote: () => void;
   currentChatId?: string | null;
   leadName?: string;
   dealerName: string;
@@ -28,21 +26,20 @@ export default function ChatWindow({
   messages = [],
   onSend,
   isLoading,
-  onAttach,
-  onRequestQuote,
   currentChatId,
   leadName,
   dealerName,
 }: ChatWindowProps) {
-  console.log('messages object in chat window ===>', messages);
   const [isSending, setIsSending] = useState(false);
-  const [showQuotationDialog, setShowQuotationDialog] = useState(false);
-  const [quotationStatus, setQuotationStatus] = useState<
-    Record<string, 'pending' | 'accepted' | 'rejected'>
-  >({});
+  const [showQuotationDialog, setShowQuotationDialog] =
+    useState<boolean>(false);
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // ✅ 1. CREATE THE HANDLER FUNCTION
+  const handleOpenQuotationDialog = () => {
+    setShowQuotationDialog((prev) => !prev);
+  };
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
@@ -54,50 +51,12 @@ export default function ChatWindow({
     }
   }, [messages, scrollToBottom]);
 
-  const handleQuotationSent = (
-    quotation: Omit<
-      QuotationMessage,
-      'id' | 'timestamp' | 'sender' | 'type' | 'senderName'
-    >,
-  ) => {
-    // The quotation will be added to the messages array by the parent component
-  };
-
-  const handleQuoteAction = (
-    messageId: string,
-    action: 'accept' | 'reject',
-  ) => {
-    setQuotationStatus((prev) => ({
-      ...prev,
-      [messageId]: action === 'accept' ? 'accepted' : 'rejected',
-    }));
-
-    // Here you would typically make an API call to update the quotation status
-  };
-
   const handleSend = async (text: string) => {
     if (!text.trim() || isSending) return;
 
     try {
       setIsSending(true);
-      // Check if the text is a JSON string (for quotations)
-      // Check if the text is a JSON string (for quotations)
-      if (text.startsWith('{') && text.endsWith('}')) {
-        try {
-          const parsed = JSON.parse(text);
-          if (parsed.type === 'quotation') {
-            // If it's a quotation, send it as a formatted message
-            await onSend(
-              `[Quotation] ${parsed.subject}: $${parsed.price?.toFixed(2) || '0.00'}`,
-            );
-            return;
-          }
-        } catch {
-          // If JSON parsing fails, continue to send as regular text
-        }
-      }
-      // Send as regular text if not a quotation or if parsing fails
-      await onSend(text);
+      onSend(text);
     } catch (error) {
       console.error('Failed to send message:', error);
       // Optionally show error to user
@@ -138,10 +97,9 @@ export default function ChatWindow({
         >
           <ChatInput
             onSend={handleSend}
-            onAttach={onAttach}
-            onRequestQuote={onRequestQuote}
             isSending={isSending}
             disabled={!currentChatId}
+            onQuoteClick={handleOpenQuotationDialog}
           />
         </Box>
       </Box>
@@ -197,7 +155,7 @@ export default function ChatWindow({
             <Typography variant="h6" gutterBottom>
               {currentChatId ? 'No messages yet' : 'No chat selected'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            <Typography variant="body2" color="text.secondary" component={'p'}>
               {currentChatId
                 ? 'Send a message to start the conversation'
                 : 'Select a chat or start a new one'}
@@ -214,8 +172,6 @@ export default function ChatWindow({
         >
           <ChatInput
             onSend={handleSend}
-            onAttach={onAttach}
-            onRequestQuote={onRequestQuote}
             isSending={isSending}
             disabled={!currentChatId}
           />
@@ -223,6 +179,7 @@ export default function ChatWindow({
       </Box>
     );
   }
+  console.log('messages ===>', messages);
 
   return (
     <Box
@@ -283,48 +240,39 @@ export default function ChatWindow({
       >
         {messages.map((message) => {
           if (message.type === 'quotation') {
-            // Handle quotation messages
-            const quotationMessage = message as QuotationMessage;
-            const formattedMessage: QuotationMessage = {
-              ...quotationMessage,
-              status:
-                quotationStatus[message.id] ||
-                quotationMessage.status ||
-                'pending',
-              subject: quotationMessage.subject || 'Quotation',
-              message:
-                quotationMessage.message || quotationMessage.content || '',
-            };
-
+            const quotation = JSON.parse(message.content);
+            console.group('Quotation Group');
+            console.log('Quotation:', quotation);
+            console.log('Sender Name:', quotation.senderName);
+            console.log('Sender Name:', dealerName);
+            console.groupEnd();
             return (
               <MessageBubble
-                key={formattedMessage.id}
-                message={formattedMessage}
-                isOwnMessage={formattedMessage.sender === 'user'}
+                key={quotation.id}
+                quotation={quotation}
+                isOwnMessage={true}
                 dealerName={dealerName}
-                onQuoteAction={handleQuoteAction}
               />
             );
-          } else {
-            // Handle regular text messages
-            const textMessage = message as Message;
-            const messageWithText = textMessage as Message & { text?: string };
-            const formattedMessage = {
-              ...textMessage,
-              content: textMessage.content || messageWithText.text || '',
-            };
+          } else if (message.type === 'message') {
+            console.group('Message Group');
+            console.log('Message:', message);
+            console.log('Sender Name:', message.dealer?.name);
+            console.groupEnd();
 
             return (
               <MessageBubble
-                key={formattedMessage.id}
-                message={formattedMessage}
-                isOwnMessage={formattedMessage.sender === 'user'}
+                key={message.id}
+                message={message}
+                isOwnMessage={true}
                 dealerName={dealerName}
-                onQuoteAction={undefined}
               />
             );
           }
+          console.log('message type issue');
+          return <Box key={Math.random()}>Message Issue</Box>;
         })}
+
         {isLoading && (
           <Box
             sx={{
@@ -351,10 +299,9 @@ export default function ChatWindow({
       >
         <ChatInput
           onSend={handleSend}
-          onAttach={onAttach}
-          onRequestQuote={() => setShowQuotationDialog(true)}
           isSending={isSending}
           disabled={!currentChatId}
+          onQuoteClick={handleOpenQuotationDialog}
         />
 
         {currentChatId && (
@@ -362,22 +309,6 @@ export default function ChatWindow({
             open={showQuotationDialog}
             onClose={() => setShowQuotationDialog(false)}
             leadId={parseInt(currentChatId, 10)}
-            onQuotationSent={(quotation) => {
-              handleQuotationSent(quotation);
-              // Create a properly typed message for the chat
-              const messageToSend: Omit<QuotationMessage, 'id'> = {
-                type: 'quotation',
-                content: `Quotation: ${quotation.subject}\n${quotation.message}\nPrice: $${quotation.price.toFixed(2)}`,
-                createdAt: new Date().toISOString(),
-                sender: 'user',
-                senderName: dealerName,
-                status: 'pending',
-                price: quotation.price,
-                subject: quotation.subject,
-                message: quotation.message,
-              };
-              onSend(JSON.stringify(messageToSend));
-            }}
           />
         )}
       </Box>
