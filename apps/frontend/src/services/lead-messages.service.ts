@@ -148,7 +148,6 @@ export const leadMessagesApi = {
     try {
       const response =
         await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
-      console.log('Get All Response ===>', response);
 
       // If the response is already an array, return it directly
       if (Array.isArray(response)) {
@@ -286,75 +285,6 @@ export const leadMessagesApi = {
   },
 
   // Format message for UI
-  formatMessage: (
-    message: LeadMessage | null | undefined,
-    isCurrentUser: boolean,
-  ): Message => {
-    // Create a safe message object with defaults
-    const safeMessage: LeadMessage & {
-      type?: string;
-      price?: number;
-      status?: 'pending' | 'accepted' | 'rejected';
-      subject?: string;
-    } = message || ({} as LeadMessage);
-
-    // Generate a default ID if none exists
-    const messageId = safeMessage.id?.toString() || `temp-${Date.now()}`;
-
-    // Ensure we have valid content
-    const messageText = safeMessage.content || '(No content)';
-
-    // Parse the timestamp from the message
-    let formattedTimestamp: Date;
-    try {
-      const timestamp = safeMessage.updatedAt || safeMessage.createdAt;
-      formattedTimestamp = timestamp ? new Date(timestamp) : new Date();
-    } catch (error) {
-      console.error('Error parsing timestamp:', error);
-      formattedTimestamp = new Date();
-    }
-
-    // Format the sender name safely
-    let senderName = 'Unknown';
-    try {
-      senderName = isCurrentUser
-        ? 'You'
-        : (safeMessage.dealer as { name?: string })?.name ||
-          (safeMessage.lead as { name?: string })?.name ||
-          'Customer';
-    } catch (error) {
-      console.error('Error getting sender name:', error);
-      senderName = isCurrentUser ? 'You' : 'Customer';
-    }
-
-    const createdAt = formattedTimestamp.toISOString();
-    const createdAt2 = formattedTimestamp.toLocaleTimeString();
-    console.log('created at ===>', createdAt2);
-    // Create a base message object with required fields
-    const baseMessage: Message = {
-      id: messageId,
-      content: messageText,
-      sender: isCurrentUser ? 'user' : 'other',
-      createdAt,
-      senderName,
-      type: 'message',
-    };
-
-    // If this is a quotation message, include additional fields
-    if (safeMessage.type === 'quotation') {
-      const quotationMessage: QuotationMessage = {
-        ...baseMessage,
-        type: 'quotation',
-        price: safeMessage.price || 0,
-        status: safeMessage.status || 'pending',
-        subject: safeMessage.subject || 'Quotation',
-        message: messageText,
-      };
-      return quotationMessage;
-    }
-
-    return baseMessage;
-  },
 
   // Format chat list item from lead data
   formatChatItem: (lead: {

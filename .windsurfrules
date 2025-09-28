@@ -2,9 +2,10 @@ Always use context7 when I need code generation, setup or configuration steps, o
 library/API documentation. This means you should automatically use the Context7 MCP
 tools to resolve library id and get library docs without me having to explicitly ask.
 
-Whenever you need to process complex logic, use sequential thinking to break down the problem into smaller, manageable steps.
+Whenever i give you a complex task, use sequential thinking to break down the problem into smaller, manageable steps.
 
-Make sure to always use memory mcp whenever we add a new feature in this project
+Always use memory mcp whenever we add a new feature in this project
+Always use Serena MCP to interact with code, for better understanding of code context.
 
 
 my nextjs is 15.5.x app router tsx
@@ -19,3 +20,4 @@ my shared types are in @crm/types package located at /shared/types
 my backend api is in @crm/api package located at /apps/backend
 my frontend is in @crm/frontend package located at /apps/frontend
 my database is postgresql
+

@@ -1,7 +1,7 @@
 import type { Message, QuotationMessage } from '@dealer/types/chat';
-import { Box, Paper, styled, Typography, Button, Chip } from '@mui/material';
-import Image from 'next/image';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import { Box, Paper, styled, Typography } from '@mui/material';
+import Image from 'next/image';
 
 const Bubble = styled(Paper, {
   shouldForwardProp: (prop) => prop !== 'isUser',
@@ -26,18 +26,21 @@ const Timestamp = styled(Typography)(({ theme }) => ({
   textAlign: 'right',
 }));
 
-interface MessageBubbleProps {
-  message: Message;
-  isOwnMessage?: boolean;
-  onQuoteAction?: (messageId: string, action: 'accept' | 'reject') => void;
+type BaseProps = {
   dealerName: string;
-}
+  isOwnMessage: boolean;
+  onQuoteAction?: (id: string, action: 'accept' | 'reject') => void;
+};
+
+type MessageBubbleProps =
+  | (BaseProps & { message: Message; quotation?: never })
+  | (BaseProps & { message?: never; quotation: QuotationMessage });
 
 export default function MessageBubble({
   message,
-  isOwnMessage = false,
-  onQuoteAction,
-  dealerName = 'You',
+  quotation,
+  isOwnMessage,
+  dealerName,
 }: MessageBubbleProps) {
   const formatTime = (date: Date | string | undefined): string => {
     if (!date) return '';
@@ -48,12 +51,9 @@ export default function MessageBubble({
     });
   };
 
-  const timestamp = 'createdAt' in message ? message.createdAt : undefined;
-  const isQuotation = message.type === 'quotation';
-  let quotation = null;
-  if (isQuotation) {
-    quotation = JSON.parse(message.message) as QuotationMessage;
-  }
+  const timestamp = message?.createdAt;
+  const isQuotation = !!quotation;
+  console.log('is own message ===>', isOwnMessage);
 
   // Generate avatar URL based on sender name
   const getAvatarUrl = (name: string) => {
@@ -64,8 +64,7 @@ export default function MessageBubble({
   };
 
   // Use the sender from the message or default to 'User'
-  const senderName = isOwnMessage ? dealerName : 'User';
-  const avatarUrl = getAvatarUrl(senderName);
+  const avatarUrl = getAvatarUrl(dealerName);
 
   return (
     <Box
@@ -221,7 +220,7 @@ export default function MessageBubble({
                     },
                   }}
                 >
-                  {message.content}
+                  {message?.content}
                 </Typography>
               </Box>
             )}

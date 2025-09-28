@@ -275,7 +275,6 @@ export class DealerService {
         delaerId!,
         LeadStatus.QUOTATION_SENT,
       );
-      await this.leadMessage(lead.id, dealer.id, dto.message);
       return result;
     } catch (error: unknown) {
       throw new CustomError('Unable to create lead' + error);
