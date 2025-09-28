@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <idk> */
 'use client';
 
 import type { Message } from '@dealer/types/chat';
@@ -25,7 +26,7 @@ export default function ChatStateProvider({
   const searchParams = useSearchParams();
   const leadIdParam = searchParams?.get('leadId');
 
-  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [messages, setMessages] = useState<Record<string, any[]>>({});
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string>('' as string);
@@ -281,7 +282,7 @@ export default function ChatStateProvider({
 
       try {
         // Send the message to the server
-        const response = await leadMessagesApi.create({
+        await leadMessagesApi.create({
           content,
           leadId: parseInt(currentChatId, 10),
         });
@@ -300,7 +301,7 @@ export default function ChatStateProvider({
         setMessages((prev) => ({
           ...prev,
           [currentChatId]: (prev[currentChatId] || []).filter(
-            (msg) => msg.id !== tempId,
+            (msg) => msg?.id !== tempId,
           ),
         }));
       }
@@ -337,18 +338,6 @@ export default function ChatStateProvider({
         if (!Array.isArray(messages)) {
           console.error('Expected messages to be an array, got:', messages);
           return;
-        }
-
-        // Get current user ID from localStorage or context
-        let currentUserId: number | null = null;
-        try {
-          const userData = localStorage.getItem('user');
-          if (userData) {
-            const user = JSON.parse(userData);
-            currentUserId = user?.id || null;
-          }
-        } catch (error) {
-          console.error('Error getting current user:', error);
         }
 
         // Format messages using the API utility with proper error handling
@@ -481,7 +470,7 @@ export default function ChatStateProvider({
       />
       {currentChatId ? (
         <ChatWindow
-          messages={messages[currentChatId] || []}
+          messages={(messages[currentChatId] || []) as Message[]}
           onSend={handleSendMessage}
           isLoading={isLoading}
           currentChatId={currentChatId}

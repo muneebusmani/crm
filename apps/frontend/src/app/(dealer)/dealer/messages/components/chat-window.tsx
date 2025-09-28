@@ -1,4 +1,4 @@
-import type { Message, QuotationMessage } from '@dealer/types/chat';
+import type { Message } from '@dealer/types/chat';
 import { Person } from '@mui/icons-material';
 import {
   Avatar,
@@ -239,38 +239,19 @@ export default function ChatWindow({
         }}
       >
         {messages.map((message) => {
-          if (message.type === 'quotation') {
-            const quotation = JSON.parse(message.content);
-            console.group('Quotation Group');
-            console.log('Quotation:', quotation);
-            console.log('Sender Name:', quotation.senderName);
-            console.log('Sender Name:', dealerName);
-            console.groupEnd();
-            return (
-              <MessageBubble
-                key={quotation.id}
-                quotation={quotation}
-                isOwnMessage={true}
-                dealerName={dealerName}
-              />
-            );
-          } else if (message.type === 'message') {
-            console.group('Message Group');
-            console.log('Message:', message);
-            console.log('Sender Name:', message.dealer?.name);
-            console.groupEnd();
+          console.group('Message Group');
+          console.log('Message:', message);
+          console.log('Sender Name:', message.dealer?.name);
+          console.groupEnd();
 
-            return (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwnMessage={true}
-                dealerName={dealerName}
-              />
-            );
-          }
-          console.log('message type issue');
-          return <Box key={Math.random()}>Message Issue</Box>;
+          return (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isOwnMessage={true}
+              dealerName={dealerName}
+            />
+          );
         })}
 
         {isLoading && (
