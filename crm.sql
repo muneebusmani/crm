@@ -18,6 +18,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
 -- Name: user_status_enum; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -156,6 +170,47 @@ ALTER SEQUENCE public.admin_role_id_seq OWNED BY public.admin_role.id;
 
 
 --
+-- Name: bank_details; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bank_details (
+    id integer NOT NULL,
+    "accountHolderName" character varying(100) NOT NULL,
+    "accountNumber" character varying(50) NOT NULL,
+    "bankName" character varying(50) NOT NULL,
+    "branchName" character varying(50) NOT NULL,
+    "ifscCode" character varying(20),
+    iban character varying(50),
+    "swiftCode" character varying(20),
+    "userId" integer
+);
+
+
+ALTER TABLE public.bank_details OWNER TO postgres;
+
+--
+-- Name: bank_details_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bank_details_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.bank_details_id_seq OWNER TO postgres;
+
+--
+-- Name: bank_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bank_details_id_seq OWNED BY public.bank_details.id;
+
+
+--
 -- Name: dealer; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -268,6 +323,45 @@ ALTER SEQUENCE public.dealer_tier_id_seq OWNED BY public.dealer_tier.id;
 
 
 --
+-- Name: invoice_items; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.invoice_items (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "invoiceId" uuid NOT NULL,
+    "productName" character varying NOT NULL,
+    "productDetails" text DEFAULT ''::text NOT NULL,
+    "unitPrice" numeric(12,2) NOT NULL,
+    quantity integer NOT NULL,
+    "totalPrice" numeric(12,2) NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.invoice_items OWNER TO postgres;
+
+--
+-- Name: invoices; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.invoices (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "invoiceNumber" character varying NOT NULL,
+    date timestamp without time zone NOT NULL,
+    "subTotal" numeric(12,2) DEFAULT '0'::numeric NOT NULL,
+    "taxAmount" numeric(12,2) DEFAULT '0'::numeric NOT NULL,
+    "totalAmount" numeric(12,2) DEFAULT '0'::numeric NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT now() NOT NULL,
+    "updatedAt" timestamp without time zone DEFAULT now() NOT NULL,
+    "grandTotal" integer NOT NULL,
+    "userId" integer,
+    "leadId" integer
+);
+
+
+ALTER TABLE public.invoices OWNER TO postgres;
+
+--
 -- Name: lead_messages; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -276,7 +370,8 @@ CREATE TABLE public.lead_messages (
     content text NOT NULL,
     "createdAt" timestamp without time zone DEFAULT now() NOT NULL,
     "dealerId" integer,
-    "leadId" integer
+    "leadId" integer,
+    type character varying DEFAULT 'message'::character varying NOT NULL
 );
 
 
@@ -471,6 +566,13 @@ ALTER TABLE ONLY public.admin_role ALTER COLUMN id SET DEFAULT nextval('public.a
 
 
 --
+-- Name: bank_details id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bank_details ALTER COLUMN id SET DEFAULT nextval('public.bank_details_id_seq'::regclass);
+
+
+--
 -- Name: dealer id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -538,6 +640,7 @@ COPY public.activity_logs (id, action, description, user_id, entity, entity_id, 
 12	CREATE_LEAD	Created lead (Civic)	0	Lead	13	2025-09-25 13:24:02.9527
 13	CREATE_LEAD	Created lead (Civic)	0	Lead	14	2025-09-26 00:27:57.299445
 14	CREATE_LEAD	Created lead (Civic)	0	Lead	15	2025-09-26 01:41:08.656734
+15	CREATE_LEAD	Created lead (Civic)	0	Lead	16	2025-09-26 14:10:56.626024
 \.
 
 
@@ -558,13 +661,24 @@ COPY public.admin_role (id, name) FROM stdin;
 
 
 --
+-- Data for Name: bank_details; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bank_details (id, "accountHolderName", "accountNumber", "bankName", "branchName", "ifscCode", iban, "swiftCode", "userId") FROM stdin;
+1	John Doe	1234567890	Example Bank	Main Branch	EXMP0123456	EXMP1234567890	EXMPUS12345	5
+\.
+
+
+--
 -- Data for Name: dealer; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.dealer (id, "userId", "tierId", name, owner, location, logo, website, "contactEmail", "tierName") FROM stdin;
 1	4	1	John Motor	John Doe	London, UK	http://localhost:3001/uploads/logo.jpg	johnmotors.co.uk	contact@johnmotors.co.uk	1
 3	6	1	John Doe	John Doe	John Doe	http://localhost:3001/uploads/logo.jpg	vJohn Doe	JohnDoe@gmail.com	1
-2	5	1	Usmani Motors	Muneeb Usmani	London, UK	http://localhost:3001/uploads/logo.jpeg	sidhupaaji.com	muneebusmani8355@gmail.com	1
+5	8	1	Khan Motors	Khan Motors	Khan Motors		Khan Motors	khanmotors@gmail.com	1
+6	9	1	sample dealer	sample dealer	sample dealer	http://localhost:3001/uploads/1758934729310-45f0950d-1615-40f8-8db9-6b594456b60a_removalai_preview.png.png	sample dealer	sample@dealer.com	1
+2	5	1	Usmani Motor	Muneeb Usmani	London, UK	http://localhost:3001/uploads/logo.jpeg	muneebusmani.com	muneebusmani8355@gmail.com	1
 \.
 
 
@@ -574,6 +688,12 @@ COPY public.dealer (id, "userId", "tierId", name, owner, location, logo, website
 
 COPY public.dealer_leads (id, status, "userId", "leadId") FROM stdin;
 3	OPEN	5	14
+4	SENT	5	16
+5	SENT	5	15
+6	SENT	5	13
+7	CONTACT	5	13
+8	CONTACT	5	15
+9	CONTACT	5	16
 \.
 
 
@@ -590,38 +710,63 @@ COPY public.dealer_tier (id, name) FROM stdin;
 
 
 --
+-- Data for Name: invoice_items; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.invoice_items (id, "invoiceId", "productName", "productDetails", "unitPrice", quantity, "totalPrice", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.invoices (id, "invoiceNumber", date, "subTotal", "taxAmount", "totalAmount", "createdAt", "updatedAt", "grandTotal", "userId", "leadId") FROM stdin;
+\.
+
+
+--
 -- Data for Name: lead_messages; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.lead_messages (id, content, "createdAt", "dealerId", "leadId") FROM stdin;
-1	Hello	2025-09-25 14:26:58.364924	5	13
-2	hi	2025-09-25 17:34:58.896956	5	13
-3	Hi There Testing from muneeb	2025-09-25 19:47:53.889515	5	13
-4	Hi	2025-09-25 19:55:57.74365	5	13
-5	Hi	2025-09-25 20:02:16.067413	5	13
-6	Hello	2025-09-25 20:05:42.211434	5	13
-7	Loml	2025-09-25 20:09:04.851714	5	13
-8	Loml2	2025-09-25 20:09:33.961922	5	13
-9	Looml4	2025-09-25 20:10:51.665789	5	13
-10	Hey there	2025-09-25 20:17:01.374125	5	13
-11	How are you i am under the water ubuuububub	2025-09-25 20:18:43.761029	5	13
-12	Mithu Mithu	2025-09-25 20:25:30.193261	5	13
-13	Hi There	2025-09-25 21:02:25.881094	5	13
-14	Helo THere	2025-09-26 00:23:22.845009	5	13
-15	Hi There	2025-09-26 00:28:30.329576	5	14
-16	hellow	2025-09-26 00:42:14.693595	5	13
-17	testing	2025-09-26 00:42:41.595041	5	13
-18	Hi there	2025-09-26 01:45:59.49271	5	15
-19	Testing v3	2025-09-26 01:46:17.389816	5	14
-20	Testing v4	2025-09-26 01:46:22.736877	5	15
-21	Testing v5	2025-09-26 01:46:29.14229	5	13
-22	testing lmao	2025-09-26 01:51:39.895746	5	14
-23	testing loml	2025-09-26 01:51:46.944348	5	13
-24	testing shaolin	2025-09-26 01:51:52.903375	5	15
-25	Tesitng	2025-09-26 01:53:46.025671	5	13
-26	testing	2025-09-26 01:53:53.574572	5	14
-27	Testing	2025-09-26 01:53:58.628042	5	15
-28	Yelllow	2025-09-26 02:17:02.249724	5	15
+COPY public.lead_messages (id, content, "createdAt", "dealerId", "leadId", type) FROM stdin;
+1	Hello	2025-09-25 14:26:58.364924	5	13	message
+2	hi	2025-09-25 17:34:58.896956	5	13	message
+3	Hi There Testing from muneeb	2025-09-25 19:47:53.889515	5	13	message
+4	Hi	2025-09-25 19:55:57.74365	5	13	message
+5	Hi	2025-09-25 20:02:16.067413	5	13	message
+6	Hello	2025-09-25 20:05:42.211434	5	13	message
+7	Loml	2025-09-25 20:09:04.851714	5	13	message
+8	Loml2	2025-09-25 20:09:33.961922	5	13	message
+9	Looml4	2025-09-25 20:10:51.665789	5	13	message
+10	Hey there	2025-09-25 20:17:01.374125	5	13	message
+11	How are you i am under the water ubuuububub	2025-09-25 20:18:43.761029	5	13	message
+12	Mithu Mithu	2025-09-25 20:25:30.193261	5	13	message
+13	Hi There	2025-09-25 21:02:25.881094	5	13	message
+14	Helo THere	2025-09-26 00:23:22.845009	5	13	message
+15	Hi There	2025-09-26 00:28:30.329576	5	14	message
+16	hellow	2025-09-26 00:42:14.693595	5	13	message
+17	testing	2025-09-26 00:42:41.595041	5	13	message
+18	Hi there	2025-09-26 01:45:59.49271	5	15	message
+19	Testing v3	2025-09-26 01:46:17.389816	5	14	message
+20	Testing v4	2025-09-26 01:46:22.736877	5	15	message
+21	Testing v5	2025-09-26 01:46:29.14229	5	13	message
+22	testing lmao	2025-09-26 01:51:39.895746	5	14	message
+23	testing loml	2025-09-26 01:51:46.944348	5	13	message
+24	testing shaolin	2025-09-26 01:51:52.903375	5	15	message
+25	Tesitng	2025-09-26 01:53:46.025671	5	13	message
+26	testing	2025-09-26 01:53:53.574572	5	14	message
+27	Testing	2025-09-26 01:53:58.628042	5	15	message
+28	Yelllow	2025-09-26 02:17:02.249724	5	15	message
+29	Hi	2025-09-26 14:11:28.091824	5	16	message
+31	Hi there	2025-09-27 16:04:42.933397	5	13	message
+32	Hello	2025-09-27 16:07:40.50152	5	13	message
+30	{"id":"quotation-1758936529969","type":"quotation","sender":"user","timestamp":"2025-09-27T01:28:49.969Z","senderName":"You","status":"pending","subject":"Hi","message":"there","price":1}	2025-09-27 01:28:50.329561	5	13	quotation
+33	a\nb\nc\nd	2025-09-27 16:10:41.301877	5	13	message
+34	Hi there	2025-09-27 16:12:13.6719	5	13	message
+35	Yo Sup	2025-09-27 22:29:33.993085	5	13	message
+36	Yo	2025-09-27 22:29:48.282975	5	15	message
+37	Yo	2025-09-27 22:29:57.767362	5	16	message
 \.
 
 
@@ -637,6 +782,7 @@ COPY public.leads (id, vehicle_model, vehicle_reg, vehicle_brand, vehicle_title,
 11	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	muneebusmani1122@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 13:42:43.344968	2025-09-26 01:56:17.6832	t
 12	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 13:42:46.103979	2025-09-26 02:49:13.99766	t
 10	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	noobragaming36@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-24 01:14:43.635571	2025-09-26 02:49:14.597626	t
+16	Civic	ABC-1234	Honda	Sedan	XYZ5678	2022	Engine	1800cc	Petrol	Yes	No	Yes	Yes	No	Yes	No	10001	FWD	Yes	alikhan.dec17@gmail.com	John Doe	Lead description goes here.	ENG123	\N	\N	\N	\N	\N	2025-09-26 14:10:56.603565	2025-09-26 14:10:56.603565	f
 \.
 
 
@@ -645,6 +791,15 @@ COPY public.leads (id, vehicle_model, vehicle_reg, vehicle_brand, vehicle_title,
 --
 
 COPY public.quotations (id, "engineCodeName", "dealershipName", "quotationPrice", subject, message, "dealerId", "leadId") FROM stdin;
+1	ENG123	Ali Chandio Motors	5000.00	Quotation for engine	Here is the quotation for your request	5	16
+2	ENG123	Ali Chandio Motors	5000.00	Quotation for engine	Here is the quotation for your request	5	16
+3	ENG123	Ali Chandio Motors	5000.00	Quotation for engine	Here is the quotation for your request	5	16
+4	ENG123	Ali Chandio Motors	100.00	Hi THere	This is a Quotation	5	16
+5	ENG123	Ali Chandio Motors	10000.00	Yo Wassup	Yo Wassup	5	15
+6	ENG123	Ali Chandio Motors	5000.00	Quotation for engine	Here is the quotation for your request	5	16
+7	ENG123	Ali Chandio Motors	10000.00	Test Quotation	Test Quotation	5	15
+8	ENG123	Ali Chandio Motors	100.00	Quotation Testing 6969	Quotation Testing 6969	5	13
+9	ENG123	Ali Chandio Motors	1.00	Hi	there	5	13
 \.
 
 
@@ -655,7 +810,9 @@ COPY public.quotations (id, "engineCodeName", "dealershipName", "quotationPrice"
 COPY public."user" (id, email, password, name, username, type, status, "resetPasswordToken", "resetPasswordExpires") FROM stdin;
 6	JohnDoe@gmail.com	$2b$10$y4okXoojTsIgaWYcOfU3du8wCppaWWzAUtlgdg/gar6l9Uz18rdRC	John Doe	John Doe	dealer	ACTIVE	\N	\N
 4	john@enginefinderscrm.com	$2b$10$FrvBAvcwAONWgQeSGco5d.MuUslcKF6/yvK0ye1GOsoZmI/1utu3G	John Motor	johndoe	dealer	ACTIVE	\N	\N
-5	muneebusmani8355@gmail.com	$2b$10$OrYCTeR3CSYbsCQp.GubF.A.S1WEan2A9DmfztSLseb.G.CHOUSoO	Ali Chandio Motors	muneeb	dealer	ACTIVE	\N	\N
+8	khanmotors@gmail.com	$2b$10$S8YHsoIu/vPF9YcEZMJu7uQ4zIW0gWFEdMd1RSG8szbTKJr43i8qG	Khan Motors	KhanMotors	dealer	ACTIVE	\N	\N
+9	sample@dealer.com	$2b$10$0P1gRFVaJN5Wbp3n5.urr.51WHFBK4Er9ETlnYYJq28Hnqvs8K6o2	sample dealer	sample dealer	dealer	ACTIVE	\N	\N
+5	muneebusmani8355@gmail.com	$2b$10$OrYCTeR3CSYbsCQp.GubF.A.S1WEan2A9DmfztSLseb.G.CHOUSoO	Usmani Motor	muneeb	dealer	ACTIVE	\N	\N
 \.
 
 
@@ -663,7 +820,7 @@ COPY public."user" (id, email, password, name, username, type, status, "resetPas
 -- Name: activity_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.activity_logs_id_seq', 14, true);
+SELECT pg_catalog.setval('public.activity_logs_id_seq', 15, true);
 
 
 --
@@ -681,17 +838,24 @@ SELECT pg_catalog.setval('public.admin_role_id_seq', 1, false);
 
 
 --
+-- Name: bank_details_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bank_details_id_seq', 1, true);
+
+
+--
 -- Name: dealer_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.dealer_id_seq', 4, true);
+SELECT pg_catalog.setval('public.dealer_id_seq', 7, true);
 
 
 --
 -- Name: dealer_leads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.dealer_leads_id_seq', 3, true);
+SELECT pg_catalog.setval('public.dealer_leads_id_seq', 9, true);
 
 
 --
@@ -705,28 +869,28 @@ SELECT pg_catalog.setval('public.dealer_tier_id_seq', 4, true);
 -- Name: lead_messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.lead_messages_id_seq', 28, true);
+SELECT pg_catalog.setval('public.lead_messages_id_seq', 37, true);
 
 
 --
 -- Name: leads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.leads_id_seq', 15, true);
+SELECT pg_catalog.setval('public.leads_id_seq', 16, true);
 
 
 --
 -- Name: quotations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.quotations_id_seq', 1, false);
+SELECT pg_catalog.setval('public.quotations_id_seq', 9, true);
 
 
 --
 -- Name: user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.user_id_seq', 7, true);
+SELECT pg_catalog.setval('public.user_id_seq', 10, true);
 
 
 --
@@ -743,6 +907,22 @@ ALTER TABLE ONLY public.dealer
 
 ALTER TABLE ONLY public.dealer_leads
     ADD CONSTRAINT "PK_43ec3415cba24216fa59fb6ca03" PRIMARY KEY (id);
+
+
+--
+-- Name: invoice_items PK_53b99f9e0e2945e69de1a12b75a; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.invoice_items
+    ADD CONSTRAINT "PK_53b99f9e0e2945e69de1a12b75a" PRIMARY KEY (id);
+
+
+--
+-- Name: invoices PK_668cef7c22a427fd822cc1be3ce; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT "PK_668cef7c22a427fd822cc1be3ce" PRIMARY KEY (id);
 
 
 --
@@ -783,6 +963,14 @@ ALTER TABLE ONLY public."user"
 
 ALTER TABLE ONLY public.leads
     ADD CONSTRAINT "PK_cd102ed7a9a4ca7d4d8bfeba406" PRIMARY KEY (id);
+
+
+--
+-- Name: bank_details PK_ddbbcb9586b7f4d6124fe58f257; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bank_details
+    ADD CONSTRAINT "PK_ddbbcb9586b7f4d6124fe58f257" PRIMARY KEY (id);
 
 
 --
@@ -834,6 +1022,14 @@ ALTER TABLE ONLY public.dealer
 
 
 --
+-- Name: invoices UQ_bf8e0f9dd4558ef209ec111782d; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT "UQ_bf8e0f9dd4558ef209ec111782d" UNIQUE ("invoiceNumber");
+
+
+--
 -- Name: dealer_tier UQ_d00410384732e55045dc3cff89e; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -871,6 +1067,22 @@ ALTER TABLE ONLY public.admin
 
 ALTER TABLE ONLY public.dealer
     ADD CONSTRAINT "FK_7c2e500551158a2e30b129d3c79" FOREIGN KEY ("userId") REFERENCES public."user"(id);
+
+
+--
+-- Name: invoice_items FK_7fb6895fc8fad9f5200e91abb59; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.invoice_items
+    ADD CONSTRAINT "FK_7fb6895fc8fad9f5200e91abb59" FOREIGN KEY ("invoiceId") REFERENCES public.invoices(id) ON DELETE CASCADE;
+
+
+--
+-- Name: invoices FK_82182ba474e5dcc53570ee4125b; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT "FK_82182ba474e5dcc53570ee4125b" FOREIGN KEY ("leadId") REFERENCES public.leads(id);
 
 
 --
@@ -914,6 +1126,14 @@ ALTER TABLE ONLY public.dealer
 
 
 --
+-- Name: bank_details FK_d566e3c5f9b1b1c497d709c1fcc; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bank_details
+    ADD CONSTRAINT "FK_d566e3c5f9b1b1c497d709c1fcc" FOREIGN KEY ("userId") REFERENCES public."user"(id);
+
+
+--
 -- Name: dealer_leads FK_ee2978b96dbc37a14228e205230; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -935,6 +1155,14 @@ ALTER TABLE ONLY public.admin
 
 ALTER TABLE ONLY public.lead_messages
     ADD CONSTRAINT "FK_f97b528b624a3949ee0d880c1f9" FOREIGN KEY ("dealerId") REFERENCES public."user"(id);
+
+
+--
+-- Name: invoices FK_fcbe490dc37a1abf68f19c5ccb9; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT "FK_fcbe490dc37a1abf68f19c5ccb9" FOREIGN KEY ("userId") REFERENCES public."user"(id);
 
 
 --
