@@ -7,7 +7,7 @@ export interface CreateQuotationParams {
   quotationPrice: number;
 }
 
-export const dealersApi = {
+export const quotationsApi = {
   async createQuotation(params: CreateQuotationParams) {
     const response = await api.post('/dealers/quotations', params);
     return response.data;

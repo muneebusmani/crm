@@ -3,7 +3,7 @@ import { use } from 'react';
 import { get } from '@/lib/api';
 import ChatStateProvider from './components/chat-state-provider';
 
-function getDealer(): { name: any } {
+function getDealer(): { name: string } {
   return use(get(`/dealers/${use(cookies()).get('id')?.value}`));
 }
 export default function ChatPage() {

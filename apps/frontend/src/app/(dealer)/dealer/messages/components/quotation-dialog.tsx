@@ -1,15 +1,15 @@
 'use client';
 
 import {
+  Box,
   Button,
   Dialog,
   DialogContent,
   DialogTitle,
   TextField,
-  Box,
 } from '@mui/material';
 import { useState } from 'react';
-import { dealersApi } from '@/services/dealers.service';
+import { quotationsApi } from '@/services/quotation.service';
 
 interface QuotationDialogProps {
   open: boolean;
@@ -33,7 +33,7 @@ export default function QuotationDialog({
 
     try {
       setIsSubmitting(true);
-      await dealersApi.createQuotation({
+      await quotationsApi.createQuotation({
         leadId,
         subject,
         message,

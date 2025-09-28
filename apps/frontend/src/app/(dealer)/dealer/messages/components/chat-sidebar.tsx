@@ -1,28 +1,28 @@
-import SearchIcon from '@mui/icons-material/Search';
+import type { Lead } from '@crm/types';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import SearchIcon from '@mui/icons-material/Search';
 import {
+  Avatar,
   Box,
   Button,
+  CircularProgress,
+  Divider,
   IconButton,
+  InputBase,
   List,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Paper,
   Typography,
   useTheme,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  CircularProgress,
-  Divider,
-  Avatar,
-  InputBase,
 } from '@mui/material';
-import { useState, useEffect, useCallback } from 'react';
-import SidebarChatItem from './sidebar-chat-item';
+import { useCallback, useEffect, useState } from 'react';
 import { leadsApi } from '@/services/leads.service';
-import type { Lead } from '@crm/types';
+import SidebarChatItem from './sidebar-chat-item';
 
 interface ChatItem {
   id: string;
@@ -49,7 +49,6 @@ interface SidebarProps {
 
 export default function Sidebar({
   chats,
-  currentChatId,
   onSelectChat,
   onNewChat,
 }: SidebarProps) {
@@ -167,10 +166,12 @@ export default function Sidebar({
               anchorEl={anchorEl}
               open={open}
               onClose={handleClose}
-              PaperProps={{
-                style: {
-                  maxHeight: 300,
-                  width: '300px',
+              slotProps={{
+                paper: {
+                  style: {
+                    maxHeight: 300,
+                    width: '300px',
+                  },
                 },
               }}
             >
@@ -198,13 +199,15 @@ export default function Sidebar({
                     <ListItemText
                       primary={lead.name || `Lead #${lead.id}`}
                       secondary={`${lead.vehicle_brand || ''} ${lead.vehicle_model || ''}`.trim()}
-                      primaryTypographyProps={{
-                        variant: 'subtitle2',
-                        noWrap: true,
-                      }}
-                      secondaryTypographyProps={{
-                        variant: 'caption',
-                        noWrap: true,
+                      slotProps={{
+                        primary: {
+                          variant: 'subtitle2',
+                          noWrap: true,
+                        },
+                        secondary: {
+                          variant: 'caption',
+                          noWrap: true,
+                        },
                       }}
                     />
                   </MenuItem>
@@ -274,7 +277,6 @@ export default function Sidebar({
                 lastMessage={chat.lastMessage}
                 timestamp={chat.timestamp}
                 avatarUrl={chat.avatarUrl}
-                isSelected={chat.id === currentChatId}
                 onClick={() => onSelectChat(chat.id)}
               />
             ))}
