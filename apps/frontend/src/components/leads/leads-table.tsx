@@ -34,7 +34,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { leadsApi } from '@/services/leads.service';
 import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
@@ -72,7 +71,9 @@ const LeadsTable: React.FC = () => {
   const fetchLeads = async () => {
     setLoading(true); // start loading
     try {
-      const leadsData = await leadsApi.getAll();
+      const res = await fetch('/api/leads', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch leads');
+      const leadsData = (await res.json()) as Lead[];
       setLeads(leadsData);
     } catch (error) {
       setSnackbar({
@@ -89,7 +90,9 @@ const LeadsTable: React.FC = () => {
   const fetchLeadById = async (id: number) => {
     setLoading(true);
     try {
-      const leadData = await leadsApi.getOne(id);
+      const res = await fetch(`/api/leads/${id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch lead info');
+      const leadData = (await res.json()) as Lead;
       setSelectedLead(leadData);
       return leadData;
     } catch (error) {
@@ -230,10 +233,13 @@ const LeadsTable: React.FC = () => {
 
   const handleLeadSave = async (updatedLead: Lead) => {
     try {
-      await leadsApi.update({
-        // id: updatedLead.id,
-        ...updatedLead,
+      const res = await fetch('/api/leads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...updatedLead }),
       });
+      if (!res.ok) throw new Error('Failed to update lead');
       setSnackbar({
         open: true,
         message: `Lead "${updatedLead.name}" updated successfully`,
@@ -251,7 +257,11 @@ const LeadsTable: React.FC = () => {
 
   const handleLeadDelete = async (leadId: number) => {
     try {
-      await leadsApi.delete(leadId);
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete lead');
       setSnackbar({
         open: true,
         message: `Lead #${leadId} deleted successfully`,

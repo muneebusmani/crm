@@ -1,4 +1,6 @@
+'use client';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import SendIcon from '@mui/icons-material/Send';
 import {
   Box,
@@ -13,6 +15,7 @@ import { useState } from 'react';
 interface ChatInputProps {
   onSend: (text: string) => void | Promise<void>;
   onQuoteClick?: () => void;
+  onInvoiceClick?: () => void;
   disabled?: boolean;
   isSending?: boolean;
 }
@@ -20,6 +23,7 @@ interface ChatInputProps {
 export default function ChatInput({
   onSend,
   onQuoteClick,
+  onInvoiceClick,
   disabled = false,
   isSending = false,
 }: ChatInputProps) {
@@ -69,6 +73,24 @@ export default function ChatInput({
             }}
           >
             <RequestQuoteIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      <Tooltip title="Send Invoice">
+        <span>
+          <IconButton
+            disabled={disabled || isSending}
+            onClick={onInvoiceClick}
+            sx={{
+              color: theme.palette.warning.main,
+              marginRight: 1,
+              '&:disabled': {
+                opacity: 0.5,
+              },
+            }}
+          >
+            <ReceiptLongIcon />
           </IconButton>
         </span>
       </Tooltip>

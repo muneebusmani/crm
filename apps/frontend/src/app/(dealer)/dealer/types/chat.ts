@@ -3,7 +3,7 @@ import { Dealer, Lead } from '@crm/types';
 export interface Message {
   id: string;
   content: string;
-  type: 'message' | 'quotation';
+  type: 'message' | 'quotation' | 'invoice';
   createdAt: string;
   dealer?: Dealer;
   lead?: Lead;
