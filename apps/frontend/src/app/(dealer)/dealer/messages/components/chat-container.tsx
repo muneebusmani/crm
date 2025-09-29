@@ -1,25 +1,21 @@
 'use client';
 
 import { Box, CircularProgress } from '@mui/material';
-import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Sidebar from '@/app/(dealer)/dealer/messages/components/chat-sidebar';
+import ChatWindow from '@/app/(dealer)/dealer/messages/components/chat-window';
+import type { Message } from '@/app/(dealer)/dealer/types/chat';
 import {
   ensureChatFromLead,
   loadChats,
   loadMessagesForChat,
   sendMessage,
   startNewChat,
-} from './slice';
-import type { Message } from '@/app/(dealer)/dealer/types/chat';
-import Sidebar from '@/app/(dealer)/dealer/messages/components/chat-sidebar';
-import ChatWindow from '@/app/(dealer)/dealer/messages/components/chat-window';
+} from '@/features/chat/slice';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 
-export default function ChatContainer({
-  dealerName,
-}: {
-  dealerName: string;
-}) {
+export default function ChatContainer({ dealerName }: { dealerName: string }) {
   const dispatch = useAppDispatch();
   const { chats, currentChatId, messagesByChatId, loading } = useAppSelector(
     (s) => s.chat,
@@ -51,7 +47,8 @@ export default function ChatContainer({
   useEffect(() => {
     if (!currentChatId) return;
     const existing = messagesByChatId[currentChatId];
-    if (!existing || existing.length === 0) {
+    // Only load if we haven't loaded yet (undefined means not loaded, empty array means loaded but no messages)
+    if (existing === undefined) {
       dispatch(loadMessagesForChat(currentChatId));
     }
   }, [currentChatId, messagesByChatId, dispatch]);
@@ -64,7 +61,15 @@ export default function ChatContainer({
   );
 
   const handleNewChat = useCallback(
-    (leadId: string, leadData?: { name?: string; email?: string; vehicle_brand?: string; vehicle_model?: string }) => {
+    (
+      leadId: string,
+      leadData?: {
+        name?: string;
+        email?: string;
+        vehicle_brand?: string;
+        vehicle_model?: string;
+      },
+    ) => {
       dispatch(startNewChat({ leadId, leadData }));
     },
     [dispatch],
@@ -80,14 +85,30 @@ export default function ChatContainer({
 
   if (loading && chats.length === 0) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100%' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          width: '100%',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ display: 'flex', padding: 0, margin: 0, width: '100%', height: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        padding: 0,
+        margin: 0,
+        width: '100%',
+        height: '100%',
+      }}
+    >
       <Sidebar
         chats={chats}
         currentChatId={currentChatId ?? undefined}

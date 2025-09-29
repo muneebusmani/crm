@@ -19,7 +19,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import BankDetailsSection from './BankDetailsSection';
+import BankDetailsSection from './bank-details-selection';
 
 // biome-ignore lint/suspicious/noExplicitAny: <any>
 const Profile = ({ id }: { id: any }) => {

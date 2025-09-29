@@ -97,8 +97,18 @@ export const loadMessagesForChat = createAsyncThunk<
     fetch(`/api/dealers/quotations?leadId=${leadId}`, { credentials: 'include' }),
     fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
   ]);
-  if (!msgRes.ok) throw new Error('Failed to load messages');
-  const baseMessages = (await msgRes.json()) as LeadMessageDTO[];
+  
+  // Handle empty or error responses gracefully - new chats might not have messages yet
+  let baseMessages: LeadMessageDTO[] = [];
+  if (msgRes.ok) {
+    try {
+      const data = await msgRes.json();
+      baseMessages = Array.isArray(data) ? data : [];
+    } catch {
+      baseMessages = [];
+    }
+  }
+  
   const quotations: QuotationDTO[] = quoRes.ok ? ((await quoRes.json()) as QuotationDTO[]) : [];
   const invoices: InvoiceDTO[] = invRes.ok ? ((await invRes.json()) as InvoiceDTO[]) : [];
 

@@ -1,9 +1,6 @@
-// AddDealerDialog.tsx
-import React, { useEffect, useState } from 'react';
-import LogoUpload from './LogoUpload';
+import { Dealer } from '@crm/types';
 import CloseIcon from '@mui/icons-material/Close';
 import {
-  Avatar,
   Box,
   Button,
   Dialog,
@@ -20,7 +17,8 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { Dealer } from '@crm/types';
+import React, { useEffect, useState } from 'react';
+import LogoUpload from './logo-upload';
 
 // Your Dealer type
 

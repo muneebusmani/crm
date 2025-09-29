@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 import axios from 'axios';
-import BankDetailsForm from './BankDetailsForm';
+import BankDetailsForm from './bank-details-form';
 import { get } from '@/lib/api';
 
 type BankDetails = {
