@@ -42,6 +42,7 @@ export class AuthService {
       where: { email: dto.email },
     });
 
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }

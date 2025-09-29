@@ -1,6 +1,5 @@
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import SendIcon from '@mui/icons-material/Send';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import SendIcon from '@mui/icons-material/Send';
 import {
   Box,
   CircularProgress,
@@ -13,16 +12,14 @@ import { useState } from 'react';
 
 interface ChatInputProps {
   onSend: (text: string) => void | Promise<void>;
-  onAttach: () => void;
-  onRequestQuote: () => void;
+  onQuoteClick?: () => void;
   disabled?: boolean;
   isSending?: boolean;
 }
 
 export default function ChatInput({
   onSend,
-  onAttach,
-  onRequestQuote,
+  onQuoteClick,
   disabled = false,
   isSending = false,
 }: ChatInputProps) {
@@ -58,42 +55,21 @@ export default function ChatInput({
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <Tooltip title="Attach file">
+      <Tooltip title="Send Quotation">
         <span>
-          <Tooltip title="Attach file">
-            <span>
-              <IconButton
-                onClick={onAttach}
-                disabled={disabled || isSending}
-                sx={{
-                  color: theme.palette.text.secondary,
-                  marginRight: 1,
-                  '&:disabled': {
-                    opacity: 0.5,
-                  },
-                }}
-              >
-                <AttachFileIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Send Quotation">
-            <span>
-              <IconButton
-                onClick={onRequestQuote}
-                disabled={disabled || isSending}
-                sx={{
-                  color: theme.palette.success.main,
-                  marginRight: 1,
-                  '&:disabled': {
-                    opacity: 0.5,
-                  },
-                }}
-              >
-                <RequestQuoteIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          <IconButton
+            disabled={disabled || isSending}
+            onClick={onQuoteClick}
+            sx={{
+              color: theme.palette.success.main,
+              marginRight: 1,
+              '&:disabled': {
+                opacity: 0.5,
+              },
+            }}
+          >
+            <RequestQuoteIcon />
+          </IconButton>
         </span>
       </Tooltip>
 
@@ -104,7 +80,7 @@ export default function ChatInput({
           placeholder={isSending ? 'Sending...' : 'Type a message...'}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
           disabled={disabled || isSending}
           multiline
           maxRows={4}

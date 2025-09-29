@@ -40,32 +40,49 @@ export class LeadsService {
     }
   }
 
-  async findAll(dealerId: number): Promise<Lead[]> {
-    try {
-      const leads = await this.leadRepo.find({
-        where: { is_deleted: false },
-        relations: ['dealerLeads', 'dealerLeads.dealer'],
-      });
+async findAll(dealerId: number): Promise<Lead[]> {
+  try {
+    const leads = await this.leadRepo.find({
+      where: { is_deleted: false },
+      relations: ['dealerLeads', 'dealerLeads.dealer'],
+    });
 
-      return leads.map((lead) => {
-        const dealerLead = lead.dealerLeads
-          .filter((dl) => dl.dealer.id === dealerId)
-          .slice(-1)[0];
+    return leads.map((lead) => {
+      // dealer's own entry for this lead
+      const dealerLead = lead.dealerLeads
+        .filter((dl) => dl.dealer.id === dealerId)
+        .slice(-1)[0];
+      
 
-        return {
-          ...lead,
-          status: dealerLead ? dealerLead.status : lead.status,
-        };
-      });
-    } catch (error: unknown) {
-      this.logger.error(
-        'Failed to fetch leads',
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
-      );
-      throw new CustomError('Unable to fetch leads');
-    }
+      // check if any dealer has WON this lead
+      const wonBy = lead.dealerLeads.find((dl) => dl.status === 'WON');
+
+      let status: string;
+
+      if (wonBy) {
+        // someone won already
+        status = wonBy.dealer.id === dealerId ? 'WON' : 'LOST';
+      } else {
+        // nobody has WON yet → show dealer's own status
+        status = dealerLead ? dealerLead.status : 'PENDING';
+      }
+
+      return {
+        ...lead,
+        status, // 👈 per-dealer status
+      } as Lead;
+    });
+  } catch (error: unknown) {
+    this.logger.error(
+      'Failed to fetch leads',
+      error instanceof Error ? error.stack : '',
+      'LeadsService',
+    );
+    throw new CustomError('Unable to fetch leads');
   }
+}
+
+
 
   async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {

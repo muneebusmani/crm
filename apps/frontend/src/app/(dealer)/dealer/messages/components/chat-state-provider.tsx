@@ -28,7 +28,7 @@ export default function ChatStateProvider({
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string>('' as string);
   const [hasCheckedLeadParam, setHasCheckedLeadParam] = useState(false);
 
   // Handle leadId parameter from URL
@@ -205,12 +205,9 @@ export default function ChatStateProvider({
     loadChats();
   }, []); // Add currentChatId to dependencies to prevent re-fetching when it changes
 
-  // Load messages when the current chat changes
-  useEffect(() => {
-    if (!currentChatId) return;
-
-    let isMounted = true;
-    const loadMessages = async () => {
+  let isMounted = true;
+  const loadMessages = useCallback(() => {
+    async () => {
       try {
         setIsLoading(true);
         const leadId = parseInt(currentChatId, 10);
@@ -227,6 +224,7 @@ export default function ChatStateProvider({
 
         // Fetch messages from the API
         const messages = await leadMessagesApi.getByLead(leadId);
+        console.log('messages ===>', messages);
 
         // Only update state if the component is still mounted
         if (!isMounted) return;
@@ -236,22 +234,11 @@ export default function ChatStateProvider({
           return;
         }
 
-        // Format messages using the API utility
-        const formattedMessages = messages.map((msg) => {
-          // Determine if the message is from the current user (dealer)
-          const isCurrentUser = msg.dealer?.id !== undefined;
-          return leadMessagesApi.formatMessage(msg, isCurrentUser);
-        });
-
         // Sort messages by timestamp (oldest first)
-        formattedMessages.sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-        );
 
         setMessages((prev) => ({
           ...prev,
-          [currentChatId]: formattedMessages,
+          [currentChatId]: messages,
         }));
       } catch (error) {
         console.error('Error loading messages:', error);
@@ -261,18 +248,16 @@ export default function ChatStateProvider({
         }
       }
     };
+  }, [currentChatId, isMounted]); // Load messages when the current chat changes
+  useEffect(() => {
+    if (!currentChatId) return;
 
     loadMessages();
 
     return () => {
       isMounted = false;
     };
-  }, [currentChatId]);
-
-  const handleAttach = useCallback(() => {
-    // TODO: Implement file attachment functionality
-    console.log('Attach file clicked');
-  }, []);
+  }, [currentChatId, isMounted, loadMessages]);
 
   // Handle sending a new message
   const handleSendMessage = useCallback(
@@ -284,10 +269,8 @@ export default function ChatStateProvider({
       const tempMessage: Message = {
         id: tempId,
         content,
-        sender: 'user',
         createdAt: new Date().toISOString(),
         type: 'message',
-        senderName: 'You',
       };
 
       // Optimistically update the UI
@@ -306,14 +289,9 @@ export default function ChatStateProvider({
         // Replace the temporary message with the server response
         setMessages((prev) => {
           const currentMessages = prev[currentChatId] || [];
-          const updatedMessages = currentMessages.map((msg) =>
-            msg.id === tempId
-              ? leadMessagesApi.formatMessage(response, true)
-              : msg,
-          );
           return {
             ...prev,
-            [currentChatId]: updatedMessages,
+            [currentChatId]: currentMessages,
           };
         });
       } catch (error) {
@@ -325,7 +303,6 @@ export default function ChatStateProvider({
             (msg) => msg.id !== tempId,
           ),
         }));
-        // TODO: Show error to user
       }
     },
     [currentChatId],
@@ -375,24 +352,9 @@ export default function ChatStateProvider({
         }
 
         // Format messages using the API utility with proper error handling
-        const formattedMessages = messages
-          .map((msg) => {
-            try {
-              if (!msg) return null;
-
-              // Determine if the message is from the current user
-              const isCurrentUser = msg.dealer?.id === currentUserId;
-
-              return leadMessagesApi.formatMessage(msg, isCurrentUser);
-            } catch (error) {
-              console.error('Error formatting message:', error, msg);
-              return null;
-            }
-          })
-          .filter((msg): msg is Message => msg !== null);
 
         // Sort messages by createdAt (oldest first)
-        const sortedMessages = [...formattedMessages].sort(
+        const sortedMessages = [...messages].sort(
           (a, b) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
@@ -522,10 +484,6 @@ export default function ChatStateProvider({
           messages={messages[currentChatId] || []}
           onSend={handleSendMessage}
           isLoading={isLoading}
-          onAttach={handleAttach}
-          onRequestQuote={() => {
-            // This will be handled by the ChatWindow component
-          }}
           currentChatId={currentChatId}
           leadName={chats.find((chat) => chat.id === currentChatId)?.name}
           dealerName={dealerName}
@@ -538,7 +496,7 @@ export default function ChatStateProvider({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'background.default',
+            backgroundColor: 'Background',
             p: 3,
             textAlign: 'center',
           }}
@@ -547,7 +505,7 @@ export default function ChatStateProvider({
             <Typography variant="h5" gutterBottom>
               No chat selected
             </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
+            <Typography variant="body1" color="textSecondary" component={'p'}>
               Select an existing chat or start a new one
             </Typography>
             <Button

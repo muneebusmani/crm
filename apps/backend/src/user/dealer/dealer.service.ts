@@ -26,6 +26,7 @@ import { DealerLead } from '../entities/dealer-lead.entity';
 import type { Multer } from 'multer';
 import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
+import { LeadsGateway } from 'src/leads/leads.gateway';
 
 @Injectable()
 export class DealerService {
@@ -52,6 +53,9 @@ export class DealerService {
 
     private readonly mailService: MailerService,
     private readonly configService: ConfigService, // 👈 inject here
+
+    private readonly leadsGateway: LeadsGateway,
+    
   ) {}
 
   async createDealer(
@@ -271,7 +275,6 @@ export class DealerService {
         delaerId!,
         LeadStatus.QUOTATION_SENT,
       );
-      await this.leadMessage(lead.id, dealer.id, dto.message);
       return result;
     } catch (error: unknown) {
       throw new CustomError('Unable to create lead' + error);
@@ -380,7 +383,10 @@ export class DealerService {
       status: status,
     });
 
-    return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result =  await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    lead.status = status;
+    this.leadsGateway.emitUpdateLead(lead);
+    return result;
   }
 
   private async leadMessage(leadId: number, dealerId: number, content: string) {
@@ -400,7 +406,7 @@ export class DealerService {
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
-
+      
     const message = this.leadMessageRepository.create({
       content: content,
       dealer,

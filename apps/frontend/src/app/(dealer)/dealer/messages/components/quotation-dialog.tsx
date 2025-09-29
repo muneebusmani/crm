@@ -10,25 +10,17 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { dealersApi } from '@/services/dealers.service';
-import type { QuotationMessage } from '@dealer/types/chat';
 
 interface QuotationDialogProps {
   open: boolean;
   onClose: () => void;
   leadId: number;
-  onQuotationSent: (
-    quotation: Omit<
-      QuotationMessage,
-      'id' | 'type' | 'timestamp' | 'sender' | 'senderName'
-    >,
-  ) => void;
 }
 
 export default function QuotationDialog({
   open,
   onClose,
   leadId,
-  onQuotationSent,
 }: QuotationDialogProps) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -48,17 +40,6 @@ export default function QuotationDialog({
         quotationPrice: parseFloat(price),
       });
 
-      const quotationData = {
-        content: `Quotation: ${subject}\n${message}\nPrice: $${parseFloat(price).toFixed(2)}`,
-        subject,
-        message,
-        price: parseFloat(price),
-        status: 'pending' as const,
-        createdAt: new Date().toISOString(),
-        // These will be added by the parent component
-      };
-
-      onQuotationSent(quotationData);
       onClose();
     } catch (error) {
       console.error('Failed to send quotation:', error);
@@ -98,10 +79,7 @@ export default function QuotationDialog({
             onChange={(e) => setPrice(e.target.value)}
             margin="normal"
             required
-            inputProps={{
-              min: 0,
-              step: '0.01',
-            }}
+            slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
           />
           <Box
             sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}
