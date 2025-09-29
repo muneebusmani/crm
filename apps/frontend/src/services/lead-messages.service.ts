@@ -1,6 +1,5 @@
 // Define types based on backend implementation
-import type { Message, QuotationMessage } from '@dealer/types/chat';
-import { get, post, put, del } from '@/lib/api';
+import { get, post, put, del } from '@lib/api';
 
 // Define the base URL for lead messages
 const LEAD_MESSAGES_BASE = '/lead-messages';
@@ -19,7 +18,7 @@ export type UpdateLeadMessageDto = {
 };
 
 // Define the message type
-interface LeadMessage {
+export interface LeadMessage {
   id: number;
   content: string;
   leadId: number;
@@ -146,8 +145,9 @@ export const leadMessagesApi = {
   // Get all messages (admin function)
   getAll: async (): Promise<LeadMessage[]> => {
     try {
-      const response =
-        await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
+      const response = await get<ApiResponse<LeadMessage[]>>(
+        LEAD_MESSAGES_BASE,
+      );
 
       // If the response is already an array, return it directly
       if (Array.isArray(response)) {
@@ -271,7 +271,6 @@ export const leadMessagesApi = {
       messageData,
     );
     const result = await response;
-    // The backend returns the updated message directly
     return result as unknown as LeadMessage;
   },
 

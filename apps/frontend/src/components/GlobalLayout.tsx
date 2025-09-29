@@ -3,6 +3,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { Roboto } from 'next/font/google';
 import type { ReactNode } from 'react';
 import theme from '@/theme';
+import StoreProvider from '@/app/store-provider';
 
 export const roboto = Roboto({
   subsets: ['latin'],
@@ -14,7 +15,9 @@ const GlobalLayout = async ({ children }: { children: ReactNode }) => {
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeProvider theme={theme}>
         <CssBaseline enableColorScheme />
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

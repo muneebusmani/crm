@@ -1,3 +1,4 @@
+'use client';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import SendIcon from '@mui/icons-material/Send';
 import {

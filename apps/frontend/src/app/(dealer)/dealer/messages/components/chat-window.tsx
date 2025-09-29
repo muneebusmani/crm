@@ -1,3 +1,4 @@
+'use client';
 import type { Message } from '@dealer/types/chat';
 import { Person } from '@mui/icons-material';
 import {

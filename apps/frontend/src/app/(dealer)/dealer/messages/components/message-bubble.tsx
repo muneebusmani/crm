@@ -1,3 +1,4 @@
+'use client';
 import type { Message, QuotationMessage } from '@dealer/types/chat';
 import { Box, Paper, styled, Typography } from '@mui/material';
 import Image from 'next/image';

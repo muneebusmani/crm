@@ -1,3 +1,4 @@
+'use client';
 import type { Lead } from '@crm/types';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -21,7 +22,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { leadsApi } from '@/services/leads.service';
 import SidebarChatItem from './sidebar-chat-item';
 
 interface ChatItem {
@@ -63,11 +63,10 @@ export default function Sidebar({
   const loadUncontactedLeads = useCallback(async () => {
     try {
       setIsLoadingLeads(true);
-      const leads = await leadsApi.getUncontacted();
-      // Ensure all leads have a valid ID
-      const validLeads = leads.filter((lead): lead is Lead =>
-        Boolean(lead?.id),
-      );
+      const res = await fetch('/api/leads/uncontacted', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load uncontacted leads');
+      const leads = (await res.json()) as Lead[];
+      const validLeads = leads.filter((lead): lead is Lead => Boolean(lead?.id));
       setUncontactedLeads(validLeads);
     } catch (error) {
       console.error('Error loading uncontacted leads:', error);
