@@ -281,6 +281,40 @@ export class DealerService {
     }
   }
 
+  
+  async fetchQuotations(leadId: number, delaerId: number) {
+    try {
+      const dealer = await this.userRepository.findOne({
+        where: { id: delaerId },
+      });
+
+      if (!dealer) {
+        throw new Error('Dealer not found');
+      }
+      const lead = await this.leadRepository.findOne({
+        where: { id: leadId },
+      });
+
+      if (!lead) {
+        throw new Error('Lead not found');
+      }
+      
+      const quotations = await  this.quotationRepository.findOne({
+        where : {
+          dealer : { id : delaerId},
+          lead : {id : leadId}
+        }
+      });
+
+      if(!quotations){
+         throw new Error('Quotations not found');
+      }
+      return quotations;
+    } catch (error: unknown) {
+      throw new CustomError('Unable to create lead' + error);
+    }
+  }
+
   async forgotPassword(email: string) {
     const dealer = await this.userRepository.findOne({
       where: { email: email, type: UserType.DEALER },
