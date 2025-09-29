@@ -1,3 +1,4 @@
+'use client';
 import type { Message } from '@dealer/types/chat';
 import { Person } from '@mui/icons-material';
 import {
@@ -12,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ChatInput from './chat-input';
 import MessageBubble from './message-bubble';
 import QuotationDialog from './quotation-dialog';
+import InvoiceDialog from './invoice-dialog';
 
 interface ChatWindowProps {
   messages: Message[];
@@ -33,12 +35,17 @@ export default function ChatWindow({
   const [isSending, setIsSending] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] =
     useState<boolean>(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] =
+    useState<boolean>(false);
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ✅ 1. CREATE THE HANDLER FUNCTION
   const handleOpenQuotationDialog = () => {
     setShowQuotationDialog((prev) => !prev);
+  };
+  const handleOpenInvoiceDialog = () => {
+    setShowInvoiceDialog((prev) => !prev);
   };
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -100,7 +107,22 @@ export default function ChatWindow({
             isSending={isSending}
             disabled={!currentChatId}
             onQuoteClick={handleOpenQuotationDialog}
+            onInvoiceClick={handleOpenInvoiceDialog}
           />
+          {currentChatId && (
+            <QuotationDialog
+              open={showQuotationDialog}
+              onClose={() => setShowQuotationDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
+          {currentChatId && (
+            <InvoiceDialog
+              open={showInvoiceDialog}
+              onClose={() => setShowInvoiceDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
         </Box>
       </Box>
     );
@@ -174,7 +196,23 @@ export default function ChatWindow({
             onSend={handleSend}
             isSending={isSending}
             disabled={!currentChatId}
+            onQuoteClick={handleOpenQuotationDialog}
+            onInvoiceClick={handleOpenInvoiceDialog}
           />
+          {currentChatId && (
+            <QuotationDialog
+              open={showQuotationDialog}
+              onClose={() => setShowQuotationDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
+          {currentChatId && (
+            <InvoiceDialog
+              open={showInvoiceDialog}
+              onClose={() => setShowInvoiceDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
         </Box>
       </Box>
     );
@@ -283,12 +321,21 @@ export default function ChatWindow({
           isSending={isSending}
           disabled={!currentChatId}
           onQuoteClick={handleOpenQuotationDialog}
+          onInvoiceClick={handleOpenInvoiceDialog}
         />
 
         {currentChatId && (
           <QuotationDialog
             open={showQuotationDialog}
             onClose={() => setShowQuotationDialog(false)}
+            leadId={parseInt(currentChatId, 10)}
+          />
+        )}
+
+        {currentChatId && (
+          <InvoiceDialog
+            open={showInvoiceDialog}
+            onClose={() => setShowInvoiceDialog(false)}
             leadId={parseInt(currentChatId, 10)}
           />
         )}

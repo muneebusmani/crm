@@ -9,7 +9,8 @@ import {
   TextField,
 } from '@mui/material';
 import { useState } from 'react';
-import { quotationsApi } from '@/services/quotation.service';
+import { useAppDispatch } from '@/lib/redux/hooks';
+import { appendMessage, loadMessagesForChat } from '@/features/chat/slice';
 
 interface QuotationDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ export default function QuotationDialog({
   onClose,
   leadId,
 }: QuotationDialogProps) {
+  const dispatch = useAppDispatch();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [price, setPrice] = useState('');
@@ -33,12 +35,34 @@ export default function QuotationDialog({
 
     try {
       setIsSubmitting(true);
-      await quotationsApi.createQuotation({
-        leadId,
-        subject,
-        message,
-        quotationPrice: parseFloat(price),
+      const res = await fetch('/api/dealers/quotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          leadId,
+          subject,
+          message,
+          quotationPrice: parseFloat(price),
+        }),
       });
+      if (!res.ok) throw new Error('Failed to create quotation');
+
+      // Optimistic append
+      dispatch(
+        appendMessage({
+          chatId: String(leadId),
+          message: {
+            id: `q-temp-${Date.now()}`,
+            content: JSON.stringify({ subject, message, price: parseFloat(price) }),
+            type: 'quotation',
+            createdAt: new Date().toISOString(),
+          },
+        }),
+      );
+
+      // Refresh from server for consistency
+      dispatch(loadMessagesForChat(String(leadId)));
 
       onClose();
     } catch (error) {

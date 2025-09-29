@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import '@/app/globals.css';
-import { cookies } from 'next/headers';
-import GlobalLayout, { roboto } from '@/components/GlobalLayout';
-import { Layout } from '@/components/Sidebar';
 import { UserType } from '@crm/types';
+import { cookies } from 'next/headers';
+import GlobalLayout, { roboto } from '@/components/global-layout';
+import { Layout } from '@/components/sidebar';
 
 export const metadata: Metadata = {
   title: 'CRM | Admin',

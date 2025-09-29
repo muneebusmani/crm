@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import PackageCard from '../components/PackageCard';
+import PackageCard from './components/package-card';
 
 const PricingPage = () => {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annually'>(

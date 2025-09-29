@@ -1,3 +1,4 @@
+'use client';
 import type { Message, QuotationMessage } from '@dealer/types/chat';
 import { Box, Paper, styled, Typography } from '@mui/material';
 import Image from 'next/image';
@@ -63,6 +64,94 @@ export default function MessageBubble({
   // Use the sender from the message or default to 'User'
   const avatarUrl = getAvatarUrl(dealerName);
 
+  const renderContent = () => {
+    if (!message) return null;
+    if (message.type === 'message') {
+      return (
+        <Typography
+          variant="body2"
+          sx={{
+            wordBreak: 'break-word',
+            color: isOwnMessage ? 'common.white' : 'text.primary',
+            '& a': {
+              color: isOwnMessage ? '#90caf9' : 'primary.main',
+              textDecoration: 'none',
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+            },
+          }}
+        >
+          {message.content}
+        </Typography>
+      );
+    }
+
+    // For quotation and invoice, the content is a JSON blob we created in the slice
+    let data: any = {};
+    try {
+      data = JSON.parse(message.content);
+    } catch {
+      // fallback to raw content
+      return (
+        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+          {message.content}
+        </Typography>
+      );
+    }
+
+    if (message.type === 'quotation') {
+      return (
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            Quotation
+          </Typography>
+          {data.subject && (
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {data.subject}
+            </Typography>
+          )}
+          {data.message && (
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              {data.message}
+            </Typography>
+          )}
+          {typeof data.price !== 'undefined' && (
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              Price: ${Number(data.price).toFixed(2)}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
+
+    if (message.type === 'invoice') {
+      return (
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            Invoice
+          </Typography>
+          {data.invoiceNumber && (
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {String(data.invoiceNumber)}
+            </Typography>
+          )}
+          {data.total && (
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              Total: ${Number(data.total).toFixed(2)}
+            </Typography>
+          )}
+          {data.status && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+              Status: {String(data.status)}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
+    return null;
+  };
+
   return (
     <Box
       sx={{
@@ -111,26 +200,15 @@ export default function MessageBubble({
                   : '0 2px 8px rgba(0, 0, 0, 0.1)',
               },
               minWidth: 'auto',
+              ...(message?.type === 'quotation'
+                ? { backgroundColor: isOwnMessage ? '#2e7d32' : '#e8f5e9' }
+                : {}),
+              ...(message?.type === 'invoice'
+                ? { backgroundColor: isOwnMessage ? '#ef6c00' : '#fff3e0' }
+                : {}),
             }}
           >
-            <Box sx={{ whiteSpace: 'pre-line' }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  wordBreak: 'break-word',
-                  color: isOwnMessage ? 'common.white' : 'text.primary',
-                  '& a': {
-                    color: isOwnMessage ? '#90caf9' : 'primary.main',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
-                  },
-                }}
-              >
-                {message?.content}
-              </Typography>
-            </Box>
+            <Box sx={{ whiteSpace: 'pre-line' }}>{renderContent()}</Box>
 
             <Timestamp
               sx={{
