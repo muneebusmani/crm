@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Avatar, Box } from '@mui/material';
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
+import { Avatar, Box } from '@mui/material';
+import { useState } from 'react';
 
 interface LogoUploadProps {
   value?: string;
