@@ -4,6 +4,38 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Message } from '@/app/(dealer)/dealer/types/chat';
 import type { Lead } from '@crm/types';
+
+// DTO used by our internal API routes
+type LeadMessageDTO = {
+  id: number | string;
+  content: string;
+  createdAt: string;
+  type: 'message' | 'quotation' | 'invoice' | string;
+  lead?: { id: number; name?: string };
+  dealer?: { id: number };
+};
+
+// Quotations as returned by /api/dealers/quotations
+type QuotationDTO = {
+  id?: number | string;
+  subject?: string;
+  message?: string;
+  quotationPrice?: number;
+  price?: number;
+  createdAt?: string;
+};
+
+// Invoices as returned by /api/invoices
+type InvoiceDTO = {
+  id: number | string;
+  date: string;
+  subTotal?: number;
+  taxAmount?: number;
+  grandTotal?: number;
+  total?: number;
+  status?: string;
+  createdAt?: string;
+};
 import type {
   ChatItem,
   ChatState,
@@ -59,20 +91,51 @@ export const loadMessagesForChat = createAsyncThunk<
   if (Number.isNaN(leadId)) {
     throw new Error('Invalid lead id');
   }
-  const res = await fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load messages');
-  const messages = (await res.json()) as LeadMessageDTO[];
-  const normalized: Message[] = messages
-    .map((m: LeadMessageDTO) => ({
-      id: String(m.id),
-      content: m.content,
-      type: (m.type as 'message' | 'quotation') || 'message',
-      createdAt: m.createdAt,
-    }))
-    .sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
-  return { chatId, messages: normalized };
+  // Fetch lead messages, quotations, and invoices in parallel
+  const [msgRes, quoRes, invRes] = await Promise.all([
+    fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
+    fetch(`/api/dealers/quotations?leadId=${leadId}`, { credentials: 'include' }),
+    fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
+  ]);
+  if (!msgRes.ok) throw new Error('Failed to load messages');
+  const baseMessages = (await msgRes.json()) as LeadMessageDTO[];
+  const quotations: QuotationDTO[] = quoRes.ok ? ((await quoRes.json()) as QuotationDTO[]) : [];
+  const invoices: InvoiceDTO[] = invRes.ok ? ((await invRes.json()) as InvoiceDTO[]) : [];
+
+  const normalizedBase: Message[] = baseMessages.map((m) => ({
+    id: String(m.id),
+    content: m.content,
+    type: (m.type as 'message' | 'quotation' | 'invoice') || 'message',
+    createdAt: m.createdAt,
+  }));
+
+  const normalizedQuotations: Message[] = quotations.map((q) => ({
+    id: `q-${q.id ?? `${leadId}-${q.createdAt}`}`,
+    content: JSON.stringify({
+      subject: q.subject,
+      message: q.message,
+      price: q.quotationPrice ?? q.price ?? 0,
+    }),
+    type: 'quotation',
+    createdAt: q.createdAt ?? new Date().toISOString(),
+  }));
+
+  const normalizedInvoices: Message[] = invoices.map((i) => ({
+    id: `inv-${i.id}`,
+    content: JSON.stringify({
+      invoiceNumber: String(i.id),
+      date: i.date,
+      total: (i.grandTotal ?? i.total ?? ((i.subTotal ?? 0) + (i.taxAmount ?? 0))),
+      status: i.status,
+    }),
+    type: 'invoice',
+    createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
+  }));
+
+  const merged: Message[] = [...normalizedBase, ...normalizedQuotations, ...normalizedInvoices]
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  return { chatId, messages: merged };
 });
 
 export const ensureChatFromLead = createAsyncThunk<
@@ -176,6 +239,16 @@ const chatSlice = createSlice({
     resetError(state) {
       state.error = null;
     },
+    appendMessage(
+      state,
+      action: PayloadAction<{ chatId: string; message: Message }>,
+    ) {
+      const { chatId, message } = action.payload;
+      const arr = state.messagesByChatId[chatId] || [];
+      state.messagesByChatId[chatId] = [...arr, message].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -261,14 +334,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setCurrentChatId, resetError } = chatSlice.actions;
+export const { setCurrentChatId, resetError, appendMessage } = chatSlice.actions;
 export default chatSlice.reducer;
-// DTO used by our internal API routes
-type LeadMessageDTO = {
-  id: number | string;
-  content: string;
-  createdAt: string;
-  type: 'message' | 'quotation' | string;
-  lead?: { id: number; name?: string };
-  dealer?: { id: number };
-};
