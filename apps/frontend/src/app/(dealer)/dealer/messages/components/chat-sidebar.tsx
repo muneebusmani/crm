@@ -63,11 +63,17 @@ export default function Sidebar({
   const loadUncontactedLeads = useCallback(async () => {
     try {
       setIsLoadingLeads(true);
-      const res = await fetch('/api/leads/uncontacted', { credentials: 'include' });
+      const res = await fetch('/api/leads/uncontacted', {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to load uncontacted leads');
       const leads = (await res.json()) as Lead[];
-      const validLeads = leads.filter((lead): lead is Lead => Boolean(lead?.id));
+      console.log('contacted leads:');
+      const validLeads = leads.filter((lead): lead is Lead =>
+        Boolean(lead?.id),
+      );
       setUncontactedLeads(validLeads);
+      console.log('uncontacted leads:', validLeads);
     } catch (error) {
       console.error('Error loading uncontacted leads:', error);
     } finally {

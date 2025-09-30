@@ -1,11 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+/**
+ * Chat Redux Slice
+ *
+ * This module handles all chat-related state management including:
+ * - Loading chats and messages
+ * - Sending new messages
+ * - Managing active chat state
+ * - Handling chat creation and updates
+ */
+
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Message } from '@/app/(dealer)/dealer/types/chat';
 import type { Lead } from '@crm/types';
 
-// DTO used by our internal API routes
+/**
+ * Data Transfer Object for lead messages from the API
+ * @property {number | string} id - Unique message identifier
+ * @property {string} content - The message content
+ * @property {string} createdAt - ISO timestamp of when the message was created
+ * @property {'message' | 'quotation' | 'invoice' | string} type - Type of the message
+ * @property {Object} [lead] - Optional lead information
+ * @property {number} lead.id - Lead ID
+ * @property {string} [lead.name] - Lead's name
+ * @property {Object} [dealer] - Optional dealer information
+ * @property {number} dealer.id - Dealer ID
+ */
 type LeadMessageDTO = {
   id: number | string;
   content: string;
@@ -15,7 +36,15 @@ type LeadMessageDTO = {
   dealer?: { id: number };
 };
 
-// Quotations as returned by /api/dealers/quotations
+/**
+ * Data Transfer Object for quotations from the API
+ * @property {number | string} [id] - Optional quotation ID
+ * @property {string} [subject] - Quotation subject
+ * @property {string} [message] - Quotation message/content
+ * @property {number} [quotationPrice] - Price in the quotation
+ * @property {number} [price] - Alias for quotationPrice
+ * @property {string} [createdAt] - ISO timestamp of when the quotation was created
+ */
 type QuotationDTO = {
   id?: number | string;
   subject?: string;
@@ -25,7 +54,17 @@ type QuotationDTO = {
   createdAt?: string;
 };
 
-// Invoices as returned by /api/invoices
+/**
+ * Data Transfer Object for invoices from the API
+ * @property {number | string} id - Invoice ID
+ * @property {string} date - Invoice date
+ * @property {number} [subTotal] - Subtotal amount before tax
+ * @property {number} [taxAmount] - Tax amount
+ * @property {number} [grandTotal] - Total amount including tax
+ * @property {number} [total] - Alias for grandTotal
+ * @property {string} [status] - Invoice status
+ * @property {string} [createdAt] - ISO timestamp of when the invoice was created
+ */
 type InvoiceDTO = {
   id: number | string;
   date: string;
@@ -45,7 +84,11 @@ import type {
   StartNewChatArgs,
 } from './types';
 
-// Thunks
+/**
+ * Thunk to load all chat conversations for the current dealer
+ * Fetches messages from the API, groups them by lead, and formats them for the UI
+ * @returns {Promise<ChatItem[]>} Array of formatted chat items
+ */
 export const loadChats = createAsyncThunk<ChatItem[]>(
   'chat/loadChats',
   async () => {
@@ -95,6 +138,12 @@ export const loadChats = createAsyncThunk<ChatItem[]>(
   },
 );
 
+/**
+ * Thunk to load all messages for a specific chat
+ * Fetches messages, quotations, and invoices for a lead and combines them
+ * @param {string} chatId - The ID of the chat (lead ID as string)
+ * @returns {Promise<{chatId: string, messages: Message[]}>} Chat ID and array of messages
+ */
 export const loadMessagesForChat = createAsyncThunk<
   { chatId: string; messages: Message[] },
   string
@@ -174,6 +223,13 @@ export const loadMessagesForChat = createAsyncThunk<
   return { chatId, messages: merged };
 });
 
+/**
+ * Thunk to ensure a chat exists for a lead
+ * Creates a new chat item if one doesn't exist, otherwise returns existing
+ * @param {EnsureChatFromLeadArgs} args - Arguments object
+ * @param {number} args.leadId - The ID of the lead to ensure a chat for
+ * @returns {Promise<{chat: ChatItem, chatId: string}>} The chat item and its ID
+ */
 export const ensureChatFromLead = createAsyncThunk<
   { chat: ChatItem; chatId: string },
   EnsureChatFromLeadArgs
@@ -231,6 +287,7 @@ export const startNewChat = createAsyncThunk<
     }),
     avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
   };
+  console.log('starting new chat:', chat);
   return { chat, chatId: leadId };
 });
 
@@ -249,7 +306,7 @@ export const sendMessage = createAsyncThunk<
     body: JSON.stringify({ content, leadId }),
   });
   if (!createRes.ok) throw new Error('Failed to send message');
-  
+
   // Re-fetch all messages, quotations, and invoices to ensure consistency
   const [msgRes, quoRes, invRes] = await Promise.all([
     fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
@@ -321,39 +378,54 @@ export const sendMessage = createAsyncThunk<
   return { chatId, messages: merged };
 });
 
+// Initial state for the chat slice
 const initialState: ChatState = {
-  chats: [],
-  messagesByChatId: {},
-  currentChatId: null,
-  loading: false,
-  error: null,
+  chats: [], // List of all chat conversations
+  messagesByChatId: {}, // Messages organized by chat ID
+  currentChatId: null, // ID of the currently active chat
+  loading: false, // Whether an async operation is in progress
+  error: null, // Current error message, if any
 };
 
+// Create the chat slice with reducers and extra reducers for async thunks
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    /**
+     * Sets the currently active chat
+     * @param {ChatState} state - Current state
+     * @param {PayloadAction<string | null>} action - Action with the chat ID to set as current
+     */
     setCurrentChatId(state, action: PayloadAction<string | null>) {
       state.currentChatId = action.payload;
     },
+    /**
+     * Resets any error in the state
+     * @param {ChatState} state - Current state
+     */
     resetError(state) {
       state.error = null;
     },
+    /**
+     * Appends a new message to a chat
+     * @param {ChatState} state - Current state
+     * @param {PayloadAction<{chatId: string, message: Message}>} action - Action with chat ID and message
+     */
     appendMessage(
       state,
       action: PayloadAction<{ chatId: string; message: Message }>,
     ) {
       const { chatId, message } = action.payload;
       const arr = state.messagesByChatId[chatId] || [];
-      state.messagesByChatId[chatId] = [...arr, message].sort(
-        (a, b) => {
-          const dateA = new Date(a.createdAt).getTime();
-          const dateB = new Date(b.createdAt).getTime();
-          return dateA - dateB;
-        }
-      );
+      state.messagesByChatId[chatId] = [...arr, message].sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
     },
   },
+  // Handle actions from async thunks
   extraReducers: (builder) => {
     builder
       .addCase(loadChats.pending, (state) => {

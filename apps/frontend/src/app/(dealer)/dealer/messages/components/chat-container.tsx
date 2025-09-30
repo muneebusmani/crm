@@ -1,9 +1,21 @@
 'use client';
 
+/**
+ * Chat Container Component
+ *
+ * This is the main container component for the chat interface. It manages:
+ * - Loading and displaying the list of chats
+ * - Handling the current active chat
+ * - Message sending and receiving
+ * - Integration with Redux for state management
+ */
+
 import { Box, CircularProgress } from '@mui/material';
-import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Sidebar from '@/app/(dealer)/dealer/messages/components/chat-sidebar';
+import ChatWindow from '@/app/(dealer)/dealer/messages/components/chat-window';
+import type { Message } from '@/app/(dealer)/dealer/types/chat';
 import {
   ensureChatFromLead,
   loadChats,
@@ -11,47 +23,74 @@ import {
   sendMessage,
   startNewChat,
 } from '@/features/chat/slice';
-import type { Message } from '@/app/(dealer)/dealer/types/chat';
-import Sidebar from '@/app/(dealer)/dealer/messages/components/chat-sidebar';
-import ChatWindow from '@/app/(dealer)/dealer/messages/components/chat-window';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 
+/**
+ * Main chat container component
+ * @param {Object} props - Component props
+ * @param {string} props.dealerName - Name of the current dealer
+ */
 export default function ChatContainer({ dealerName }: { dealerName: string }) {
+  // Redux hooks for dispatching actions and selecting state
   const dispatch = useAppDispatch();
   const { chats, currentChatId, messagesByChatId, loading } = useAppSelector(
     (s) => s.chat,
   );
+
+  // Hook to access URL search params
   const searchParams = useSearchParams();
+
+  // State to track if we've checked for a lead ID in the URL
   const [leadChecked, setLeadChecked] = useState(false);
 
+  // Load all chats when the component mounts
   useEffect(() => {
     dispatch(loadChats());
   }, [dispatch]);
 
-  // Handle leadId param for deep link
+  /**
+   * Handle deep linking to a specific chat via URL parameter
+   * This allows users to directly open a chat using a URL like /messages?leadId=123
+   */
   useEffect(() => {
     const leadIdParam = searchParams?.get('leadId');
+    // Only run once and only if we have a leadId param
     if (!leadIdParam || leadChecked) return;
+
     const numericLeadId = parseInt(leadIdParam, 10);
     if (!Number.isNaN(numericLeadId)) {
+      // Ensure the chat exists for this lead
       dispatch(ensureChatFromLead({ leadId: numericLeadId }));
     }
     setLeadChecked(true);
   }, [dispatch, leadChecked, searchParams]);
 
+  /**
+   * Get messages for the current chat, memoized for performance
+   * Returns an empty array if no chat is selected
+   */
   const messages: Message[] = useMemo(() => {
     if (!currentChatId) return [];
     return (messagesByChatId[currentChatId] || []) as Message[];
   }, [currentChatId, messagesByChatId]);
 
-  // If a chat becomes current and we don't yet have messages, load them
+  /**
+   * Lazy load messages when a chat is selected
+   * Only loads messages if they haven't been loaded already
+   */
   useEffect(() => {
     if (!currentChatId) return;
     const existing = messagesByChatId[currentChatId];
-    if (!existing || existing.length === 0) {
+    // Only load messages if we don't have any for this chat yet
+    if (existing === undefined) {
       dispatch(loadMessagesForChat(currentChatId));
     }
   }, [currentChatId, messagesByChatId, dispatch]);
 
+  /**
+   * Handle selecting a chat from the sidebar
+   * Loads messages for the selected chat
+   */
   const handleSelectChat = useCallback(
     (chatId: string) => {
       dispatch(loadMessagesForChat(chatId));
@@ -59,6 +98,11 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
     [dispatch],
   );
 
+  /**
+   * Handle starting a new chat with a lead
+   * @param {string} leadId - ID of the lead to start a chat with
+   * @param {Object} [leadData] - Optional lead data for new leads
+   */
   const handleNewChat = useCallback(
     (
       leadId: string,
@@ -74,6 +118,10 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
     [dispatch],
   );
 
+  /**
+   * Handle sending a new message in the current chat
+   * @param {string} text - The message text to send
+   */
   const handleSend = useCallback(
     async (text: string) => {
       if (!currentChatId) return;
@@ -82,6 +130,7 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
     [dispatch, currentChatId],
   );
 
+  // Show loading spinner when initially loading chats and we don't have any yet
   if (loading && chats.length === 0) {
     return (
       <Box
@@ -108,12 +157,15 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
         height: '100%',
       }}
     >
+      {/* Left sidebar showing list of chats */}
       <Sidebar
         chats={chats}
         currentChatId={currentChatId ?? undefined}
         onSelectChat={handleSelectChat}
         onNewChat={handleNewChat}
       />
+
+      {/* Main chat area - only shown when a chat is selected */}
       {currentChatId ? (
         <ChatWindow
           messages={messages}
@@ -124,6 +176,7 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
           dealerName={dealerName}
         />
       ) : (
+        // Empty state when no chat is selected
         <Box sx={{ flex: 1 }} />
       )}
     </Box>

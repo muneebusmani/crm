@@ -35,8 +35,7 @@ export default function ChatWindow({
   const [isSending, setIsSending] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] =
     useState<boolean>(false);
-  const [showInvoiceDialog, setShowInvoiceDialog] =
-    useState<boolean>(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState<boolean>(false);
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
