@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { leadsApi } from '@/services/leads.service';
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const id = parseInt(params.id, 10);
     if (Number.isNaN(id)) {
@@ -18,10 +16,8 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const id = parseInt(params.id, 10);
     if (Number.isNaN(id)) {

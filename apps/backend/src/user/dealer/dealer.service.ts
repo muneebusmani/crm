@@ -55,7 +55,6 @@ export class DealerService {
     private readonly configService: ConfigService, // 👈 inject here
 
     private readonly leadsGateway: LeadsGateway,
-    
   ) {}
 
   async createDealer(
@@ -281,7 +280,6 @@ export class DealerService {
     }
   }
 
-  
   async fetchQuotations(leadId: number, delaerId: number) {
     try {
       const dealer = await this.userRepository.findOne({
@@ -298,16 +296,16 @@ export class DealerService {
       if (!lead) {
         throw new Error('Lead not found');
       }
-      
-      const quotations = await  this.quotationRepository.findOne({
-        where : {
-          dealer : { id : delaerId},
-          lead : {id : leadId}
-        }
+
+      const quotations = await this.quotationRepository.find({
+        where: {
+          dealer: { id: delaerId },
+          lead: { id: leadId },
+        },
       });
 
-      if(!quotations){
-         throw new Error('Quotations not found');
+      if (!quotations) {
+        throw new Error('Quotations not found');
       }
       return quotations;
     } catch (error: unknown) {
@@ -417,7 +415,7 @@ export class DealerService {
       status: status,
     });
 
-    const result =  await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
     lead.status = status;
     this.leadsGateway.emitUpdateLead(lead);
     return result;
@@ -440,7 +438,7 @@ export class DealerService {
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
-      
+
     const message = this.leadMessageRepository.create({
       content: content,
       dealer,

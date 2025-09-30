@@ -48,35 +48,124 @@ import type {
 export const loadChats = createAsyncThunk<ChatItem[]>(
   'chat/loadChats',
   async () => {
-    const res = await fetch('/api/lead-messages', { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to load chats');
-    const allMessages = (await res.json()) as LeadMessageDTO[];
+    // Fetch messages, quotations, and invoices in parallel
+    const [msgRes, quoRes, invRes] = await Promise.all([
+      fetch('/api/lead-messages', { credentials: 'include' }),
+      fetch('/api/dealers/quotations', { credentials: 'include' }),
+      fetch('/api/invoices', { credentials: 'include' }),
+    ]);
 
-    // Group by leadId and build chat list
-    const byLead: Record<string, LeadMessageDTO[]> = {};
+    // Get messages (tolerate errors)
+    let allMessages: LeadMessageDTO[] = [];
+    if (msgRes.ok) {
+      try {
+        const data = await msgRes.json();
+        allMessages = Array.isArray(data) ? data : [];
+      } catch {
+        allMessages = [];
+      }
+    }
+
+    // Get quotations and invoices (tolerate errors)
+    const quotations: QuotationDTO[] = quoRes.ok
+      ? ((await quoRes.json()) as QuotationDTO[])
+      : [];
+    const invoices: InvoiceDTO[] = invRes.ok
+      ? ((await invRes.json()) as InvoiceDTO[])
+      : [];
+
+    // Collect all lead IDs that have any activity
+    const leadIds = new Set<string>();
+    const leadData: Record<
+      string,
+      { name?: string; lastActivity?: string; lastTimestamp?: string }
+    > = {};
+
+    // Process messages
     allMessages.forEach((m: LeadMessageDTO) => {
       const id = m.lead?.id?.toString();
       if (!id) return;
-      byLead[id] = byLead[id] || [];
-      byLead[id].push(m);
+      leadIds.add(id);
+      if (
+        !leadData[id] ||
+        new Date(m.createdAt) > new Date(leadData[id].lastTimestamp || '')
+      ) {
+        leadData[id] = {
+          name: m.lead?.name || `Lead #${id}`,
+          lastActivity:
+            m.content.length > 30
+              ? `${m.content.substring(0, 30)}...`
+              : m.content,
+          lastTimestamp: m.createdAt,
+        };
+      }
     });
 
-    const chatList: ChatItem[] = Object.entries(byLead).map(([leadId, list]) => {
-      const sorted = [...list].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-      const last = sorted[0];
-      const leadName = last.lead?.name || `Lead #${leadId}`;
+    // Process quotations
+    quotations.forEach((q: any) => {
+      const id = q.lead?.id?.toString() || String(q.id);
+      if (!id) return;
+      leadIds.add(id);
+      const activity = `Quotation: ${q.subject}`;
+      const timestamp = q.createdAt || new Date().toISOString();
+      if (
+        !leadData[id] ||
+        new Date(timestamp) > new Date(leadData[id].lastTimestamp || '')
+      ) {
+        leadData[id] = {
+          name: q.dealershipName || leadData[id]?.name || `Lead #${id}`,
+          lastActivity:
+            activity.length > 30 ? `${activity.substring(0, 30)}...` : activity,
+          lastTimestamp: timestamp,
+        };
+      }
+    });
+
+    // Process invoices
+    invoices.forEach((i: any) => {
+      const id = i.lead?.id?.toString() || String(i.leadId) || String(i.id);
+      if (!id) return;
+      leadIds.add(id);
+      const activity = `Invoice #${i.id}`;
+      const timestamp = i.createdAt || i.date || new Date().toISOString();
+      if (
+        !leadData[id] ||
+        new Date(timestamp) > new Date(leadData[id].lastTimestamp || '')
+      ) {
+        leadData[id] = {
+          name: i.lead?.name || leadData[id]?.name || `Lead #${id}`,
+          lastActivity: activity,
+          lastTimestamp: timestamp,
+        };
+      }
+    });
+
+    // Build chat list from all leads with activity
+    const chatList: ChatItem[] = Array.from(leadIds).map((leadId) => {
+      const data = leadData[leadId];
+      const leadName = data?.name || `Lead #${leadId}`;
       return {
         id: leadId,
         name: leadName,
-        lastMessage:
-          last.content.length > 30 ? `${last.content.substring(0, 30)}...` : last.content,
-        timestamp: last.createdAt
-          ? new Date(last.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        lastMessage: data?.lastActivity || 'No activity yet',
+        timestamp: data?.lastTimestamp
+          ? new Date(data.lastTimestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
       } satisfies ChatItem;
+    });
+
+    // Sort by most recent activity
+    chatList.sort((a, b) => {
+      const aTime = leadData[a.id]?.lastTimestamp || '';
+      const bTime = leadData[b.id]?.lastTimestamp || '';
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
 
     return chatList;
@@ -94,10 +183,12 @@ export const loadMessagesForChat = createAsyncThunk<
   // Fetch lead messages, quotations, and invoices in parallel
   const [msgRes, quoRes, invRes] = await Promise.all([
     fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
-    fetch(`/api/dealers/quotations?leadId=${leadId}`, { credentials: 'include' }),
+    fetch(`/api/dealers/quotations?leadId=${leadId}`, {
+      credentials: 'include',
+    }),
     fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
   ]);
-  
+
   // Handle empty or error responses gracefully - new chats might not have messages yet
   let baseMessages: LeadMessageDTO[] = [];
   if (msgRes.ok) {
@@ -108,9 +199,13 @@ export const loadMessagesForChat = createAsyncThunk<
       baseMessages = [];
     }
   }
-  
-  const quotations: QuotationDTO[] = quoRes.ok ? ((await quoRes.json()) as QuotationDTO[]) : [];
-  const invoices: InvoiceDTO[] = invRes.ok ? ((await invRes.json()) as InvoiceDTO[]) : [];
+
+  const quotations: QuotationDTO[] = quoRes.ok
+    ? ((await quoRes.json()) as QuotationDTO[])
+    : [];
+  const invoices: InvoiceDTO[] = invRes.ok
+    ? ((await invRes.json()) as InvoiceDTO[])
+    : [];
 
   const normalizedBase: Message[] = baseMessages.map((m) => ({
     id: String(m.id),
@@ -135,15 +230,20 @@ export const loadMessagesForChat = createAsyncThunk<
     content: JSON.stringify({
       invoiceNumber: String(i.id),
       date: i.date,
-      total: (i.grandTotal ?? i.total ?? ((i.subTotal ?? 0) + (i.taxAmount ?? 0))),
+      total: i.grandTotal ?? i.total ?? (i.subTotal ?? 0) + (i.taxAmount ?? 0),
       status: i.status,
     }),
     type: 'invoice',
     createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
   }));
 
-  const merged: Message[] = [...normalizedBase, ...normalizedQuotations, ...normalizedInvoices]
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const merged: Message[] = [
+    ...normalizedBase,
+    ...normalizedQuotations,
+    ...normalizedInvoices,
+  ].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 
   return { chatId, messages: merged };
 });
@@ -165,7 +265,10 @@ export const ensureChatFromLead = createAsyncThunk<
       id: String(leadId),
       name: leadName,
       lastMessage: vehicleInfo || 'No messages yet',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
       avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
     };
     return { chat, chatId: String(leadId) };
@@ -174,7 +277,10 @@ export const ensureChatFromLead = createAsyncThunk<
       id: String(leadId),
       name: `Lead #${leadId}`,
       lastMessage: 'No messages yet',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
       avatarUrl: `https://ui-avatars.com/api/?name=Lead+${leadId}&background=3f51b5&color=ffffff&type=png`,
     };
     return { chat, chatId: String(leadId) };
@@ -193,7 +299,10 @@ export const startNewChat = createAsyncThunk<
     id: leadId,
     name: leadName,
     lastMessage: vehicleInfo || 'No messages yet',
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    timestamp: new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
     avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
   };
   return { chat, chatId: leadId };
@@ -214,21 +323,72 @@ export const sendMessage = createAsyncThunk<
     body: JSON.stringify({ content, leadId }),
   });
   if (!createRes.ok) throw new Error('Failed to send message');
-  // Re-fetch messages to ensure consistency
-  const res = await fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load messages');
-  const messages = (await res.json()) as LeadMessageDTO[];
-  const normalized: Message[] = messages
-    .map((m: LeadMessageDTO) => ({
-      id: String(m.id),
-      content: m.content,
-      type: (m.type as 'message' | 'quotation') || 'message',
-      createdAt: m.createdAt,
-    }))
-    .sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
-  return { chatId, messages: normalized };
+  // Re-fetch merged feed (messages + quotations + invoices) to ensure consistency
+  const [msgRes, quoRes, invRes] = await Promise.all([
+    fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
+    fetch(`/api/dealers/quotations?leadId=${leadId}`, {
+      credentials: 'include',
+    }),
+    fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
+  ]);
+
+  // Base messages (tolerate empty)
+  let baseMessages: LeadMessageDTO[] = [];
+  if (msgRes.ok) {
+    try {
+      const data = await msgRes.json();
+      baseMessages = Array.isArray(data) ? data : [];
+    } catch {
+      baseMessages = [];
+    }
+  }
+
+  const quotations: QuotationDTO[] = quoRes.ok
+    ? ((await quoRes.json()) as QuotationDTO[])
+    : [];
+  const invoices: InvoiceDTO[] = invRes.ok
+    ? ((await invRes.json()) as InvoiceDTO[])
+    : [];
+
+  const normalizedBase: Message[] = baseMessages.map((m) => ({
+    id: String(m.id),
+    content: m.content,
+    type: (m.type as 'message' | 'quotation' | 'invoice') || 'message',
+    createdAt: m.createdAt,
+  }));
+
+  const normalizedQuotations: Message[] = quotations.map((q) => ({
+    id: `q-${q.id ?? `${leadId}-${q.createdAt}`}`,
+    content: JSON.stringify({
+      subject: q.subject,
+      message: q.message,
+      price: q.quotationPrice ?? q.price ?? 0,
+    }),
+    type: 'quotation',
+    createdAt: q.createdAt ?? new Date().toISOString(),
+  }));
+
+  const normalizedInvoices: Message[] = invoices.map((i) => ({
+    id: `inv-${i.id}`,
+    content: JSON.stringify({
+      invoiceNumber: String(i.id),
+      date: i.date,
+      total: i.grandTotal ?? i.total ?? (i.subTotal ?? 0) + (i.taxAmount ?? 0),
+      status: i.status,
+    }),
+    type: 'invoice',
+    createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
+  }));
+
+  const merged: Message[] = [
+    ...normalizedBase,
+    ...normalizedQuotations,
+    ...normalizedInvoices,
+  ].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+
+  return { chatId, messages: merged };
 });
 
 const initialState: ChatState = {
@@ -256,7 +416,8 @@ const chatSlice = createSlice({
       const { chatId, message } = action.payload;
       const arr = state.messagesByChatId[chatId] || [];
       state.messagesByChatId[chatId] = [...arr, message].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
     },
   },
@@ -280,7 +441,8 @@ const chatSlice = createSlice({
         state.error = null;
         // Initialize array
         const chatId = action.meta.arg;
-        if (!state.messagesByChatId[chatId]) state.messagesByChatId[chatId] = [];
+        if (!state.messagesByChatId[chatId])
+          state.messagesByChatId[chatId] = [];
       })
       .addCase(loadMessagesForChat.fulfilled, (state, action) => {
         state.loading = false;
@@ -303,7 +465,7 @@ const chatSlice = createSlice({
         const exists = state.chats.some((c) => c.id === chat.id);
         if (!exists) state.chats.unshift(chat);
         state.currentChatId = chatId;
-        if (!state.messagesByChatId[chatId]) state.messagesByChatId[chatId] = [];
+        // Do not prefill messages array here; leaving it undefined triggers initial load
       })
       .addCase(ensureChatFromLead.rejected, (state, action) => {
         state.loading = false;
@@ -315,7 +477,7 @@ const chatSlice = createSlice({
         const exists = state.chats.some((c) => c.id === chat.id);
         if (!exists) state.chats.unshift(chat);
         state.currentChatId = chatId;
-        if (!state.messagesByChatId[chatId]) state.messagesByChatId[chatId] = [];
+        // Do not prefill messages array; let the effect fetch merged feed
       })
 
       .addCase(sendMessage.pending, (state, action) => {
@@ -344,5 +506,6 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setCurrentChatId, resetError, appendMessage } = chatSlice.actions;
+export const { setCurrentChatId, resetError, appendMessage } =
+  chatSlice.actions;
 export default chatSlice.reducer;
