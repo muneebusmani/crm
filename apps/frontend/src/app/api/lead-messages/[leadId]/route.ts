@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { leadMessagesApi } from '@/services/lead-messages.service';
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { leadId: string } },
-) {
+export async function GET(_req: Request, props: { params: Promise<{ leadId: string }> }) {
+  const params = await props.params;
   try {
     const leadId = parseInt(params.leadId, 10);
     if (Number.isNaN(leadId)) {
