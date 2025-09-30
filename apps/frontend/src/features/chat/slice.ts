@@ -36,6 +36,7 @@ type InvoiceDTO = {
   status?: string;
   createdAt?: string;
 };
+
 import type {
   ChatItem,
   ChatState,
@@ -159,13 +160,16 @@ export const loadMessagesForChat = createAsyncThunk<
     createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
   }));
 
+  // Merge all message types and ensure proper sorting by createdAt timestamp
   const merged: Message[] = [
     ...normalizedBase,
     ...normalizedQuotations,
     ...normalizedInvoices,
-  ].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  ].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateA - dateB;
+  });
 
   return { chatId, messages: merged };
 });
@@ -245,24 +249,76 @@ export const sendMessage = createAsyncThunk<
     body: JSON.stringify({ content, leadId }),
   });
   if (!createRes.ok) throw new Error('Failed to send message');
-  // Re-fetch messages to ensure consistency
-  const res = await fetch(`/api/lead-messages/${leadId}`, {
-    credentials: 'include',
+  
+  // Re-fetch all messages, quotations, and invoices to ensure consistency
+  const [msgRes, quoRes, invRes] = await Promise.all([
+    fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
+    fetch(`/api/dealers/quotations?leadId=${leadId}`, {
+      credentials: 'include',
+    }),
+    fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
+  ]);
+
+  // Handle empty or error responses gracefully
+  let baseMessages: LeadMessageDTO[] = [];
+  if (msgRes.ok) {
+    try {
+      const data = await msgRes.json();
+      baseMessages = Array.isArray(data) ? data : [];
+    } catch {
+      baseMessages = [];
+    }
+  }
+
+  const quotations: QuotationDTO[] = quoRes.ok
+    ? ((await quoRes.json()) as QuotationDTO[])
+    : [];
+  const invoices: InvoiceDTO[] = invRes.ok
+    ? ((await invRes.json()) as InvoiceDTO[])
+    : [];
+
+  const normalizedBase: Message[] = baseMessages.map((m) => ({
+    id: String(m.id),
+    content: m.content,
+    type: (m.type as 'message' | 'quotation' | 'invoice') || 'message',
+    createdAt: m.createdAt,
+  }));
+
+  const normalizedQuotations: Message[] = quotations.map((q) => ({
+    id: `q-${q.id ?? `${leadId}-${q.createdAt}`}`,
+    content: JSON.stringify({
+      subject: q.subject,
+      message: q.message,
+      price: q.quotationPrice ?? q.price ?? 0,
+    }),
+    type: 'quotation',
+    createdAt: q.createdAt ?? new Date().toISOString(),
+  }));
+
+  const normalizedInvoices: Message[] = invoices.map((i) => ({
+    id: `inv-${i.id}`,
+    content: JSON.stringify({
+      invoiceNumber: String(i.id),
+      date: i.date,
+      total: i.grandTotal ?? i.total ?? (i.subTotal ?? 0) + (i.taxAmount ?? 0),
+      status: i.status,
+    }),
+    type: 'invoice',
+    createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
+  }));
+
+  // Merge all message types and ensure proper sorting by createdAt timestamp
+  const merged: Message[] = [
+    ...normalizedBase,
+    ...normalizedQuotations,
+    ...normalizedInvoices,
+  ].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateA - dateB;
   });
-  if (!res.ok) throw new Error('Failed to load messages');
-  const messages = (await res.json()) as LeadMessageDTO[];
-  const normalized: Message[] = messages
-    .map((m: LeadMessageDTO) => ({
-      id: String(m.id),
-      content: m.content,
-      type: (m.type as 'message' | 'quotation') || 'message',
-      createdAt: m.createdAt,
-    }))
-    .sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
-  return { chatId, messages: normalized };
+
+  return { chatId, messages: merged };
 });
 
 const initialState: ChatState = {
@@ -290,8 +346,11 @@ const chatSlice = createSlice({
       const { chatId, message } = action.payload;
       const arr = state.messagesByChatId[chatId] || [];
       state.messagesByChatId[chatId] = [...arr, message].sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        (a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateA - dateB;
+        }
       );
     },
   },
@@ -311,12 +370,13 @@ const chatSlice = createSlice({
       })
 
       .addCase(loadMessagesForChat.pending, (state, action) => {
-        state.loading = true;
-        state.error = null;
-        // Initialize array
+        // Only set loading state if we don't already have messages
         const chatId = action.meta.arg;
-        if (!state.messagesByChatId[chatId])
-          state.messagesByChatId[chatId] = [];
+        const existing = state.messagesByChatId[chatId];
+        if (existing === undefined) {
+          state.loading = true;
+        }
+        state.error = null;
       })
       .addCase(loadMessagesForChat.fulfilled, (state, action) => {
         state.loading = false;
@@ -357,18 +417,25 @@ const chatSlice = createSlice({
       })
 
       .addCase(sendMessage.pending, (state, action) => {
-        state.loading = true;
+        // Only set loading state if we have messages already
+        const { chatId } = action.meta.arg;
+        const existing = state.messagesByChatId[chatId];
+        if (existing !== undefined) {
+          state.loading = true;
+        }
         state.error = null;
-        const { chatId, content } = action.meta.arg;
+        const { chatId: chatId2, content } = action.meta.arg;
         const tempId = `temp-${Date.now()}`;
-        const arr = state.messagesByChatId[chatId] || [];
+        const arr = state.messagesByChatId[chatId2] || [];
+        // Use a timestamp that's slightly in the past to ensure proper ordering
+        const createdAt = new Date(Date.now() - 1000).toISOString();
         const temp: Message = {
           id: tempId,
           content,
           type: 'message',
-          createdAt: new Date().toISOString(),
+          createdAt,
         };
-        state.messagesByChatId[chatId] = [...arr, temp];
+        state.messagesByChatId[chatId2] = [...arr, temp];
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.loading = false;

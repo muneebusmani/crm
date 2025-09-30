@@ -61,9 +61,12 @@ export default function InvoiceDialog({ open, onClose, leadId }: InvoiceDialogPr
       // Optimistic append
       const sub = computeSubTotal();
       const total = sub + payload.taxAmount;
+      const chatId = String(leadId);
+      // Use a timestamp that's slightly in the past to ensure proper ordering
+      const createdAt = new Date(Date.now() - 1000).toISOString();
       dispatch(
         appendMessage({
-          chatId: String(leadId),
+          chatId,
           message: {
             id: `inv-temp-${Date.now()}`,
             content: JSON.stringify({
@@ -73,13 +76,13 @@ export default function InvoiceDialog({ open, onClose, leadId }: InvoiceDialogPr
               status: 'PENDING',
             }),
             type: 'invoice',
-            createdAt: new Date().toISOString(),
+            createdAt,
           },
         }),
       );
 
       // Refresh
-      dispatch(loadMessagesForChat(String(leadId)));
+      dispatch(loadMessagesForChat(chatId));
 
       onClose();
     } catch (error) {

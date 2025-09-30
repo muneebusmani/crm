@@ -49,20 +49,23 @@ export default function QuotationDialog({
       if (!res.ok) throw new Error('Failed to create quotation');
 
       // Optimistic append
+      const chatId = String(leadId);
+      // Use a timestamp that's slightly in the past to ensure proper ordering
+      const createdAt = new Date(Date.now() - 1000).toISOString();
       dispatch(
         appendMessage({
-          chatId: String(leadId),
+          chatId,
           message: {
             id: `q-temp-${Date.now()}`,
             content: JSON.stringify({ subject, message, price: parseFloat(price) }),
             type: 'quotation',
-            createdAt: new Date().toISOString(),
+            createdAt,
           },
         }),
       );
 
       // Refresh from server for consistency
-      dispatch(loadMessagesForChat(String(leadId)));
+      dispatch(loadMessagesForChat(chatId));
 
       onClose();
     } catch (error) {
