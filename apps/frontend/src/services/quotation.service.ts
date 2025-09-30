@@ -17,7 +17,7 @@ export const quotationsApi = {
   },
   async getQuotations(leadId?: number) {
     const url = leadId
-      ? `/dealers/quotations?leadId=${leadId}`
+      ? `/dealers/quotations/leads/${leadId}`
       : '/dealers/quotations';
     return handleResponse(get<ApiResponse<Quotation[]>>(url));
   },

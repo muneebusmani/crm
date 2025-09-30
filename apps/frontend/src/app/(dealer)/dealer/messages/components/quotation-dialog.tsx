@@ -10,7 +10,11 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useAppDispatch } from '@/lib/redux/hooks';
-import { appendMessage, loadMessagesForChat } from '@/features/chat/slice';
+import {
+  appendMessage,
+  ensureChatFromLead,
+  loadMessagesForChat,
+} from '@/features/chat/slice';
 
 interface QuotationDialogProps {
   open: boolean;
@@ -48,13 +52,20 @@ export default function QuotationDialog({
       });
       if (!res.ok) throw new Error('Failed to create quotation');
 
+      // Ensure a chat item exists for this lead (adds proper name/avatar)
+      await dispatch(ensureChatFromLead({ leadId: leadId }));
+
       // Optimistic append
       dispatch(
         appendMessage({
           chatId: String(leadId),
           message: {
             id: `q-temp-${Date.now()}`,
-            content: JSON.stringify({ subject, message, price: parseFloat(price) }),
+            content: JSON.stringify({
+              subject,
+              message,
+              price: parseFloat(price),
+            }),
             type: 'quotation',
             createdAt: new Date().toISOString(),
           },

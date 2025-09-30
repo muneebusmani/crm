@@ -89,18 +89,16 @@ export class DealerController {
     return this.buildResponse(result);
   }
 
-
   @UseGuards(JwtAuthGuard, DealerGuard)
   @Get('quotations/leads/:id')
   async fetchQuotations(
     @Param('id') id: number,
-    @Req() req
-  ): Promise<ApiResponse<Quotation>> {
+    @Req() req,
+  ): Promise<ApiResponse<Quotation[]>> {
     const delaerId = req.user.id; // cast to 'any' if TS complains
     const result = await this.dealerService.fetchQuotations(id, delaerId);
     return this.buildResponse(result);
   }
-
 
   @Post('forgot-password')
   async forgotPassword(
