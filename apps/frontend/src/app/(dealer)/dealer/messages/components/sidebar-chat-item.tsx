@@ -1,5 +1,6 @@
 'use client';
-import { Avatar, Box, styled, Typography } from '@mui/material';
+import { Box, styled, Typography } from '@mui/material';
+import Image from 'next/image';
 
 const ChatItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -28,18 +29,18 @@ export default function SidebarChatItem({
   avatarUrl,
   onClick,
 }: SidebarChatItemProps) {
-  const initials = (fullName: string) => {
-    const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return 'L';
-    const first = parts[0]?.[0] || '';
-    const second = parts[1]?.[0] || '';
-    return (first + second).toUpperCase() || 'L';
-  };
   return (
     <ChatItem onClick={onClick}>
-      <Avatar src={avatarUrl} alt={name} sx={{ width: 40, height: 40 }}>
-        {initials(name)}
-      </Avatar>
+      <Box sx={{ width: 40, height: 40 }}>
+        <Image
+          src={avatarUrl}
+          alt={name}
+          width={40}
+          height={40}
+          loading="eager"
+          style={{ borderRadius: '50%', objectFit: 'cover' }}
+        />
+      </Box>
       <Box sx={{ marginLeft: 1, flex: 1 }}>
         <Typography variant="subtitle2" color="primary">
           {name}
