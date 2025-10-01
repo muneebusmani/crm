@@ -11,6 +11,7 @@ import { DealerLead } from '../entities/dealer-lead.entity';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { BankDetails } from '../../bank-details/entities/bank-details.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
+import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { LeadsGateway } from 'src/leads/leads.gateway';
       Lead,
       DealerLead,
       LeadMessage,
+      DealerTierCredit
     ]),
     CustomMailerModule,
   ],

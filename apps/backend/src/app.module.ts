@@ -14,6 +14,7 @@ import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
 import { InvoiceModule } from './invoices/invocie.module';
 import { BankDeatil } from './bank-details/bank-detail.module';
+import { SeederModule } from './seeder/seeder.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { BankDeatil } from './bank-details/bank-detail.module';
     DealerModule,
     ActivityLogModule,
     LeadMessageModule,
+    SeederModule,
     AnalyticsModule,
     InvoiceModule,
     BankDeatil
