@@ -24,6 +24,7 @@ import { PdfService } from 'src/Pdf/pdf-service';
 import { BankDetails } from 'src/bank-details/entities/bank-details.entity';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
+import { DealerTierService } from 'src/dealer-tier/dealer-tier.service';
 
 @Injectable()
 export class InvoiceService {
@@ -52,6 +53,9 @@ export class InvoiceService {
     private readonly mailService: MailerService,
 
     private readonly leadsGateway: LeadsGateway,
+
+    private readonly dealerTierService: DealerTierService, // inject service
+
   ) {}
 
   async create(
@@ -154,13 +158,6 @@ export class InvoiceService {
       },
     });
     await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
-    // await this.leadMessage(
-    //   lead.id,
-    //   dealer.id,
-    //   JSON.stringify(invoiceData),
-    //   LeadMessageType.INVOICE,
-    // );
-    // Return complete invoice
     return invoice;
   }
 
@@ -187,7 +184,7 @@ export class InvoiceService {
     if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
-    const dealer = await this.userRepository.findOneBy({ id: dealerId });
+    const dealer = await this.userRepository.findOne({ where : { id: dealerId} ,  relations: ['dealer']});;
     if (!dealer)
       throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
@@ -203,6 +200,7 @@ export class InvoiceService {
     lead.status = status;
     const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
     this.leadsGateway.emitUpdateLead(lead);
+    await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
     return result;
   }
 

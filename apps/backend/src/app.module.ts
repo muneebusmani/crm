@@ -15,6 +15,7 @@ import { DealerModule } from './user/dealer/dealer.module';
 import { InvoiceModule } from './invoices/invocie.module';
 import { BankDeatil } from './bank-details/bank-detail.module';
 import { SeederModule } from './seeder/seeder.module';
+import { DealerTierModule } from './dealer-tier/dealer-tier.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SeederModule } from './seeder/seeder.module';
     DealerModule,
     ActivityLogModule,
     LeadMessageModule,
+    DealerTierModule,
     SeederModule,
     AnalyticsModule,
     InvoiceModule,
