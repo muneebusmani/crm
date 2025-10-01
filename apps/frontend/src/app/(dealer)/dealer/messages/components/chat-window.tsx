@@ -32,6 +32,7 @@ export default function ChatWindow({
   leadName,
   dealerName,
 }: ChatWindowProps) {
+  console.log('currentChatId', currentChatId);
   const [isSending, setIsSending] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] =
     useState<boolean>(false);
@@ -108,6 +109,20 @@ export default function ChatWindow({
             onQuoteClick={handleOpenQuotationDialog}
             onInvoiceClick={handleOpenInvoiceDialog}
           />
+          {currentChatId && (
+            <QuotationDialog
+              open={showQuotationDialog}
+              onClose={() => setShowQuotationDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
+          {currentChatId && (
+            <InvoiceDialog
+              open={showInvoiceDialog}
+              onClose={() => setShowInvoiceDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
         </Box>
       </Box>
     );
@@ -184,6 +199,20 @@ export default function ChatWindow({
             onQuoteClick={handleOpenQuotationDialog}
             onInvoiceClick={handleOpenInvoiceDialog}
           />
+          {currentChatId && (
+            <QuotationDialog
+              open={showQuotationDialog}
+              onClose={() => setShowQuotationDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
+          {currentChatId && (
+            <InvoiceDialog
+              open={showInvoiceDialog}
+              onClose={() => setShowInvoiceDialog(false)}
+              leadId={parseInt(currentChatId, 10)}
+            />
+          )}
         </Box>
       </Box>
     );
