@@ -1,11 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+/**
+ * Chat Redux Slice
+ *
+ * This module handles all chat-related state management including:
+ * - Loading chats and messages
+ * - Sending new messages
+ * - Managing active chat state
+ * - Handling chat creation and updates
+ */
+
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Message } from '@/app/(dealer)/dealer/types/chat';
 import type { Lead } from '@crm/types';
 
-// DTO used by our internal API routes
+/**
+ * Data Transfer Object for lead messages from the API
+ * @property {number | string} id - Unique message identifier
+ * @property {string} content - The message content
+ * @property {string} createdAt - ISO timestamp of when the message was created
+ * @property {'message' | 'quotation' | 'invoice' | string} type - Type of the message
+ * @property {Object} [lead] - Optional lead information
+ * @property {number} lead.id - Lead ID
+ * @property {string} [lead.name] - Lead's name
+ * @property {Object} [dealer] - Optional dealer information
+ * @property {number} dealer.id - Dealer ID
+ */
 type LeadMessageDTO = {
   id: number | string;
   content: string;
@@ -15,7 +36,15 @@ type LeadMessageDTO = {
   dealer?: { id: number };
 };
 
-// Quotations as returned by /api/dealers/quotations
+/**
+ * Data Transfer Object for quotations from the API
+ * @property {number | string} [id] - Optional quotation ID
+ * @property {string} [subject] - Quotation subject
+ * @property {string} [message] - Quotation message/content
+ * @property {number} [quotationPrice] - Price in the quotation
+ * @property {number} [price] - Alias for quotationPrice
+ * @property {string} [createdAt] - ISO timestamp of when the quotation was created
+ */
 type QuotationDTO = {
   id?: number | string;
   subject?: string;
@@ -25,7 +54,17 @@ type QuotationDTO = {
   createdAt?: string;
 };
 
-// Invoices as returned by /api/invoices
+/**
+ * Data Transfer Object for invoices from the API
+ * @property {number | string} id - Invoice ID
+ * @property {string} date - Invoice date
+ * @property {number} [subTotal] - Subtotal amount before tax
+ * @property {number} [taxAmount] - Tax amount
+ * @property {number} [grandTotal] - Total amount including tax
+ * @property {number} [total] - Alias for grandTotal
+ * @property {string} [status] - Invoice status
+ * @property {string} [createdAt] - ISO timestamp of when the invoice was created
+ */
 type InvoiceDTO = {
   id: number | string;
   date: string;
@@ -36,6 +75,7 @@ type InvoiceDTO = {
   status?: string;
   createdAt?: string;
 };
+
 import type {
   ChatItem,
   ChatState,
@@ -44,134 +84,66 @@ import type {
   StartNewChatArgs,
 } from './types';
 
-// Thunks
+/**
+ * Thunk to load all chat conversations for the current dealer
+ * Fetches messages from the API, groups them by lead, and formats them for the UI
+ * @returns {Promise<ChatItem[]>} Array of formatted chat items
+ */
 export const loadChats = createAsyncThunk<ChatItem[]>(
   'chat/loadChats',
   async () => {
-    // Fetch messages, quotations, and invoices in parallel
-    const [msgRes, quoRes, invRes] = await Promise.all([
-      fetch('/api/lead-messages', { credentials: 'include' }),
-      fetch('/api/dealers/quotations', { credentials: 'include' }),
-      fetch('/api/invoices', { credentials: 'include' }),
-    ]);
+    const res = await fetch('/api/lead-messages', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to load chats');
+    const allMessages = (await res.json()) as LeadMessageDTO[];
 
-    // Get messages (tolerate errors)
-    let allMessages: LeadMessageDTO[] = [];
-    if (msgRes.ok) {
-      try {
-        const data = await msgRes.json();
-        allMessages = Array.isArray(data) ? data : [];
-      } catch {
-        allMessages = [];
-      }
-    }
-
-    // Get quotations and invoices (tolerate errors)
-    const quotations: QuotationDTO[] = quoRes.ok
-      ? ((await quoRes.json()) as QuotationDTO[])
-      : [];
-    const invoices: InvoiceDTO[] = invRes.ok
-      ? ((await invRes.json()) as InvoiceDTO[])
-      : [];
-
-    // Collect all lead IDs that have any activity
-    const leadIds = new Set<string>();
-    const leadData: Record<
-      string,
-      { name?: string; lastActivity?: string; lastTimestamp?: string }
-    > = {};
-
-    // Process messages
+    // Group by leadId and build chat list
+    const byLead: Record<string, LeadMessageDTO[]> = {};
     allMessages.forEach((m: LeadMessageDTO) => {
       const id = m.lead?.id?.toString();
       if (!id) return;
-      leadIds.add(id);
-      if (
-        !leadData[id] ||
-        new Date(m.createdAt) > new Date(leadData[id].lastTimestamp || '')
-      ) {
-        leadData[id] = {
-          name: m.lead?.name || `Lead #${id}`,
-          lastActivity:
-            m.content.length > 30
-              ? `${m.content.substring(0, 30)}...`
-              : m.content,
-          lastTimestamp: m.createdAt,
-        };
-      }
+      byLead[id] = byLead[id] || [];
+      byLead[id].push(m);
     });
 
-    // Process quotations
-    quotations.forEach((q: any) => {
-      const id = q.lead?.id?.toString() || String(q.id);
-      if (!id) return;
-      leadIds.add(id);
-      const activity = `Quotation: ${q.subject}`;
-      const timestamp = q.createdAt || new Date().toISOString();
-      if (
-        !leadData[id] ||
-        new Date(timestamp) > new Date(leadData[id].lastTimestamp || '')
-      ) {
-        leadData[id] = {
-          name: q.dealershipName || leadData[id]?.name || `Lead #${id}`,
-          lastActivity:
-            activity.length > 30 ? `${activity.substring(0, 30)}...` : activity,
-          lastTimestamp: timestamp,
-        };
-      }
-    });
-
-    // Process invoices
-    invoices.forEach((i: any) => {
-      const id = i.lead?.id?.toString() || String(i.leadId) || String(i.id);
-      if (!id) return;
-      leadIds.add(id);
-      const activity = `Invoice #${i.id}`;
-      const timestamp = i.createdAt || i.date || new Date().toISOString();
-      if (
-        !leadData[id] ||
-        new Date(timestamp) > new Date(leadData[id].lastTimestamp || '')
-      ) {
-        leadData[id] = {
-          name: i.lead?.name || leadData[id]?.name || `Lead #${id}`,
-          lastActivity: activity,
-          lastTimestamp: timestamp,
-        };
-      }
-    });
-
-    // Build chat list from all leads with activity
-    const chatList: ChatItem[] = Array.from(leadIds).map((leadId) => {
-      const data = leadData[leadId];
-      const leadName = data?.name || `Lead #${leadId}`;
-      return {
-        id: leadId,
-        name: leadName,
-        lastMessage: data?.lastActivity || 'No activity yet',
-        timestamp: data?.lastTimestamp
-          ? new Date(data.lastTimestamp).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : new Date().toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
-      } satisfies ChatItem;
-    });
-
-    // Sort by most recent activity
-    chatList.sort((a, b) => {
-      const aTime = leadData[a.id]?.lastTimestamp || '';
-      const bTime = leadData[b.id]?.lastTimestamp || '';
-      return new Date(bTime).getTime() - new Date(aTime).getTime();
-    });
+    const chatList: ChatItem[] = Object.entries(byLead).map(
+      ([leadId, list]) => {
+        const sorted = [...list].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        const last = sorted[0];
+        const leadName = last.lead?.name || `Lead #${leadId}`;
+        return {
+          id: leadId,
+          name: leadName,
+          lastMessage:
+            last.content.length > 30
+              ? `${last.content.substring(0, 30)}...`
+              : last.content,
+          timestamp: last.createdAt
+            ? new Date(last.createdAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              }),
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
+        } satisfies ChatItem;
+      },
+    );
 
     return chatList;
   },
 );
 
+/**
+ * Thunk to load all messages for a specific chat
+ * Fetches messages, quotations, and invoices for a lead and combines them
+ * @param {string} chatId - The ID of the chat (lead ID as string)
+ * @returns {Promise<{chatId: string, messages: Message[]}>} Chat ID and array of messages
+ */
 export const loadMessagesForChat = createAsyncThunk<
   { chatId: string; messages: Message[] },
   string
@@ -237,17 +209,27 @@ export const loadMessagesForChat = createAsyncThunk<
     createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
   }));
 
+  // Merge all message types and ensure proper sorting by createdAt timestamp
   const merged: Message[] = [
     ...normalizedBase,
     ...normalizedQuotations,
     ...normalizedInvoices,
-  ].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  ].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateA - dateB;
+  });
 
   return { chatId, messages: merged };
 });
 
+/**
+ * Thunk to ensure a chat exists for a lead
+ * Creates a new chat item if one doesn't exist, otherwise returns existing
+ * @param {EnsureChatFromLeadArgs} args - Arguments object
+ * @param {number} args.leadId - The ID of the lead to ensure a chat for
+ * @returns {Promise<{chat: ChatItem, chatId: string}>} The chat item and its ID
+ */
 export const ensureChatFromLead = createAsyncThunk<
   { chat: ChatItem; chatId: string },
   EnsureChatFromLeadArgs
@@ -305,6 +287,7 @@ export const startNewChat = createAsyncThunk<
     }),
     avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(leadName)}&background=3f51b5&color=ffffff&type=png`,
   };
+  console.log('starting new chat:', chat);
   return { chat, chatId: leadId };
 });
 
@@ -323,7 +306,8 @@ export const sendMessage = createAsyncThunk<
     body: JSON.stringify({ content, leadId }),
   });
   if (!createRes.ok) throw new Error('Failed to send message');
-  // Re-fetch merged feed (messages + quotations + invoices) to ensure consistency
+
+  // Re-fetch all messages, quotations, and invoices to ensure consistency
   const [msgRes, quoRes, invRes] = await Promise.all([
     fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
     fetch(`/api/dealers/quotations?leadId=${leadId}`, {
@@ -332,7 +316,7 @@ export const sendMessage = createAsyncThunk<
     fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
   ]);
 
-  // Base messages (tolerate empty)
+  // Handle empty or error responses gracefully
   let baseMessages: LeadMessageDTO[] = [];
   if (msgRes.ok) {
     try {
@@ -380,47 +364,68 @@ export const sendMessage = createAsyncThunk<
     createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
   }));
 
+  // Merge all message types and ensure proper sorting by createdAt timestamp
   const merged: Message[] = [
     ...normalizedBase,
     ...normalizedQuotations,
     ...normalizedInvoices,
-  ].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  ].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateA - dateB;
+  });
 
   return { chatId, messages: merged };
 });
 
+// Initial state for the chat slice
 const initialState: ChatState = {
-  chats: [],
-  messagesByChatId: {},
-  currentChatId: null,
-  loading: false,
-  error: null,
+  chats: [], // List of all chat conversations
+  messagesByChatId: {}, // Messages organized by chat ID
+  currentChatId: null, // ID of the currently active chat
+  loading: false, // Whether an async operation is in progress
+  error: null, // Current error message, if any
 };
 
+// Create the chat slice with reducers and extra reducers for async thunks
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    /**
+     * Sets the currently active chat
+     * @param {ChatState} state - Current state
+     * @param {PayloadAction<string | null>} action - Action with the chat ID to set as current
+     */
     setCurrentChatId(state, action: PayloadAction<string | null>) {
       state.currentChatId = action.payload;
     },
+    /**
+     * Resets any error in the state
+     * @param {ChatState} state - Current state
+     */
     resetError(state) {
       state.error = null;
     },
+    /**
+     * Appends a new message to a chat
+     * @param {ChatState} state - Current state
+     * @param {PayloadAction<{chatId: string, message: Message}>} action - Action with chat ID and message
+     */
     appendMessage(
       state,
       action: PayloadAction<{ chatId: string; message: Message }>,
     ) {
       const { chatId, message } = action.payload;
       const arr = state.messagesByChatId[chatId] || [];
-      state.messagesByChatId[chatId] = [...arr, message].sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
+      state.messagesByChatId[chatId] = [...arr, message].sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
     },
   },
+  // Handle actions from async thunks
   extraReducers: (builder) => {
     builder
       .addCase(loadChats.pending, (state) => {
@@ -437,12 +442,13 @@ const chatSlice = createSlice({
       })
 
       .addCase(loadMessagesForChat.pending, (state, action) => {
-        state.loading = true;
-        state.error = null;
-        // Initialize array
+        // Only set loading state if we don't already have messages
         const chatId = action.meta.arg;
-        if (!state.messagesByChatId[chatId])
-          state.messagesByChatId[chatId] = [];
+        const existing = state.messagesByChatId[chatId];
+        if (existing === undefined) {
+          state.loading = true;
+        }
+        state.error = null;
       })
       .addCase(loadMessagesForChat.fulfilled, (state, action) => {
         state.loading = false;
@@ -465,7 +471,8 @@ const chatSlice = createSlice({
         const exists = state.chats.some((c) => c.id === chat.id);
         if (!exists) state.chats.unshift(chat);
         state.currentChatId = chatId;
-        // Do not prefill messages array here; leaving it undefined triggers initial load
+        if (!state.messagesByChatId[chatId])
+          state.messagesByChatId[chatId] = [];
       })
       .addCase(ensureChatFromLead.rejected, (state, action) => {
         state.loading = false;
@@ -477,22 +484,30 @@ const chatSlice = createSlice({
         const exists = state.chats.some((c) => c.id === chat.id);
         if (!exists) state.chats.unshift(chat);
         state.currentChatId = chatId;
-        // Do not prefill messages array; let the effect fetch merged feed
+        if (!state.messagesByChatId[chatId])
+          state.messagesByChatId[chatId] = [];
       })
 
       .addCase(sendMessage.pending, (state, action) => {
-        state.loading = true;
+        // Only set loading state if we have messages already
+        const { chatId } = action.meta.arg;
+        const existing = state.messagesByChatId[chatId];
+        if (existing !== undefined) {
+          state.loading = true;
+        }
         state.error = null;
-        const { chatId, content } = action.meta.arg;
+        const { chatId: chatId2, content } = action.meta.arg;
         const tempId = `temp-${Date.now()}`;
-        const arr = state.messagesByChatId[chatId] || [];
+        const arr = state.messagesByChatId[chatId2] || [];
+        // Use a timestamp that's slightly in the past to ensure proper ordering
+        const createdAt = new Date(Date.now() - 1000).toISOString();
         const temp: Message = {
           id: tempId,
           content,
           type: 'message',
-          createdAt: new Date().toISOString(),
+          createdAt,
         };
-        state.messagesByChatId[chatId] = [...arr, temp];
+        state.messagesByChatId[chatId2] = [...arr, temp];
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.loading = false;

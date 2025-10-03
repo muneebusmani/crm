@@ -1,6 +1,4 @@
-import type { ApiResponse, Quotation } from '@crm/types';
-import { handleResponse } from '@/services/response.service';
-import { get, post } from '@/lib/api';
+import * as api from '@lib/api';
 
 export interface CreateQuotationParams {
   leadId: number;
@@ -11,20 +9,17 @@ export interface CreateQuotationParams {
 
 export const quotationsApi = {
   async createQuotation(params: CreateQuotationParams) {
-    return handleResponse(
-      post<Quotation, CreateQuotationParams>('/dealers/quotations', params),
-    );
+    const response = await api.post('/dealers/quotations', params);
+    return response.data;
   },
   async getQuotations(leadId?: number) {
-    const url = leadId
-      ? `/dealers/quotations/leads/${leadId}`
-      : '/dealers/quotations';
-    return handleResponse(get<ApiResponse<Quotation[]>>(url));
+    const url = `/dealers/quotations/leads/${leadId}`;
+    const response = await api.get(url);
+    return response;
   },
 
   async getQuotation(id: number) {
-    return handleResponse(
-      get<ApiResponse<Quotation>>(`/dealers/quotations/${id}`),
-    );
+    const response = await api.get(`/dealers/quotations/${id}`);
+    return response;
   },
 };

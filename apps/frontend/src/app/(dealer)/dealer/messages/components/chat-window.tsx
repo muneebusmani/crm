@@ -32,11 +32,11 @@ export default function ChatWindow({
   leadName,
   dealerName,
 }: ChatWindowProps) {
+  console.log('currentChatId', currentChatId);
   const [isSending, setIsSending] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] =
     useState<boolean>(false);
-  const [showInvoiceDialog, setShowInvoiceDialog] =
-    useState<boolean>(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState<boolean>(false);
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

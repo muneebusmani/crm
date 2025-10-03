@@ -1,6 +1,5 @@
 'use client';
-
-import type { Dealer } from '@crm/types';
+import type { Dealer, DealerFlatData, User } from '@crm/types';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -40,20 +39,24 @@ import axios from 'axios';
 import Image from 'next/image';
 import type React from 'react';
 import { type ChangeEvent, useEffect, useState } from 'react';
-import * as api from '@/lib/api';
 import AddDealerDialog from './add-dealer-dialog';
+import { get } from '@/lib/api';
+
+type Dealers = User & { dealer: Dealer };
 
 const Dealers = ({ token }: { token: string }) => {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
-  const [dealers, setDealers] = useState<Dealer[]>([]);
-  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  const [dealers, setDealers] = useState<DealerFlatData[]>([]);
+  const [selectedDealer, setSelectedDealer] = useState<DealerFlatData | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('Name');
   const [page, setPage] = useState(1);
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Dealer | null>(null);
+  const [editData, setEditData] = useState<DealerFlatData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -62,31 +65,29 @@ const Dealers = ({ token }: { token: string }) => {
     const fetchDealers = async () => {
       try {
         setLoading(true);
-        const response = await api.get<Array<any>>(`/dealers`);
+        const data = await get<Dealers[]>(`/dealers`);
+        // console.log('Data ===>', data);
         // if (response) throw new Error(response.error);
 
-        const data = response as unknown as Array<any>;
-        console.log('Response ===>', data);
-        // console.log('raw data ===>', data);
-
         // flatten structure
-        // biome-ignore lint/suspicious/noExplicitAny: <idk>
-        const flatData = data.map((u: any) => ({
-          id: u.id,
-          email: u.email,
-          username: u.username,
-          name: u.dealer?.name,
-          owner: u.dealer?.owner,
-          location: u.dealer?.location,
-          logo: u.dealer?.logo,
-          website: u.dealer?.website,
-          contactEmail: u.dealer?.contactEmail,
-          tierId: u.dealer?.tier?.id,
-          tierName: u.dealer?.tier?.name,
-        }));
-
-        // console.log('flatData ===>', flatData);
-        setDealers(flatData as any);
+        const flatData: DealerFlatData[] = data.map(
+          (u): DealerFlatData => ({
+            id: u.id,
+            email: u.email,
+            username: u.username,
+            name: u.dealer?.name ?? '',
+            owner: u.dealer?.owner ?? '',
+            location: u.dealer?.location ?? '',
+            logo: u.dealer?.logo ?? '',
+            website: u.dealer?.website ?? '',
+            contactEmail: u.dealer?.contactEmail ?? '',
+            tierId: u.dealer?.tier?.id,
+            tierName: u.dealer?.tier?.name,
+            password: '', // required by type, default empty
+            logoFile: null, // required by type, default null
+          }),
+        );
+        setDealers(flatData);
 
         // Remove auto-selection of first dealer
         // if (flatData.length > 0) {
@@ -141,27 +142,27 @@ const Dealers = ({ token }: { token: string }) => {
         },
       );
 
-      setDealers([...(dealers as any), newDealer as any]);
+      setDealers([...dealers, newDealer]);
       setOpen(false);
-      setSelectedDealer(newDealer as any);
+      setSelectedDealer(newDealer);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add dealer');
     }
   };
 
   // Handle dealer selection (only for checkbox selection)
-  const handleSelectDealer = (dealer: Dealer) => {
+  const handleSelectDealer = (dealer: DealerFlatData) => {
     setSelectedDealer(dealer);
   };
 
   // Handle view click
-  const handleViewClick = (dealer: Dealer) => {
+  const handleViewClick = (dealer: DealerFlatData) => {
     setSelectedDealer(dealer);
     setShowDetails(true);
   };
 
   // Handle edit click
-  const handleEditClick = (dealer: Dealer) => {
+  const handleEditClick = (dealer: DealerFlatData) => {
     setIsEditing(true);
     setEditData(dealer);
     setSelectedDealer(dealer);
@@ -733,7 +734,10 @@ const Dealers = ({ token }: { token: string }) => {
                               }}
                             >
                               <Image
-                                src={dealer.logo}
+                                src={
+                                  dealer.logo ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(dealer.name || dealer.owner || 'John Doe')}&background=3f51b5&color=ffffff&type=png`
+                                }
                                 alt={dealer.name}
                                 width={24}
                                 height={24}
@@ -795,7 +799,7 @@ const Dealers = ({ token }: { token: string }) => {
                                 color="error"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDelete(dealer.id);
+                                  handleDelete(dealer.id as number);
                                 }}
                               >
                                 <DeleteIcon />

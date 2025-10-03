@@ -62,7 +62,7 @@ export default function ChatInput({
       <Tooltip title="Send Quotation">
         <span>
           <IconButton
-            disabled={disabled || isSending}
+            disabled={isSending}
             onClick={onQuoteClick}
             sx={{
               color: theme.palette.success.main,
@@ -80,7 +80,7 @@ export default function ChatInput({
       <Tooltip title="Send Invoice">
         <span>
           <IconButton
-            disabled={disabled || isSending}
+            disabled={isSending}
             onClick={onInvoiceClick}
             sx={{
               color: theme.palette.warning.main,
