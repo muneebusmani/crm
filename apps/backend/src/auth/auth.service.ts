@@ -28,6 +28,13 @@ export class AuthService {
     );
   }
 
+
+  async generateRefreshToken( user :{  id: number; email: string;type: string}) :Promise<string> {
+      const payload = { sub: user.id, email: user.email, type: user.type };
+      return await this.jwtService.signAsync(payload, {
+        expiresIn: '7d'
+      });
+  }
   private async generateToken(user: {
     id: number;
     email: string;
@@ -37,7 +44,7 @@ export class AuthService {
     return await this.jwtService.signAsync(payload);
   }
 
-  async login(dto: LoginDto): Promise<{ user: User; accessToken: string }> {
+  async login(dto: LoginDto): Promise<{ user: User; accessToken: string, refreshToken : string }> {
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
@@ -54,6 +61,7 @@ export class AuthService {
     }
 
     const accessToken = await this.generateToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
 
     return {
       user: {
@@ -65,6 +73,7 @@ export class AuthService {
         type: user.type,
       },
       accessToken,
+      refreshToken
     };
   }
 

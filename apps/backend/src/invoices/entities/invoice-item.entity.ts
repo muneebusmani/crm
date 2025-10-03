@@ -39,6 +39,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('invoice_items')
@@ -68,6 +69,9 @@ export class InvoiceItem {
   @JoinColumn({ name: 'invoiceId' })
   invoice!: any; // string-based relation avoids circular dependency
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt!: Date;
 }

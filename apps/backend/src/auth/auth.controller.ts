@@ -27,11 +27,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ZodValidationPipe(LoginSchema))
   async login(@Body() dto: LoginDto): Promise<Login> {
-    const { user, accessToken } = await this.authService.login(dto);
+    const { user, accessToken, refreshToken } = await this.authService.login(dto);
     console.log(user);
     return {
       user,
       accessToken,
+      refreshToken
     };
   }
 
