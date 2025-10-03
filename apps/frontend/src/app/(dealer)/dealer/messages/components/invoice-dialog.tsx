@@ -3,7 +3,7 @@
 import { Box, Button, Dialog, DialogContent, DialogTitle, TextField } from '@mui/material';
 import { useState } from 'react';
 import { useAppDispatch } from '@/lib/redux/hooks';
-import { appendMessage, ensureChatFromLead, loadMessagesForChat } from '@/features/chat/slice';
+import { appendMessage, loadMessagesForChat } from '@/features/chat/slice';
 
 interface InvoiceDialogProps {
   open: boolean;
@@ -59,12 +59,14 @@ export default function InvoiceDialog({ open, onClose, leadId }: InvoiceDialogPr
       if (!res.ok) throw new Error('Failed to create invoice');
 
       // Optimistic append
-      await dispatch(ensureChatFromLead({ leadId: String(leadId) } as any));
       const sub = computeSubTotal();
       const total = sub + payload.taxAmount;
+      const chatId = String(leadId);
+      // Use a timestamp that's slightly in the past to ensure proper ordering
+      const createdAt = new Date(Date.now() - 1000).toISOString();
       dispatch(
         appendMessage({
-          chatId: String(leadId),
+          chatId,
           message: {
             id: `inv-temp-${Date.now()}`,
             content: JSON.stringify({
@@ -74,13 +76,13 @@ export default function InvoiceDialog({ open, onClose, leadId }: InvoiceDialogPr
               status: 'PENDING',
             }),
             type: 'invoice',
-            createdAt: new Date().toISOString(),
+            createdAt,
           },
         }),
       );
 
       // Refresh
-      dispatch(loadMessagesForChat(String(leadId)));
+      dispatch(loadMessagesForChat(chatId));
 
       onClose();
     } catch (error) {

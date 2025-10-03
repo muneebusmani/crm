@@ -1,4 +1,3 @@
-import { Dealer } from '@crm/types';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
@@ -19,6 +18,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import LogoUpload from './logo-upload';
+import { DealerFlatData } from '@crm/types';
 
 // Your Dealer type
 
@@ -38,22 +38,8 @@ interface AddDealerDialogProps {
     contactEmail: string;
     tierId?: number;
   }) => void;
-  initialData?: Dealer;
+  initialData?: DealerFlatData;
   isEditing?: boolean;
-}
-
-interface DealerFormData {
-  name: string;
-  email: string;
-  username: string;
-  password: string;
-  owner: string;
-  location: string;
-  logo: string; // preview URL
-  logoFile: File | null;
-  website: string;
-  contactEmail: string;
-  tierId: number;
 }
 
 const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
@@ -65,7 +51,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
 }) => {
   const theme = useTheme();
 
-  const [formData, setFormData] = useState<DealerFormData>({
+  const [formData, setFormData] = useState<DealerFlatData>({
     name: '',
     email: '',
     username: '',
@@ -79,6 +65,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
     tierId: 1,
   });
 
+  console.log('initialData', initialData);
   // Populate form if editing
   useEffect(() => {
     if (initialData && isEditing) {

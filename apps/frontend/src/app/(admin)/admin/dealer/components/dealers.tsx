@@ -1,6 +1,5 @@
 'use client';
-
-import type { Dealer } from '@crm/types';
+import type { DealerFlatData } from '@crm/types';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -46,14 +45,16 @@ import AddDealerDialog from './add-dealer-dialog';
 const Dealers = ({ token }: { token: string }) => {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
-  const [dealers, setDealers] = useState<Dealer[]>([]);
-  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  const [dealers, setDealers] = useState<DealerFlatData[]>([]);
+  const [selectedDealer, setSelectedDealer] = useState<DealerFlatData | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('Name');
   const [page, setPage] = useState(1);
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Dealer | null>(null);
+  const [editData, setEditData] = useState<DealerFlatData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -150,18 +151,18 @@ const Dealers = ({ token }: { token: string }) => {
   };
 
   // Handle dealer selection (only for checkbox selection)
-  const handleSelectDealer = (dealer: Dealer) => {
+  const handleSelectDealer = (dealer: DealerFlatData) => {
     setSelectedDealer(dealer);
   };
 
   // Handle view click
-  const handleViewClick = (dealer: Dealer) => {
+  const handleViewClick = (dealer: DealerFlatData) => {
     setSelectedDealer(dealer);
     setShowDetails(true);
   };
 
   // Handle edit click
-  const handleEditClick = (dealer: Dealer) => {
+  const handleEditClick = (dealer: DealerFlatData) => {
     setIsEditing(true);
     setEditData(dealer);
     setSelectedDealer(dealer);
@@ -733,7 +734,10 @@ const Dealers = ({ token }: { token: string }) => {
                               }}
                             >
                               <Image
-                                src={dealer.logo}
+                                src={
+                                  dealer.logo ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(dealer.name || dealer.owner || 'John Doe')}&background=3f51b5&color=ffffff&type=png`
+                                }
                                 alt={dealer.name}
                                 width={24}
                                 height={24}
@@ -795,7 +799,7 @@ const Dealers = ({ token }: { token: string }) => {
                                 color="error"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDelete(dealer.id);
+                                  handleDelete(dealer.id as number);
                                 }}
                               >
                                 <DeleteIcon />

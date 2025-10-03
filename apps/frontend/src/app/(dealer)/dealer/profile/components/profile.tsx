@@ -1,5 +1,5 @@
 'use client';
-import type { Dealer } from '@crm/types';
+import type { Dealer, User } from '@crm/types';
 import { Close, LocationOn, Person, Settings, Web } from '@mui/icons-material';
 import {
   Avatar,
@@ -17,46 +17,59 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { get, put } from '@/lib/api';
 import BankDetailsSection from './bank-details-selection';
 
-// biome-ignore lint/suspicious/noExplicitAny: <any>
-const Profile = ({ id }: { id: any }) => {
+interface DealerData extends User {
+  dealer: Dealer;
+}
+interface DealerInfo {
+  id: number;
+  email: string;
+  username: string;
+  name: string;
+  owner: string;
+  location: string;
+  logo: string;
+  website: string;
+  contactEmail: string;
+  tierId?: number;
+  tierName?: string;
+}
+
+const Profile = () => {
   const theme = useTheme();
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [profileData, setProfileData] = useState<Dealer | null>(null);
+  const [profileData, setProfileData] = useState<DealerInfo>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        console.log(id);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
-        );
-        console.log(response.data);
-        if (response.status !== 200) throw new Error('Failed to fetch profile');
+        const userData = await get<DealerData>('/dealers/profile/me');
+        console.log('response: ', userData);
 
-        const userData = await response.data;
+        const {
+          id,
+          email,
+          username,
+          dealer: {
+            tier: { id: tierId, name: tierName },
+            ...dealerRest
+          },
+        } = userData;
 
-        const dealer = userData.dealer;
         const profile = {
-          id: userData.id,
-          email: userData.email,
-          username: userData.username,
-          name: dealer?.name || '',
-          owner: dealer?.owner || '',
-          location: dealer?.location || '',
-          logo: dealer?.logo || '/static/images/avatar/default.jpg',
-          website: dealer?.website || '',
-          contactEmail: dealer?.contactEmail || '',
-          tierId: dealer?.tier?.id,
+          id,
+          email,
+          username,
+          ...dealerRest,
+          tierId,
+          tierName,
         };
-        console.log('Logo===>', profile.logo);
-
-        setProfileData(profile as Dealer);
+        setProfileData(profile);
       } catch (err) {
         console.error('Failed to load profile:', err);
       } finally {
@@ -65,7 +78,7 @@ const Profile = ({ id }: { id: any }) => {
     };
 
     fetchProfile();
-  }, [id]);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -137,38 +150,31 @@ const Profile = ({ id }: { id: any }) => {
         password: formData.password || '',
       };
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/dealers/${profileData.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(dataToSend),
-        },
+      const updatedData = await put<DealerData>(
+        '/dealers/profile/me',
+        dataToSend,
       );
 
-      if (!response.ok) throw new Error('Failed to update profile');
+      const {
+        id,
+        email,
+        username,
+        dealer: {
+          tier: { id: tierId, name: tierName },
+          ...dealerRest
+        },
+      } = updatedData;
 
-      const updatedData = await response.json();
-
-      const dealer = updatedData.dealer;
       const updatedProfile = {
-        id: updatedData.id,
-        email: updatedData.email,
-        username: updatedData.username,
-        name: dealer?.name || profileData.name,
-        owner: dealer?.owner || profileData.owner,
-        location: dealer?.location || profileData.location,
-        logo: dealer?.logo || profileData.logo,
-        website: dealer?.website || profileData.website,
-        contactEmail: dealer?.contactEmail || profileData.contactEmail,
-        tierId: dealer?.tier?.id || profileData.tierId,
+        id,
+        email,
+        username,
+        ...dealerRest,
+        tierId,
+        tierName,
       };
 
-      setProfileData(updatedProfile as Dealer);
+      setProfileData(updatedProfile);
       setOpenEditDialog(false);
       alert('Profile updated successfully!');
     } catch (err) {
