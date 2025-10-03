@@ -80,6 +80,14 @@ export async function post<R = any, B = any>(
     await attachToken(options, skipAuth),
   ) as Promise<ApiResponse<R>>;
 }
+export async function post2<R = any, B = any>(
+  path: string,
+  body?: B,
+  options?: RequestConfig<B>,
+  skipAuth = false,
+) {
+  return http.post<R, B>(path, body, await attachToken(options, skipAuth));
+}
 
 export async function put<R = any, B = any>(
   path: string,

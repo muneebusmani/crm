@@ -5,6 +5,7 @@ import { type Login, type LoginDto, UserType } from '@crm/types';
 import axios from 'axios';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { post2 } from '@/lib/api';
 
 export async function loginAction(formData: FormData) {
   try {
@@ -12,14 +13,10 @@ export async function loginAction(formData: FormData) {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
     };
-    const response = await axios.post<Login>(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-      formdata,
-    );
     const {
       accessToken: token,
       user: { type: userType, id },
-    } = response.data;
+    } = await post2<Login, LoginDto>(`/auth/login`, formdata);
 
     const expiryMap: Record<UserType | 'DEFAULT', number> = {
       [UserType.ADMIN]: 24 * 60 * 60, // 24 hrs
