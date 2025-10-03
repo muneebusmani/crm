@@ -14,6 +14,7 @@ export interface Dealer {
   tier: Tier;
 }
 export interface DealerFlatData {
+  id?: number;
   name: string;
   email: string;
   username: string;
@@ -25,6 +26,7 @@ export interface DealerFlatData {
   website: string;
   contactEmail: string;
   tierId: number;
+  tierName?: string;
 }
 
 export interface Tier {

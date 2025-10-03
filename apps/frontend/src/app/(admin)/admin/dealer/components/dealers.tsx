@@ -1,5 +1,5 @@
 'use client';
-import type { DealerFlatData } from '@crm/types';
+import type { Dealer, DealerFlatData, User } from '@crm/types';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -39,8 +39,10 @@ import axios from 'axios';
 import Image from 'next/image';
 import type React from 'react';
 import { type ChangeEvent, useEffect, useState } from 'react';
-import * as api from '@/lib/api';
 import AddDealerDialog from './add-dealer-dialog';
+import { get } from '@/lib/api';
+
+type Dealers = User & { dealer: Dealer };
 
 const Dealers = ({ token }: { token: string }) => {
   const theme = useTheme();
@@ -63,31 +65,29 @@ const Dealers = ({ token }: { token: string }) => {
     const fetchDealers = async () => {
       try {
         setLoading(true);
-        const response = await api.get<Array<any>>(`/dealers`);
+        const data = await get<Dealers[]>(`/dealers`);
+        // console.log('Data ===>', data);
         // if (response) throw new Error(response.error);
 
-        const data = response as unknown as Array<any>;
-        console.log('Response ===>', data);
-        // console.log('raw data ===>', data);
-
         // flatten structure
-        // biome-ignore lint/suspicious/noExplicitAny: <idk>
-        const flatData = data.map((u: any) => ({
-          id: u.id,
-          email: u.email,
-          username: u.username,
-          name: u.dealer?.name,
-          owner: u.dealer?.owner,
-          location: u.dealer?.location,
-          logo: u.dealer?.logo,
-          website: u.dealer?.website,
-          contactEmail: u.dealer?.contactEmail,
-          tierId: u.dealer?.tier?.id,
-          tierName: u.dealer?.tier?.name,
-        }));
-
-        // console.log('flatData ===>', flatData);
-        setDealers(flatData as any);
+        const flatData: DealerFlatData[] = data.map(
+          (u): DealerFlatData => ({
+            id: u.id,
+            email: u.email,
+            username: u.username,
+            name: u.dealer?.name ?? '',
+            owner: u.dealer?.owner ?? '',
+            location: u.dealer?.location ?? '',
+            logo: u.dealer?.logo ?? '',
+            website: u.dealer?.website ?? '',
+            contactEmail: u.dealer?.contactEmail ?? '',
+            tierId: u.dealer?.tier?.id,
+            tierName: u.dealer?.tier?.name,
+            password: '', // required by type, default empty
+            logoFile: null, // required by type, default null
+          }),
+        );
+        setDealers(flatData);
 
         // Remove auto-selection of first dealer
         // if (flatData.length > 0) {
@@ -142,9 +142,9 @@ const Dealers = ({ token }: { token: string }) => {
         },
       );
 
-      setDealers([...(dealers as any), newDealer as any]);
+      setDealers([...dealers, newDealer]);
       setOpen(false);
-      setSelectedDealer(newDealer as any);
+      setSelectedDealer(newDealer);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add dealer');
     }
