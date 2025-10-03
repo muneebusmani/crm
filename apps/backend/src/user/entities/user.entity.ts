@@ -73,7 +73,7 @@ export class User {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updated_at!: Date;
   
-  @Column({type : "text"})
+  @Column({ nullable: true })
   refreshToken!: string
 
 }

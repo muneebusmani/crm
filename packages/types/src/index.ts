@@ -5,6 +5,7 @@ export * from './types/Dealer';
 export * from './types/LeadMessageType';
 export * from './types/UserStatus';
 export * from './types/Quotation';
+export * from './types/DealerMessageReposne';
 export * from './types/Invoice';
 export * from './types/BankDetailsResponse';
 export * from './types/UserStatus';

@@ -63,6 +63,9 @@ export class AuthService {
     const accessToken = await this.generateToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
+    const hashedRefresh = await bcrypt.hash(refreshToken, 10);
+    await this.userRepository.update(user.id, { refreshToken: hashedRefresh });
+
     return {
       user: {
         id: user.id,
@@ -75,6 +78,41 @@ export class AuthService {
       accessToken,
       refreshToken
     };
+  }
+
+   async refresh(refreshToken: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+      });
+
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException('Access Denied');
+      }
+
+      const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      if (!isValid) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const accessToken = await this.generateToken(user);
+      const newRefreshToken = await this.generateRefreshToken(user);
+
+      // rotate refresh token
+      const hashedRefresh = await bcrypt.hash(newRefreshToken, 10);
+      await this.userRepository.update(user.id, { refreshToken: hashedRefresh });
+
+      return {
+        accessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   async register(dto: RegisterDto) {
@@ -93,6 +131,7 @@ export class AuthService {
       const savedUser = await this.userRepository.save(user);
 
       const accessToken = await this.generateToken(savedUser);
+      const refreshToken =  await this.generateRefreshToken(savedUser);
 
       return {
         user: {
@@ -104,6 +143,7 @@ export class AuthService {
           type: user.type,
         },
         accessToken,
+        refreshToken
       };
       // biome-ignore lint/suspicious/noExplicitAny: <idk>
     } catch (error: any) {
