@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <abstraction> */
 'use server';
 
 import type { ApiResponse } from '@crm/types';
@@ -86,11 +87,7 @@ export async function put<R = any, B = any>(
   options?: RequestConfig<B>,
   skipAuth = false,
 ) {
-  return http.put<R, B>(
-    path,
-    body,
-    await attachToken(options, skipAuth),
-  ) as Promise<ApiResponse<R>>;
+  return http.put<R, B>(path, body, await attachToken(options, skipAuth));
 }
 
 export async function patch<R = any, B = any>(

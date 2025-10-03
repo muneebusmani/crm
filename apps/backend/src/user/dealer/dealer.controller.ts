@@ -30,6 +30,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { DealerGuard } from 'src/auth/guards/dealer.guard';
 import { Lead } from 'src/leads/entities/lead.entity';
 import type { Multer } from 'multer';
+import type { AuthenticatedRequest } from 'src/common/user.interface';
 
 @Controller('dealers')
 export class DealerController {
@@ -55,6 +56,23 @@ export class DealerController {
   @Get()
   findAll() {
     return this.dealerService.getAllDealers();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/profile/me')
+  getProfile(@Req() req: AuthenticatedRequest) {
+    return this.dealerService.getDealerById(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('/profile/me')
+  @UseInterceptors(FileInterceptor('logoFile'))
+  async updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateDealerDto,
+    @UploadedFile() file?: Multer.File,
+  ) {
+    return this.dealerService.updateDealer(req.user.id, dto, file);
   }
 
   @Get(':id')
