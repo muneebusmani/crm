@@ -49,7 +49,7 @@ export class MessagesController {
   @UseGuards(JwtAuthGuard, DealerGuard)
   @Get('dealer')
   getDealerConversation(@Req() req) {
-    const dealerId = req.user.id;;
+    const dealerId = req.user.id;
     return this.msgService.getConversation(dealerId);
   }
 
