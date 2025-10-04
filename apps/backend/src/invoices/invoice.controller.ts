@@ -17,6 +17,7 @@ import type {
   InvoiceStatus,
 } from '@crm/types';
 import { CustomError } from 'src/common/custom-error';
+import type { AuthenticatedRequest } from 'src/common/user.interface';
 
 @Controller('invoices')
 @UseGuards(JwtAuthGuard)
@@ -35,15 +36,22 @@ export class InvoiceController {
 
   @Post()
   async create(
-    @Body() createInvoiceDto: CreateInvoiceDto,  @Req() req) : Promise<ApiResponse<InvoiceResponse>> {
-      const dealerId = req.user.id; // Extracted from JWT token
-      const invoice = await this.invoiceService.create(createInvoiceDto, dealerId);
-      return this.buildResponse(invoice);
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ApiResponse<InvoiceResponse>> {
+    const dealerId = req.user.id; // Extracted from JWT token
+    const invoice = (await this.invoiceService.create(
+      createInvoiceDto,
+      dealerId,
+    )) as unknown as InvoiceResponse;
+    return this.buildResponse(invoice);
   }
 
   @Get()
-  async findAll(@Req() req: any): Promise<ApiResponse<InvoiceResponse[]>> {
-    const dealerId = req.user.dealerId;
+  async findAll(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ApiResponse<InvoiceResponse[]>> {
+    const dealerId = req.user.id;
     const invoices = await this.invoiceService.findAll(dealerId);
 
     const data: InvoiceResponse[] = (await invoices).map((invoice) => ({

@@ -164,7 +164,7 @@ export class InvoiceService {
     return invoice;
   }
 
-  async findAll(dealerId: string): Promise<Invoice[]> {
+  async findAll(dealerId: number): Promise<Invoice[]> {
     return this.invoiceRepository.find({
       where: { dealer: { id: dealerId } },
       relations: ['dealer', 'lead', 'items'], // ✅ fixed
