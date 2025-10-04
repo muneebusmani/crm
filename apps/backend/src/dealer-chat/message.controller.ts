@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Req, Request, UseGuards } from "@nestjs/common";
 import { MessagesService } from "./message.service";
 import { JwtAuthGuard } from "src/auth/guards/jwt.guard";
 import { DealerGuard } from "src/auth/guards/dealer.guard";
@@ -19,29 +19,37 @@ export class MessagesController {
     }
   // Dealer sends message
   @UseGuards(JwtAuthGuard, DealerGuard)
-  @Post('dealer/:dealerId')
-  sendDealerMessage(
+  @Post('dealer')
+  async sendDealerMessage(
     @Body('body') body: string,
     @Request() req
-  ) : Promise<DealerMessageReposne> {
+  ) : Promise<ApiResponse<DealerMessageReposne>> {
     // req.user contains dealer info if using JWT
-    return this.msgService.sendMessage(req.user.id, 'dealer', body);
+    const result = await  this.msgService.sendMessage(req.user.id, 'dealer', body);
+    return await this.buildResponse(result);
   }
 
   // Admin replies
+  @UseGuards(JwtAuthGuard)
   @Post('admin/:dealerId')
-  sendAdminMessage(
+  async sendAdminMessage(
     @Param('dealerId') dealerId: number,
-    @Body('body') body: string,
-    @Request() req
-  ) {
+    @Body('body') body: string
+  ) : Promise<ApiResponse<DealerMessageReposne>>  {
     // req.user contains admin info
-    return this.msgService.sendMessage(req.user.id, 'admin', body);
+    const result = await this.msgService.sendMessage(dealerId, 'admin', body);
+    return await this.buildResponse(result);
   }
 
   // Dealer fetches their conversation
-  @Get('dealer/:dealerId')
-  getDealerConversation(@Param('dealerId') dealerId: number) {
+  @Get('admin/:dealerId')
+  getDealerAdminConversation(@Param('dealerId') dealerId: number) {
+    return this.msgService.getConversation(dealerId);
+  }
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('dealer')
+  getDealerConversation(@Req() req) {
+    const dealerId = req.user.id;;
     return this.msgService.getConversation(dealerId);
   }
 

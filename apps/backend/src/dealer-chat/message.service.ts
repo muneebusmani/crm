@@ -19,12 +19,19 @@ export class MessagesService {
       convo = this.convoRepo.create({ dealerId : dealerId, adminId: 0});
       convo = await this.convoRepo.save(convo);
     }
+     const msg = this.msgRepo.create({
+      conversation: convo,
+      senderId: dealerId,
+      senderRole,
+      body,
+    });
 
     const savedMsg = await this.msgRepo.save(msg);
 
   // map to response DTO
     return {
       id: savedMsg.id,
+      conversation: savedMsg.conversation,
       senderId: savedMsg.senderId,
       senderRole: savedMsg.senderRole,
       body: savedMsg.body,
