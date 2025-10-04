@@ -1,5 +1,10 @@
 'use client';
-import type { Dealer, DealerFlatData, User } from '@crm/types';
+import {
+  UserType,
+  type Dealer,
+  type DealerFlatData,
+  type User,
+} from '@crm/types';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -66,27 +71,29 @@ const Dealers = ({ token }: { token: string }) => {
       try {
         setLoading(true);
         const data = await get<Dealers[]>(`/dealers`);
-        // console.log('Data ===>', data);
+        console.log('Data ===>', data);
         // if (response) throw new Error(response.error);
 
         // flatten structure
-        const flatData: DealerFlatData[] = data.map(
-          (u): DealerFlatData => ({
-            id: u.id,
-            email: u.email,
-            username: u.username,
-            name: u.dealer?.name ?? '',
-            owner: u.dealer?.owner ?? '',
-            location: u.dealer?.location ?? '',
-            logo: u.dealer?.logo ?? '',
-            website: u.dealer?.website ?? '',
-            contactEmail: u.dealer?.contactEmail ?? '',
-            tierId: u.dealer?.tier?.id,
-            tierName: u.dealer?.tier?.name,
-            password: '', // required by type, default empty
-            logoFile: null, // required by type, default null
-          }),
-        );
+        const flatData: DealerFlatData[] = data
+          .filter((u) => u.type !== UserType.ADMIN)
+          .map(
+            (u): DealerFlatData => ({
+              id: u.id,
+              email: u.email,
+              username: u.username,
+              name: u.dealer?.name ?? '',
+              owner: u.dealer?.owner ?? '',
+              location: u.dealer?.location ?? '',
+              logo: u.dealer?.logo ?? '',
+              website: u.dealer?.website ?? '',
+              contactEmail: u.dealer?.contactEmail ?? '',
+              tierId: u.dealer?.tier?.id,
+              tierName: u.dealer?.tier?.name,
+              password: '', // required by type, default empty
+              logoFile: null, // required by type, default null
+            }),
+          );
         setDealers(flatData);
 
         // Remove auto-selection of first dealer

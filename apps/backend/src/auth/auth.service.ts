@@ -28,12 +28,15 @@ export class AuthService {
     );
   }
 
-
-  async generateRefreshToken( user :{  id: number; email: string;type: string}) :Promise<string> {
-      const payload = { sub: user.id, email: user.email, type: user.type };
-      return await this.jwtService.signAsync(payload, {
-        expiresIn: '7d'
-      });
+  async generateRefreshToken(user: {
+    id: number;
+    email: string;
+    type: string;
+  }): Promise<string> {
+    const payload = { sub: user.id, email: user.email, type: user.type };
+    return await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
   }
   private async generateToken(user: {
     id: number;
@@ -44,11 +47,12 @@ export class AuthService {
     return await this.jwtService.signAsync(payload);
   }
 
-  async login(dto: LoginDto): Promise<{ user: User; accessToken: string, refreshToken : string }> {
+  async login(
+    dto: LoginDto,
+  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
-
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -76,11 +80,11 @@ export class AuthService {
         type: user.type,
       },
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
-   async refresh(refreshToken: string) {
+  async refresh(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET,
@@ -104,7 +108,9 @@ export class AuthService {
 
       // rotate refresh token
       const hashedRefresh = await bcrypt.hash(newRefreshToken, 10);
-      await this.userRepository.update(user.id, { refreshToken: hashedRefresh });
+      await this.userRepository.update(user.id, {
+        refreshToken: hashedRefresh,
+      });
 
       return {
         accessToken,
@@ -116,7 +122,7 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const { name, email, username, password } = dto;
+    const { name, email, username, password, type } = dto;
 
     try {
       const hashedPassword = await bcrypt.hash(password, this.saltRounds);
@@ -126,12 +132,13 @@ export class AuthService {
         email,
         username,
         password: hashedPassword,
+        type,
       });
 
       const savedUser = await this.userRepository.save(user);
 
       const accessToken = await this.generateToken(savedUser);
-      const refreshToken =  await this.generateRefreshToken(savedUser);
+      const refreshToken = await this.generateRefreshToken(savedUser);
 
       return {
         user: {
@@ -143,11 +150,14 @@ export class AuthService {
           type: user.type,
         },
         accessToken,
-        refreshToken
+        refreshToken,
       };
-      // biome-ignore lint/suspicious/noExplicitAny: <idk>
-    } catch (error: any) {
-      throw new InternalServerErrorException('Registration failed:', error);
+    } catch (error: unknown) {
+      console.log('Error:', error);
+      throw new InternalServerErrorException(
+        'Registration failed:',
+        JSON.stringify(error),
+      );
     }
   }
 }
