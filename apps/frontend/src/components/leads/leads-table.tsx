@@ -10,6 +10,8 @@ import {
   // FilterList as FilterListIcon,
   Info as InfoIcon,
   Search as SearchIcon,
+  RequestQuote as RequestQuoteIcon,
+  ReceiptLong as ReceiptLongIcon,
 } from '@mui/icons-material';
 import ChatIcon from '@mui/icons-material/Chat';
 
@@ -39,6 +41,8 @@ import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
 import { useRouter } from 'next/navigation'; // ✅ App Router hook
+import SendQuotationDialog from './send-quotation-dialog';
+import SendInvoiceDialog from './send-invoice-dialog';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -59,6 +63,8 @@ const LeadsTable: React.FC = () => {
   const [openInfoDialog, setOpenInfoDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
+  const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
+  const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -513,6 +519,28 @@ const LeadsTable: React.FC = () => {
                       </IconButton>
                       <IconButton
                         size="small"
+                        color="primary"
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setOpenQuotationDialog(true);
+                        }}
+                        title="Send Quotation"
+                      >
+                        <RequestQuoteIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="warning"
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setOpenInvoiceDialog(true);
+                        }}
+                        title="Send Invoice"
+                      >
+                        <ReceiptLongIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
                         onClick={() => handleActionClick('edit', lead)}
                         title="Edit"
                       >
@@ -599,6 +627,24 @@ const LeadsTable: React.FC = () => {
             onClose={() => setOpenInfoDialog(false)}
             lead={selectedLead}
             isLoading={isInfoDialogLoading}
+          />
+
+          <SendQuotationDialog
+            open={openQuotationDialog}
+            onClose={() => setOpenQuotationDialog(false)}
+            leadId={selectedLead.id ?? null}
+            onSuccess={() =>
+              setSnackbar({ open: true, message: 'Quotation sent successfully', severity: 'success' })
+            }
+          />
+
+          <SendInvoiceDialog
+            open={openInvoiceDialog}
+            onClose={() => setOpenInvoiceDialog(false)}
+            leadId={selectedLead.id ?? null}
+            onSuccess={() =>
+              setSnackbar({ open: true, message: 'Invoice sent successfully', severity: 'success' })
+            }
           />
         </>
       )}

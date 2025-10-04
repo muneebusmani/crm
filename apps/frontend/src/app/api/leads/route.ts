@@ -26,9 +26,10 @@ export async function PUT(req: Request) {
   try {
     const body = await req.json();
     const updated = await leadsApi.update(body);
+    console.log('updated ===>', updated);
     return NextResponse.json(updated);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to update lead';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: e }, { status: 500 });
   }
 }
