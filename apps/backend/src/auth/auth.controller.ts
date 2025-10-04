@@ -27,12 +27,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ZodValidationPipe(LoginSchema))
   async login(@Body() dto: LoginDto): Promise<Login> {
-    const { user, accessToken } = await this.authService.login(dto);
-    console.log(user);
+    const { user, accessToken, refreshToken } = await this.authService.login(dto);
     return {
-      user,
+      data: user,
       accessToken,
+      refreshToken
     };
+  }
+
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken: string }) {
+    return this.authService.refresh(body.refreshToken);
   }
 
   @Public()
@@ -40,10 +45,11 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(RegisterSchema))
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterDto): Promise<Register> {
-    const { user, accessToken } = await this.authService.register(dto);
+    const { user, accessToken, refreshToken } = await this.authService.register(dto);
     return {
-      user,
+      data : user,
       accessToken,
+      refreshToken
     };
   }
 }

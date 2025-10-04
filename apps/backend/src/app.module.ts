@@ -14,6 +14,9 @@ import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
 import { InvoiceModule } from './invoices/invocie.module';
 import { BankDeatil } from './bank-details/bank-detail.module';
+import { SeederModule } from './seeder/seeder.module';
+import { DealerTierModule } from './dealer-tier/dealer-tier.module';
+import { MessagesModule } from './dealer-chat/messages.module';
 
 @Module({
   imports: [
@@ -40,8 +43,11 @@ import { BankDeatil } from './bank-details/bank-detail.module';
     AuthModule,
     AdminModule,
     DealerModule,
+    MessagesModule,
     ActivityLogModule,
     LeadMessageModule,
+    DealerTierModule,
+    SeederModule,
     AnalyticsModule,
     InvoiceModule,
     BankDeatil

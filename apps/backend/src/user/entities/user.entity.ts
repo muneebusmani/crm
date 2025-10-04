@@ -67,4 +67,13 @@ export class User {
   @OneToMany('BankDetails', 'user')
   bankDetails!: any[];
 
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at!: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at!: Date;
+  
+  @Column({ nullable: true })
+  refreshToken!: string
+
 }

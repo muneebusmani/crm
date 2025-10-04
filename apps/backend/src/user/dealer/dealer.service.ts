@@ -7,7 +7,7 @@ import {
   type UpdateQuotationDto,
   UserType,
 } from '@crm/types';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
@@ -27,6 +27,7 @@ import type { Multer } from 'multer';
 import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
+import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 
 @Injectable()
 export class DealerService {
@@ -51,79 +52,162 @@ export class DealerService {
     @InjectRepository(LeadMessage)
     private leadMessageRepository: Repository<LeadMessage>,
 
+    @InjectRepository(DealerTierCredit)
+     private dealerTierCreditRepository: Repository<DealerTierCredit>,
+
     private readonly mailService: MailerService,
     private readonly configService: ConfigService, // 👈 inject here
 
     private readonly leadsGateway: LeadsGateway,
   ) {}
 
-  async createDealer(
-    dto: Omit<CreateDealerDto, 'logo'>,
-    logoFile?: Multer.File,
-  ) {
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+// dealer.service.ts
 
-    // Save user
-    const user = this.userRepository.create({
-      name: dto.name,
-      email: dto.email,
-      username: dto.username,
-      password: hashedPassword,
-    });
-    const savedUser = await this.userRepository.save(user);
+// async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
+//   const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Handle logo file
-    let logoUrl = '';
-    if (logoFile) {
-      // Make filename URL-safe
-      const ext = extname(logoFile.originalname); // e.g., .jpeg
-      const baseName = basename(logoFile.originalname, ext) // removes extension
-        .replace(/\s+/g, '-') // replace spaces
-        .replace(/[^\w\-]/g, ''); // remove special chars
+//   // Create user
+//   const user = this.userRepository.create({
+//     name: dto.name,
+//     email: dto.email,
+//     username: dto.username,
+//     password: hashedPassword,
+//   });
+//   const savedUser = await this.userRepository.save(user);
 
-      const filename = `${Date.now()}-${baseName}${ext}`; // Add extension once
+//   // Handle logo upload
+//   let logoUrl = '';
+//   if (logoFile) {
+//     const ext = extname(logoFile.originalname);
+//     const baseName = basename(logoFile.originalname, ext)
+//       .replace(/\s+/g, '-')
+//       .replace(/[^\w\-]/g, '');
+//     const filename = `${Date.now()}-${baseName}${ext}`;
 
-      // Save to public uploads folder (outside src)
-      const uploadDir = join(process.cwd(), 'uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
+//     const uploadDir = join(process.cwd(), 'uploads');
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir, { recursive: true });
+//     }
+//     fs.writeFileSync(join(uploadDir, filename), logoFile.buffer);
+//     logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+//   }
 
-      const uploadPath = join(uploadDir, filename);
-      fs.writeFileSync(uploadPath, logoFile.buffer);
+//   // Find tier with credits
+//   const dealerTier = await this.dealerTierRepository.findOne({
+//     where: { id: dto.tierId },
+//     relations: ['dealerTierCredits'],
+//   });
+//   if (!dealerTier) throw new BadRequestException('Invalid dealer tier');
 
-      logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+//   // Get default credit config
+//   const tierCredit =
+//     dealerTier.dealerTierCredits.length > 0
+//       ? dealerTier.dealerTierCredits[0]
+//       : null;
+//   if (!tierCredit)
+//     throw new BadRequestException('Tier has no credit configuration');
+
+//   // Create dealer with credits from dealer_tier_credit table
+//   const dealer = this.dealerRepository.create({
+//     name: dto.name,
+//     owner: dto.owner,
+//     location: dto.location,
+//     logo: logoUrl,
+//     website: dto.website,
+//     contactEmail: dto.contactEmail,
+//     tierId: dto.tierId,
+//     credits: tierCredit.credit, // ✅ matches Dealer entity
+//     user: savedUser, // ✅ one-to-one with User
+//   });
+
+//   await this.dealerRepository.save(dealer);
+
+//   return this.userRepository.findOne({
+//     where: { id: savedUser.id },
+//     relations: ['dealer'],
+//   });
+// }
+
+
+async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
+  const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+  // 1️⃣ Create user
+  const user = this.userRepository.create({
+    name: dto.name,
+    email: dto.email,
+    username: dto.username,
+    password: hashedPassword,
+  });
+  const savedUser = await this.userRepository.save(user);
+
+  // 2️⃣ Handle logo upload
+  let logoUrl = '';
+  if (logoFile) {
+    const ext = extname(logoFile.originalname);
+    const baseName = basename(logoFile.originalname, ext)
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]/g, '');
+    const filename = `${Date.now()}-${baseName}${ext}`;
+
+    const uploadDir = join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
-
-    // Handle dealer tier
-    let dealerTier: DealerTier | null = null;
-    if (dto.tierId) {
-      dealerTier = await this.dealerTierRepository.findOne({
-        where: { id: dto.tierId },
-      });
-    }
-
-    // Save dealer
-    const dealer = this.dealerRepository.create({
-      name: dto.name,
-      owner: dto.owner,
-      location: dto.location,
-      logo: logoUrl, // store full URL
-      website: dto.website,
-      contactEmail: dto.contactEmail,
-      tierId: dto.tierId,
-      user: savedUser,
-      tier: dealerTier || undefined,
-    });
-
-    await this.dealerRepository.save(dealer);
-
-    // Return user with dealer relation
-    return this.userRepository.findOne({
-      where: { id: savedUser.id },
-      relations: ['dealer', 'dealer.tier'],
-    });
+    fs.writeFileSync(join(uploadDir, filename), logoFile.buffer);
+    logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
   }
+
+  // 3️⃣ Find tier
+  const dealerTier = await this.dealerTierRepository.findOne({
+    where: { id: dto.tierId },
+    relations: ['dealerTierCredits'],
+  });
+  if (!dealerTier) throw new BadRequestException('Invalid dealer tier');
+
+  // 4️⃣ Determine starting credit
+  let credit = dealerTier.creditLimit; // fallback
+  if (dealerTier.dealerTierCredits.length > 0) {
+    credit = dealerTier.dealerTierCredits[0].credit;
+  }
+
+  // 5️⃣ Create dealer
+  const dealer = this.dealerRepository.create({
+    name: dto.name,
+    owner: dto.owner,
+    location: dto.location,
+    logo: logoUrl,
+    website: dto.website,
+    contactEmail: dto.contactEmail,
+    tierId: dto.tierId,
+    credits: credit,
+    user: savedUser,
+  });
+
+  const savedDealer = await this.dealerRepository.save(dealer);
+
+  // 6️⃣ Insert dealer_tier_credit record for tracking
+  const dealerTierCredit = this.dealerTierCreditRepository.create({
+    dealerId: savedDealer.id,
+    tierId: dealerTier.id,
+    credit: credit,
+  });
+  await this.dealerTierCreditRepository.save(dealerTierCredit);
+
+  // 7️⃣ Return dealer with relations
+  return this.userRepository.findOne({
+  where: { id: savedUser.id },
+  relations: [
+    'dealer',
+    'dealer.dealerTierCredits', // ✅ belongs to Dealer, not User
+  ],
+});
+
+}
+
+
+
+
 
   async getAllDealers() {
     return await this.userRepository.find({

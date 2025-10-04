@@ -1,27 +1,11 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-  Unique,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { DealerTier } from './dealer-tier.entity';
 import { User } from './user.entity';
 
 @Entity('dealer')
-@Unique(['userId'])
 export class Dealer {
   @PrimaryGeneratedColumn()
   id!: number;
-
-  @Column()
-  userId!: number;
-
-  @Column({ nullable: true })
-  tierId!: number;
 
   @Column()
   name!: string;
@@ -32,30 +16,32 @@ export class Dealer {
   @Column()
   location!: string;
 
-  @Column()
+  @Column({ nullable: true })
   logo!: string;
 
-  @Column()
+  @Column({ nullable: true })
   website!: string;
 
-  @Column()
+  @Column({ nullable: true })
   contactEmail!: string;
 
-  @OneToOne(
-    () => User,
-    (user) => user.dealer,
-  )
-  @JoinColumn({ name: 'userId' })
+  // Dealer’s current credits
+  @Column({ type: 'int', default: 0 })
+  credits!: number;
+
+  @OneToMany('DealerTierCredit', 'dealer')
+  dealerTierCredits!: any[];
+
+  @Column({ nullable: true })
+  tierId!: number;
+
+  @OneToOne(() => User, (user) => user.dealer, { cascade: true })
+  @JoinColumn()
   user!: User;
 
-  @ManyToOne(
-    () => DealerTier,
-    (dealerTier) => dealerTier.dealers,
-    { nullable: true },
-  )
-  @JoinColumn({ name: 'tierName' })
-  tier!: DealerTier;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at!: Date;
 
-  @OneToMany('Quotation', 'dealer')
-  quotations!: any[];
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at!: Date;
 }
