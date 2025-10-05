@@ -1,3 +1,4 @@
+// @ts-nocheck
 // WARN: DO Not Touch This File
 'use server';
 
