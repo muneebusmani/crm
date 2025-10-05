@@ -23,6 +23,10 @@ export class LeadMessage {
   @Column({ default: 'message' })
   type!: string;
 
-  @CreateDateColumn()
+  @Column({
+    name: 'createdAt',
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt!: Date;
 }

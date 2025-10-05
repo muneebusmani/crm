@@ -17,7 +17,7 @@ async function attachToken<T>(
   options: RequestConfig<T> = {},
   skipAuth = false,
 ) {
-  const token = !skipAuth ? (await cookies()).get('token')?.value : null;
+  const token = !skipAuth ? (await cookies()).get('access_token')?.value : null;
   return {
     ...options,
     headers: {

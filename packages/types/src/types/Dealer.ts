@@ -11,7 +11,8 @@ export interface Dealer {
   logoFile: File | null;
   website: string;
   contactEmail: string;
-  tier: Tier;
+  tierId?: number;
+  tier?: Tier;
 }
 export interface DealerFlatData {
   id?: number;
@@ -25,7 +26,7 @@ export interface DealerFlatData {
   logoFile: File | null;
   website: string;
   contactEmail: string;
-  tierId: number;
+  tierId?: number;
   tierName?: string;
 }
 
@@ -35,7 +36,7 @@ export interface Tier {
 }
 declare global {
   namespace React {
-    type ReactNode = any;
+    type ReactNode = unknown;
   }
 }
 export interface QuickAction {

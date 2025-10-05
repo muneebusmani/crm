@@ -1,5 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { DealerTier } from './dealer-tier.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('dealer')
@@ -29,13 +35,17 @@ export class Dealer {
   @Column({ type: 'int', default: 0 })
   credits!: number;
 
-  @OneToMany('DealerTierCredit', 'dealer')
+  @OneToMany('DealerTierCredit', 'dealer', { onDelete: 'CASCADE' })
   dealerTierCredits!: any[];
 
   @Column({ nullable: true })
   tierId!: number;
 
-  @OneToOne(() => User, (user) => user.dealer, { cascade: true })
+  @OneToOne(
+    () => User,
+    (user) => user.dealer,
+    { cascade: true },
+  )
   @JoinColumn()
   user!: User;
 

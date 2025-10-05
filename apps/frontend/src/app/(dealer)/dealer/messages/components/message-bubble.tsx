@@ -51,7 +51,6 @@ export default function MessageBubble({
   };
 
   const timestamp = message?.createdAt;
-  console.log('is own message ===>', isOwnMessage);
 
   // Generate avatar URL based on sender name
   const getAvatarUrl = (name: string) => {
@@ -142,7 +141,11 @@ export default function MessageBubble({
             </Typography>
           )}
           {data.status && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 0.5, display: 'block' }}
+            >
               Status: {String(data.status)}
             </Typography>
           )}

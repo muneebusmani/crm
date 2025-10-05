@@ -34,9 +34,10 @@ export class Quotation {
   @JoinColumn({ name: 'leadId' })
   lead: any;
 
-   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  created_at!: Date;
-
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  updated_at!: Date;
+  @Column({
+    name: 'createdAt',
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt!: Date;
 }

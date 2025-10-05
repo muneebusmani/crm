@@ -3,15 +3,12 @@
 
 import type { Lead } from '@crm/types';
 import {
-  // Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Email as EmailIcon,
-  // FilterList as FilterListIcon,
   Info as InfoIcon,
-  Search as SearchIcon,
-  RequestQuote as RequestQuoteIcon,
   ReceiptLong as ReceiptLongIcon,
+  RequestQuote as RequestQuoteIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import ChatIcon from '@mui/icons-material/Chat';
 
@@ -35,14 +32,14 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { useRouter } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState } from 'react';
 import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
-import { useRouter } from 'next/navigation'; // ✅ App Router hook
-import SendQuotationDialog from './send-quotation-dialog';
 import SendInvoiceDialog from './send-invoice-dialog';
+import SendQuotationDialog from './send-quotation-dialog';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -77,7 +74,7 @@ const LeadsTable: React.FC = () => {
   const fetchLeads = async () => {
     setLoading(true); // start loading
     try {
-      const res = await fetch('/api/leads', { credentials: 'include' });
+      const res = await fetch('/api/leads');
       if (!res.ok) throw new Error('Failed to fetch leads');
       const leadsData = (await res.json()) as Lead[];
       setLeads(leadsData);
@@ -189,11 +186,6 @@ const LeadsTable: React.FC = () => {
 
   const handleActionClick = async (action: string, lead: Lead) => {
     switch (action) {
-      case 'email':
-        setSelectedLead(lead);
-        setOpenEmailDialog(true);
-        break;
-
       case 'edit':
         setSelectedLead(lead);
         setOpenEditDialog(true);
@@ -511,14 +503,6 @@ const LeadsTable: React.FC = () => {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
                         size="small"
-                        onClick={() => handleActionClick('email', lead)}
-                        title="Send Email"
-                        disabled={!lead.email}
-                      >
-                        <EmailIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
                         color="primary"
                         onClick={() => {
                           setSelectedLead(lead);
@@ -634,7 +618,11 @@ const LeadsTable: React.FC = () => {
             onClose={() => setOpenQuotationDialog(false)}
             leadId={selectedLead.id ?? null}
             onSuccess={() =>
-              setSnackbar({ open: true, message: 'Quotation sent successfully', severity: 'success' })
+              setSnackbar({
+                open: true,
+                message: 'Quotation sent successfully',
+                severity: 'success',
+              })
             }
           />
 
@@ -643,7 +631,11 @@ const LeadsTable: React.FC = () => {
             onClose={() => setOpenInvoiceDialog(false)}
             leadId={selectedLead.id ?? null}
             onSuccess={() =>
-              setSnackbar({ open: true, message: 'Invoice sent successfully', severity: 'success' })
+              setSnackbar({
+                open: true,
+                message: 'Invoice sent successfully',
+                severity: 'success',
+              })
             }
           />
         </>

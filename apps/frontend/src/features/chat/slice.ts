@@ -341,6 +341,7 @@ export const sendMessage = createAsyncThunk<
     createdAt: m.createdAt,
   }));
 
+  console.log('Quotations:', quotations);
   const normalizedQuotations: Message[] = quotations.map((q) => ({
     id: `q-${q.id ?? `${leadId}-${q.createdAt}`}`,
     content: JSON.stringify({

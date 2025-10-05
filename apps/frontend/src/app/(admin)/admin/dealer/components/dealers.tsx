@@ -88,8 +88,8 @@ const Dealers = ({ token }: { token: string }) => {
               logo: u.dealer?.logo ?? '',
               website: u.dealer?.website ?? '',
               contactEmail: u.dealer?.contactEmail ?? '',
-              tierId: u.dealer?.tier?.id,
-              tierName: u.dealer?.tier?.name,
+              tierId: u.dealer?.tierId ?? undefined,
+              tierName: u.dealer?.tier?.name ?? undefined,
               password: '', // required by type, default empty
               logoFile: null, // required by type, default null
             }),
@@ -149,7 +149,26 @@ const Dealers = ({ token }: { token: string }) => {
         },
       );
 
-      setDealers([...dealers, newDealer]);
+      // setDealers([...dealers, newDealer]);
+      const flatDealer: DealerFlatData = {
+        id: newDealer.id,
+        email: newDealer.email,
+        username: newDealer.username,
+        name: newDealer.name ?? newDealer.dealer?.name ?? '',
+        owner: newDealer.owner ?? newDealer.dealer?.owner ?? '',
+        location: newDealer.location ?? newDealer.dealer?.location ?? '',
+        logo: newDealer.logo ?? newDealer.dealer?.logo ?? '',
+        website: newDealer.website ?? newDealer.dealer?.website ?? '',
+        contactEmail:
+          newDealer.contactEmail ?? newDealer.dealer?.contactEmail ?? '',
+        tierId: newDealer.tierId ?? newDealer.dealer?.tierId ?? undefined,
+        tierName:
+          newDealer.tierName ?? newDealer.dealer?.tier?.name ?? undefined,
+        password: '', // required by type, default empty
+        logoFile: null, // required by type, default null
+      };
+      setDealers([...dealers, flatDealer]);
+      setSelectedDealer(flatDealer);
       setOpen(false);
       setSelectedDealer(newDealer);
     } catch (err) {
@@ -164,6 +183,7 @@ const Dealers = ({ token }: { token: string }) => {
 
   // Handle view click
   const handleViewClick = (dealer: DealerFlatData) => {
+    console.log('selected dealer:', dealer);
     setSelectedDealer(dealer);
     setShowDetails(true);
   };
@@ -864,7 +884,10 @@ const Dealers = ({ token }: { token: string }) => {
                 }}
               >
                 <Image
-                  src={selectedDealer.logo}
+                  src={
+                    selectedDealer.logo ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDealer.name || selectedDealer.owner || 'John Doe')}&background=3f51b5&color=ffffff&type=png`
+                  }
                   alt={selectedDealer.name}
                   width={60}
                   height={60}

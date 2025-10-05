@@ -34,8 +34,9 @@ import { MessagesModule } from './dealer-chat/messages.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        // synchronize: true,
         entities: [`${__dirname}/**/*.entity{.ts,.js}`],
-        // logging: configService.get('NODE_ENV') === 'development',
+        logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
     }),
@@ -50,7 +51,7 @@ import { MessagesModule } from './dealer-chat/messages.module';
     SeederModule,
     AnalyticsModule,
     InvoiceModule,
-    BankDeatil
+    BankDeatil,
   ],
   controllers: [AppController],
   providers: [

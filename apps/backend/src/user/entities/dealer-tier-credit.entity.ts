@@ -9,7 +9,7 @@ export class DealerTierCredit {
   credit!: number;
 
   // Relation to Dealer
-  @ManyToOne('Dealer', 'tierCredits')
+  @ManyToOne('Dealer', 'tierCredits', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'dealerId' })
   dealer!: any;
 
