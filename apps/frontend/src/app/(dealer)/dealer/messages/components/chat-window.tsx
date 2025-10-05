@@ -32,7 +32,6 @@ export default function ChatWindow({
   leadName,
   dealerName,
 }: ChatWindowProps) {
-  console.log('currentChatId', currentChatId);
   const [isSending, setIsSending] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] =
     useState<boolean>(false);
@@ -217,7 +216,6 @@ export default function ChatWindow({
       </Box>
     );
   }
-  console.log('messages ===>', messages);
 
   return (
     <Box
@@ -277,11 +275,6 @@ export default function ChatWindow({
         }}
       >
         {messages.map((message) => {
-          console.group('Message Group');
-          console.log('Message:', message);
-          console.log('Sender Name:', message.dealer?.name);
-          console.groupEnd();
-
           return (
             <MessageBubble
               key={message.id}

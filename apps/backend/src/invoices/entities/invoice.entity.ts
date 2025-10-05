@@ -88,9 +88,10 @@ export class Invoice {
   @OneToMany('InvoiceItem', 'invoice', { cascade: true, eager: true })
   items!: any[]; // use `any[]` for string-based relation
 
-  @CreateDateColumn()
+  @Column({
+    name: 'createdAt',
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

@@ -7,6 +7,7 @@ export async function GET(req: Request) {
     const leadIdParam = url.searchParams.get('leadId');
     const leadId = leadIdParam ? Number(leadIdParam) : undefined;
     const resp = await quotationsApi.getQuotations(leadId);
+    console.log('quotations:', resp);
     // quotationsApi.getQuotations returns ApiResponse-like or raw; normalize
     if (Array.isArray((resp as any).data)) {
       return NextResponse.json((resp as any).data);

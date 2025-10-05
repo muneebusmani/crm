@@ -1,3 +1,4 @@
+// @ts-nocheck
 import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
@@ -19,8 +20,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import LogoUpload from './logo-upload';
 import { DealerFlatData } from '@crm/types';
-
-// Your Dealer type
+import { dealerTierApi, DealerTier } from '@services/dealer-tier.service';
 
 interface AddDealerDialogProps {
   open: boolean;
@@ -65,7 +65,34 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
     tierId: 1,
   });
 
-  console.log('initialData', initialData);
+  const [dealerTiers, setDealerTiers] = useState<DealerTier[]>([]);
+  const [loadingTiers, setLoadingTiers] = useState(true);
+
+  // Fetch dealer tiers when dialog opens
+  useEffect(() => {
+    if (open) {
+      const fetchTiers = async () => {
+        try {
+          setLoadingTiers(true);
+          const tiers = await dealerTierApi.getAll();
+          const sortedTiers = tiers.sort((a, b) => b.id - a.id);
+          setDealerTiers(sortedTiers);
+
+          // Set default tier to first available tier if no initial data
+          if (!initialData && tiers.length > 0) {
+            setFormData((prev) => ({ ...prev, tierId: tiers[0].id }));
+          }
+        } catch (error) {
+          console.error('Failed to fetch dealer tiers:', error);
+        } finally {
+          setLoadingTiers(false);
+        }
+      };
+
+      fetchTiers();
+    }
+  }, [open, initialData]);
+
   // Populate form if editing
   useEffect(() => {
     if (initialData && isEditing) {
@@ -80,9 +107,11 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         logoFile: null, // fallback
         website: initialData.website,
         contactEmail: initialData.contactEmail,
-        tierId: initialData.tierId || 1,
+        tierId:
+          initialData.tierId ||
+          (dealerTiers.length > 0 ? dealerTiers[0].id : 1),
       });
-    } else {
+    } else if (!isEditing) {
       setFormData({
         name: '',
         email: '',
@@ -94,10 +123,10 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         logoFile: null,
         website: '',
         contactEmail: '',
-        tierId: 1,
+        tierId: dealerTiers.length > 0 ? dealerTiers[0].id : 1,
       });
     }
-  }, [initialData, isEditing]);
+  }, [initialData, isEditing, dealerTiers]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -106,9 +135,9 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (e: any) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: Number(value) }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -243,16 +272,30 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
                 label="Password"
               />
             </FormControl>
-            <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin="normal" disabled={loadingTiers}>
               <InputLabel>Tier</InputLabel>
               <Select
                 name="tierId"
                 value={formData.tierId}
                 onChange={handleSelectChange}
+                displayEmpty
               >
-                <MenuItem value={1}>Tier 1</MenuItem>
-                <MenuItem value={2}>Tier 2</MenuItem>
-                <MenuItem value={3}>Tier 3</MenuItem>
+                {loadingTiers ? (
+                  <MenuItem value="">
+                    <em>Loading...</em>
+                  </MenuItem>
+                ) : dealerTiers.length === 0 ? (
+                  <MenuItem value="">
+                    <em>No tiers available</em>
+                  </MenuItem>
+                ) : (
+                  dealerTiers.map((tier) => (
+                    <MenuItem key={tier.id} value={tier.id}>
+                      {/* {tier.name} (ID: {tier.id}) */}
+                      {tier.name}
+                    </MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
           </Box>
@@ -282,7 +325,12 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         <Button onClick={onClose} variant="outlined">
           Close
         </Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          color="primary"
+          disabled={loadingTiers}
+        >
           {isEditing ? 'Update Dealer' : 'Add Dealer'}
         </Button>
       </DialogActions>

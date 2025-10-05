@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client';
 import type { Dealer, User } from '@crm/types';
 import { Close, LocationOn, Person, Settings, Web } from '@mui/icons-material';

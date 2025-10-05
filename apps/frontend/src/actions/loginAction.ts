@@ -1,4 +1,3 @@
-// @ts-nocheck
 // WARN: DO Not Touch This File
 'use server';
 
@@ -14,14 +13,12 @@ export async function loginAction(formData: FormData) {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
     };
-    const data = await post2(
-      // const { accessToken: token, user } = await post2<Login, LoginDto>(
-      `/auth/login`,
-      formdata,
-    );
-    const userType = data.user.type as UserType;
-    const id = data.user.id.toString();
-    const accessToken = data.accessToken as string;
+    // const data = await post2(
+    const {
+      user: { type: userType, id },
+      accessToken,
+      refreshToken,
+    } = await post2<Login, LoginDto>(`/auth/login`, formdata);
 
     const expiryMap: Record<UserType | 'DEFAULT', number> = {
       [UserType.ADMIN]: 24 * 60 * 60, // 24 hrs
@@ -41,9 +38,10 @@ export async function loginAction(formData: FormData) {
     };
     if (!accessToken) console.error('Token not sent from API');
 
-    cookieStore.set('token', accessToken, commonOptions);
+    cookieStore.set('id', id.toString(), commonOptions);
     cookieStore.set('user_type', userType, commonOptions);
-    cookieStore.set('id', id, commonOptions);
+    cookieStore.set('access_token', accessToken, commonOptions);
+    cookieStore.set('refresh_token', refreshToken, commonOptions);
 
     const redirectMap: Record<UserType, string> = {
       [UserType.ADMIN]: '/admin',

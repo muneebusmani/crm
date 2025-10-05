@@ -27,11 +27,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ZodValidationPipe(LoginSchema))
   async login(@Body() dto: LoginDto): Promise<Login> {
-    const { user, accessToken, refreshToken } = await this.authService.login(dto);
+    const { user, accessToken, refreshToken } =
+      await this.authService.login(dto);
     return {
-      data: user,
+      user,
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
@@ -45,11 +46,12 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(RegisterSchema))
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterDto): Promise<Register> {
-    const { user, accessToken, refreshToken } = await this.authService.register(dto);
+    const { user, accessToken, refreshToken } =
+      await this.authService.register(dto);
     return {
-      data : user,
+      user,
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 }

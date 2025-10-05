@@ -42,6 +42,8 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
 
   // State to track if we've checked for a lead ID in the URL
   const [leadChecked, setLeadChecked] = useState(false);
+  // State to track if we're loading a chat from URL parameter
+  const [isLoadingFromUrl, setIsLoadingFromUrl] = useState(false);
 
   // Load all chats when the component mounts
   useEffect(() => {
@@ -59,10 +61,27 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
 
     const numericLeadId = parseInt(leadIdParam, 10);
     if (!Number.isNaN(numericLeadId)) {
-      // Ensure the chat exists for this lead
-      dispatch(ensureChatFromLead({ leadId: numericLeadId }));
+      setIsLoadingFromUrl(true);
+      // Ensure the chat exists for this lead and set it as active
+      dispatch(ensureChatFromLead({ leadId: numericLeadId }))
+        .unwrap()
+        .then(({ chatId }) => {
+          // Set the chat as active after it's been ensured to exist
+          if (chatId) {
+            return dispatch(loadMessagesForChat(chatId)).unwrap();
+          }
+          return null;
+        })
+        .catch((error) => {
+          console.error('Failed to load chat from lead:', error);
+        })
+        .finally(() => {
+          setIsLoadingFromUrl(false);
+          setLeadChecked(true);
+        });
+    } else {
+      setLeadChecked(true);
     }
-    setLeadChecked(true);
   }, [dispatch, leadChecked, searchParams]);
 
   /**
@@ -165,8 +184,21 @@ export default function ChatContainer({ dealerName }: { dealerName: string }) {
         onNewChat={handleNewChat}
       />
 
-      {/* Main chat area - only shown when a chat is selected */}
-      {currentChatId ? (
+      {/* Main chat area - show loader when loading from URL or show chat when selected */}
+      {isLoadingFromUrl ? (
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            backgroundColor: 'background.paper',
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : currentChatId ? (
         <ChatWindow
           messages={messages}
           onSend={handleSend}
