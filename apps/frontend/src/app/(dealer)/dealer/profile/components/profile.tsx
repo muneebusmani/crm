@@ -1,7 +1,16 @@
 // @ts-nocheck
 'use client';
 import type { Dealer, User } from '@crm/types';
-import { Close, LocationOn, Person, Settings, Web } from '@mui/icons-material';
+import {
+  EmojiEvents,
+  MilitaryTech,
+  WorkspacePremium,
+  LocationOn,
+  Person,
+  Settings,
+  Web,
+  Close,
+} from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -56,11 +65,13 @@ const Profile = () => {
           id,
           email,
           username,
-          dealer: {
-            tier: { id: tierId, name: tierName },
-            ...dealerRest
-          },
+          dealer: { dealerTierCredits, ...dealerRest },
         } = userData;
+
+        // Extract tier data from dealerTierCredits[0].tier if available
+        const tierData = dealerTierCredits?.[0]?.tier;
+        const tierId = tierData?.id ?? dealerRest.tierId;
+        const tierName = tierData?.name ?? 'No Tier Assigned';
 
         const profile = {
           id,
@@ -92,6 +103,13 @@ const Profile = () => {
     website: '',
     contactEmail: '',
     tierId: 1,
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    phone: '',
+    fax: '',
   });
 
   if (loading) {
@@ -123,6 +141,13 @@ const Profile = () => {
         website: profileData.website,
         contactEmail: profileData.contactEmail,
         tierId: profileData.tierId || 1,
+        address: profileData.address || '',
+        city: profileData.city || '',
+        state: profileData.state || '',
+        zip: profileData.zip || '',
+        country: profileData.country || '',
+        phone: profileData.phone || '',
+        fax: profileData.fax || '',
       });
     }
     setOpenEditDialog(true);
@@ -160,11 +185,13 @@ const Profile = () => {
         id,
         email,
         username,
-        dealer: {
-          tier: { id: tierId, name: tierName },
-          ...dealerRest
-        },
+        dealer: { dealerTierCredits, ...dealerRest },
       } = updatedData;
+
+      // Extract tier data from dealerTierCredits[0].tier if available
+      const tierData = dealerTierCredits?.[0]?.tier;
+      const tierId = tierData?.id ?? dealerRest.tierId;
+      const tierName = tierData?.name ?? 'No Tier Assigned';
 
       const updatedProfile = {
         id,
@@ -264,44 +291,66 @@ const Profile = () => {
       <Grid spacing={3}>
         {/* LEFT COLUMN */}
         <Grid size={{ xs: 12, md: 4 }}>
-          {/* <Card sx={{ mb: 2 }}> */}
-          {/*   <CardContent> */}
-          {/*     <Typography variant="h6" gutterBottom> */}
-          {/*       Dealer Tier Status */}
-          {/*     </Typography> */}
-          {/* Progress bar logic can be dynamic later */}
-          {/*     <Box sx={{ width: '100%', mb: 2 }}> */}
-          {/*       <Box */}
-          {/*         sx={{ */}
-          {/*           display: 'flex', */}
-          {/*           justifyContent: 'space-between', */}
-          {/*           mb: 1, */}
-          {/*         }} */}
-          {/*       > */}
-          {/*         <Typography variant="body2">65%</Typography> */}
-          {/*         <Typography variant="body2">Tier Progress</Typography> */}
-          {/*       </Box> */}
-          {/*       <Box */}
-          {/*         sx={{ */}
-          {/*           width: '100%', */}
-          {/*           height: 8, */}
-          {/*           bgcolor: '#e0e0e0', */}
-          {/*           borderRadius: 1, */}
-          {/*         }} */}
-          {/*       > */}
-          {/*         <Box */}
-          {/*           sx={{ */}
-          {/*             width: '65%', */}
-          {/*             height: '100%', */}
-          {/*             bgcolor: theme.palette.success.main, */}
-          {/*             borderRadius: 1, */}
-          {/*           }} */}
-          {/*         /> */}
-          {/*       </Box> */}
-          {/*     </Box> */}
-          {/*   </CardContent> */}
-          {/* </Card> */}
+          {/* Tier Status Card */}
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Tier
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    bgcolor: profileData.tierName
+                      ?.toLowerCase()
+                      .includes('gold')
+                      ? '#FFD700'
+                      : profileData.tierName?.toLowerCase().includes('silver')
+                        ? '#C0C0C0'
+                        : profileData.tierName?.toLowerCase().includes('bronze')
+                          ? '#CD7F32'
+                          : theme.palette.primary.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: theme.palette.getContrastText(
+                      profileData.tierName?.toLowerCase().includes('gold')
+                        ? '#FFD700'
+                        : profileData.tierName?.toLowerCase().includes('silver')
+                          ? '#C0C0C0'
+                          : profileData.tierName
+                                ?.toLowerCase()
+                                .includes('bronze')
+                            ? '#CD7F32'
+                            : theme.palette.primary.main,
+                    ),
+                  }}
+                >
+                  {profileData.tierName?.toLowerCase().includes('gold') ? (
+                    <EmojiEvents fontSize="small" />
+                  ) : profileData.tierName?.toLowerCase().includes('silver') ? (
+                    <MilitaryTech fontSize="small" />
+                  ) : profileData.tierName?.toLowerCase().includes('bronze') ? (
+                    <WorkspacePremium fontSize="small" />
+                  ) : (
+                    <Typography fontWeight="bold">N/A</Typography>
+                  )}
+                </Box>
+                <Box>
+                  <Typography variant="body1" fontWeight="bold">
+                    {profileData.tierName || 'No Tier Assigned'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Current subscription level
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
 
+          {/* Info Card */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
