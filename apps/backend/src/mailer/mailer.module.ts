@@ -23,7 +23,10 @@ import { ConfigService, ConfigModule } from '@nestjs/config';
           from: '"CRM Quotation System" <no-reply@crm.com>',
         },
         template: {
-          dir: join(process.cwd(), 'src/templates'), // ✅ path for templates
+          dir:
+            process.env.NODE_ENV !== 'production'
+              ? join(process.cwd(), 'src/templates')
+              : join(process.cwd(), 'dist/templates/templates'), // ✅ path for templates
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
