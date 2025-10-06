@@ -54,6 +54,14 @@ type QuotationDTO = {
   createdAt?: string;
 };
 
+export type Item = {
+  id?: string;
+  productName?: string;
+  productDetails?: string;
+  unitPrice?: number | string;
+  quantity?: number;
+  total?: number | string;
+};
 /**
  * Data Transfer Object for invoices from the API
  * @property {number | string} id - Invoice ID
@@ -64,9 +72,17 @@ type QuotationDTO = {
  * @property {number} [total] - Alias for grandTotal
  * @property {string} [status] - Invoice status
  * @property {string} [createdAt] - ISO timestamp of when the invoice was created
+ * @property {Array} [items] - List of items in the invoice
+ * @property {Object} [lead] - Optional lead information
+ * @property {number} lead.id - Lead ID
+ * @property {string} [lead.name] - Lead's name
+ * @property {string} [lead.email] - Lead's email
+ * @property {string} [lead.vehicle_brand] - Lead's vehicle brand
+ * @property {string} [lead.vehicle_model] - Lead's vehicle model
  */
 type InvoiceDTO = {
   id: number | string;
+  invoiceNumber: string;
   date: string;
   subTotal?: number;
   taxAmount?: number;
@@ -74,6 +90,14 @@ type InvoiceDTO = {
   total?: number;
   status?: string;
   createdAt?: string;
+  items?: Item[];
+  lead?: {
+    id: number;
+    name?: string;
+    email?: string;
+    vehicle_brand?: string;
+    vehicle_model?: string;
+  };
 };
 
 import type {
@@ -200,10 +224,14 @@ export const loadMessagesForChat = createAsyncThunk<
   const normalizedInvoices: Message[] = invoices.map((i) => ({
     id: `inv-${i.id}`,
     content: JSON.stringify({
-      invoiceNumber: String(i.id),
+      invoiceNumber: i.invoiceNumber,
       date: i.date,
+      items: i.items || [],
+      subTotal: i.subTotal || 0,
+      taxAmount: i.taxAmount || 0,
       total: i.grandTotal ?? i.total ?? (i.subTotal ?? 0) + (i.taxAmount ?? 0),
       status: i.status,
+      lead: i.lead,
     }),
     type: 'invoice',
     createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),
@@ -356,10 +384,14 @@ export const sendMessage = createAsyncThunk<
   const normalizedInvoices: Message[] = invoices.map((i) => ({
     id: `inv-${i.id}`,
     content: JSON.stringify({
-      invoiceNumber: String(i.id),
+      invoiceNumber: i.invoiceNumber,
       date: i.date,
+      items: i.items || [],
+      subTotal: i.subTotal || 0,
+      taxAmount: i.taxAmount || 0,
       total: i.grandTotal ?? i.total ?? (i.subTotal ?? 0) + (i.taxAmount ?? 0),
       status: i.status,
+      lead: i.lead,
     }),
     type: 'invoice',
     createdAt: i.createdAt ?? i.date ?? new Date().toISOString(),

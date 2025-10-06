@@ -124,27 +124,147 @@ export default function MessageBubble({
       );
     }
 
+    // if (message.type === 'invoice') {
+    //   return (
+    //     <Box>
+    //       <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+    //         Invoice
+    //       </Typography>
+    //       {data.invoiceNumber && (
+    //         <Typography variant="body2" sx={{ fontWeight: 600 }}>
+    //           {String(data.invoiceNumber)}
+    //         </Typography>
+    //       )}
+    //       {data.total && (
+    //         <Typography variant="body2" sx={{ mt: 0.5 }}>
+    //           Total: ${Number(data.total).toFixed(2)}
+    //         </Typography>
+    //       )}
+    //       {data.status && (
+    //         <Typography
+    //           variant="caption"
+    //           color="text.secondary"
+    //           sx={{ mt: 0.5, display: 'block' }}
+    //         >
+    //           Status: {String(data.status)}
+    //         </Typography>
+    //       )}
+    //     </Box>
+    //   );
+    // }
+    // In message-bubble.tsx, update the invoice rendering section:
+
     if (message.type === 'invoice') {
       return (
-        <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            Invoice
+        <Box sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+            Invoice {data.invoiceNumber}
           </Typography>
-          {data.invoiceNumber && (
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {String(data.invoiceNumber)}
+
+          {data.date && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mb: 1 }}
+            >
+              Date: {new Date(data.date).toLocaleDateString()}
             </Typography>
           )}
-          {data.total && (
-            <Typography variant="body2" sx={{ mt: 0.5 }}>
-              Total: ${Number(data.total).toFixed(2)}
-            </Typography>
+
+          {data.lead && (
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Bill To:
+              </Typography>
+              <Typography variant="body2">{data.lead.name}</Typography>
+              {data.lead.email && (
+                <Typography variant="caption" color="text.secondary">
+                  {data.lead.email}
+                </Typography>
+              )}
+              {data.lead.vehicle_brand && data.lead.vehicle_model && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block' }}
+                >
+                  Vehicle: {data.lead.vehicle_brand} {data.lead.vehicle_model}
+                </Typography>
+              )}
+            </Box>
           )}
+
+          {data.items && data.items.length > 0 && (
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Items:
+              </Typography>
+              {data.items.map((item: any) => (
+                <Box key={item.id} sx={{ ml: 1, mt: 0.5 }}>
+                  <Typography variant="body2">
+                    {item.productName} x {item.quantity}
+                  </Typography>
+                  {item.productDetails && (
+                    <Typography variant="caption" color="text.secondary">
+                      {item.productDetails}
+                    </Typography>
+                  )}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block' }}
+                  >
+                    ${parseFloat(item.unitPrice).toFixed(2)} each = $
+                    {parseFloat(
+                      item.total || item.unitPrice * item.quantity,
+                    ).toFixed(2)}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
+            {data.subTotal !== undefined && (
+              <Typography
+                variant="body2"
+                sx={{ display: 'flex', justifyContent: 'space-between' }}
+              >
+                <span>Subtotal:</span>
+                <span>${parseFloat(data.subTotal).toFixed(2)}</span>
+              </Typography>
+            )}
+
+            {data.taxAmount !== undefined && (
+              <Typography
+                variant="body2"
+                sx={{ display: 'flex', justifyContent: 'space-between' }}
+              >
+                <span>Tax:</span>
+                <span>${parseFloat(data.taxAmount).toFixed(2)}</span>
+              </Typography>
+            )}
+
+            {data.total !== undefined && (
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>Total:</span>
+                <span>${parseFloat(data.total).toFixed(2)}</span>
+              </Typography>
+            )}
+          </Box>
+
           {data.status && (
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ mt: 0.5, display: 'block' }}
+              sx={{ mt: 1, display: 'block', textAlign: 'right' }}
             >
               Status: {String(data.status)}
             </Typography>
@@ -204,10 +324,10 @@ export default function MessageBubble({
               },
               minWidth: 'auto',
               ...(message?.type === 'quotation'
-                ? { backgroundColor: isOwnMessage ? '#2e7d32' : '#e8f5e9' }
+                ? { backgroundColor: isOwnMessage ? '#1E4E6E' : '#e8f5e9' }
                 : {}),
               ...(message?.type === 'invoice'
-                ? { backgroundColor: isOwnMessage ? '#ef6c00' : '#fff3e0' }
+                ? { backgroundColor: isOwnMessage ? '#B6B5B4' : '#fff3e0' }
                 : {}),
             }}
           >

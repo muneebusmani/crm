@@ -56,6 +56,7 @@ export class InvoiceController {
 
     const data: InvoiceResponse[] = (await invoices).map((invoice) => ({
       id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
       lead: invoice.lead, // ✅ careful with relation naming
       date: invoice.date,
       items: invoice.items.map((item) => ({
@@ -71,7 +72,6 @@ export class InvoiceController {
       grandTotal: invoice.totalAmount,
       status: invoice.status,
       createdAt: invoice.createdAt,
-      updatedAt: invoice.updatedAt,
     }));
     return this.buildResponse(data);
   }
