@@ -321,15 +321,19 @@ export class DealerService {
       const dealer = await this.userRepository.findOne({
         where: { id: delaerId },
       });
+      console.log('Step 1');
       if (!dealer) {
         throw new Error('Dealer not found');
       }
+      console.log('Step 2');
       const lead = await this.leadRepository.findOne({
         where: { id: dto.leadId },
       });
+      console.log('Step 3');
       if (!lead) {
         throw new Error('Lead not found');
       }
+      console.log('Step 4');
 
       const quotation = this.quotationRepository.create({
         engineCodeName: lead.engine_code,
@@ -340,8 +344,12 @@ export class DealerService {
         dealer,
         lead,
       });
+      console.log('Step 5');
 
       const result = await this.quotationRepository.save(quotation);
+
+      console.log('Step 6');
+
       this.mailService.sendMail({
         to: lead.email, // 👈 you must have dealer.email field
         subject: 'New Quotation Created',
@@ -354,11 +362,15 @@ export class DealerService {
           message: result.message,
         },
       });
+      console.log('Step 7');
+
       await this.ensureDealerLead(
         dto.leadId,
         delaerId!,
         LeadStatus.QUOTATION_SENT,
       );
+      console.log('Step 8');
+
       return result;
     } catch (error: unknown) {
       throw new CustomError('Unable to create lead' + error);

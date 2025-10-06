@@ -4,7 +4,7 @@ import type { Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3000', // your frontend URL
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // your frontend URL
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
     credentials: true,
   },
