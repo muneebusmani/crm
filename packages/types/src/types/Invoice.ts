@@ -10,13 +10,15 @@ export interface InvoiceItemResponse {
 // Invoice Response
 export interface InvoiceResponse {
   id: string;
+  invoiceNumber: string;
   leadId: string;
   date: Date; // ISO string
   items: InvoiceItemResponse[];
   taxAmount: number;
   subTotal: number;
   grandTotal: number;
-  status: "PENDING" | "SENT" | "PAID" | "CANCELLED";
+  status: 'PENDING' | 'SENT' | 'PAID' | 'CANCELLED';
   createdAt: Date;
   updatedAt: Date;
 }
+
