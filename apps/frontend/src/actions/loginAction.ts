@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { post2 } from '@/lib/api';
 
-export async function loginAction(formData: FormData) {
+export async function loginAction(_, formData: FormData) {
   try {
     const formdata: LoginDto = {
       email: formData.get('email') as string,
@@ -51,16 +51,19 @@ export async function loginAction(formData: FormData) {
 
     const target = redirectMap[userType];
     if (target) {
-      redirect(target);
+      return { success: true, target, message: 'Login successful' };
+      // redirect(target);
     }
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-      throw error; // Re-throw redirect errors
+      throw error;
     }
     if (axios.isAxiosError(error)) {
-      console.error(error.response?.data); // server response error
+      console.error(error.response?.data);
+      return { message: error.response?.data };
     } else {
-      console.error(error); // other errors
+      console.error(error);
+      return { message: error };
     }
   }
 }

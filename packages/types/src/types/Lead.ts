@@ -2,6 +2,7 @@
 
 export interface Lead {
   id: number;
+  number: string;
   vehicle_model?: string;
   vehicle_reg?: string;
   vehicle_brand?: string;

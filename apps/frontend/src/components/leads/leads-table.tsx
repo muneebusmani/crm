@@ -75,9 +75,12 @@ const LeadsTable: React.FC = () => {
     setLoading(true); // start loading
     try {
       const res = await fetch('/api/leads');
+      console.log('Why Response is not okay', res.status);
       if (!res.ok) throw new Error('Failed to fetch leads');
       const leadsData = (await res.json()) as Lead[];
-      setLeads(leadsData);
+      const reversedleads = leadsData.reverse();
+      // setLeads(leadsData);
+      setLeads(reversedleads);
     } catch (error) {
       setSnackbar({
         open: true,
