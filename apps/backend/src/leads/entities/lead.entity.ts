@@ -13,6 +13,9 @@ export class Lead {
   id!: number;
 
   @Column({ nullable: true })
+  number!: string;
+
+  @Column({ nullable: true })
   vehicle_model!: string;
 
   @Column({ nullable: true })
@@ -105,15 +108,21 @@ export class Lead {
   @OneToMany('Quotation', 'lead')
   quotations!: any[];
 
-  
   @OneToMany('invoices', 'lead') // 'Quotation' is the target, 'dealer' is property in Quotation
   invoices!: any[];
 
-  // ✅ Auto timestamps for analytics
-  @CreateDateColumn({ type: 'timestamp' })
+  @Column({
+    name: 'createdAt',
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @Column({
+    name: 'updatedAt',
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   updatedAt!: Date;
 
   @OneToMany('LeadMessage', 'lead')
