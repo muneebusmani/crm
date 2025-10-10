@@ -75,12 +75,18 @@ const LeadsTable: React.FC = () => {
     setLoading(true); // start loading
     try {
       const res = await fetch('/api/leads');
-      console.log('Why Response is not okay', res.status);
+      // console.log('Why Response is not okay', res.status);
       if (!res.ok) throw new Error('Failed to fetch leads');
       const leadsData = (await res.json()) as Lead[];
-      const reversedleads = leadsData.reverse();
-      // setLeads(leadsData);
-      setLeads(reversedleads);
+      const sortedLeads = leadsData.sort(
+        (a, b) =>
+          new Date(b.createdAt as unknown as Date).getTime() -
+          new Date(a.createdAt as unknown as Date).getTime(),
+      );
+      setLeads(sortedLeads);
+      // setLeads(leadsData); regular leads
+      // const reversedleads = leadsData.reverse();
+      // setLeads(reversedleads); reverse leads
     } catch (error) {
       setSnackbar({
         open: true,
