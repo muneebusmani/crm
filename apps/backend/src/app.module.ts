@@ -17,6 +17,7 @@ import { BankDeatil } from './bank-details/bank-detail.module';
 import { SeederModule } from './seeder/seeder.module';
 import { DealerTierModule } from './dealer-tier/dealer-tier.module';
 import { MessagesModule } from './dealer-chat/messages.module';
+import { BusinessSettingModule } from './business-setting/business-setting.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { MessagesModule } from './dealer-chat/messages.module';
     MessagesModule,
     ActivityLogModule,
     LeadMessageModule,
+    BusinessSettingModule,
     DealerTierModule,
     SeederModule,
     AnalyticsModule,
