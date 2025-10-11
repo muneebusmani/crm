@@ -1,36 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Req } from '@nestjs/common';
 import { BusinessSettingService } from './business-setting.service';
-import {
-   type CreateBusinessSettingDto,
-  type UpdateBusinessSettingDto,
-} from "@crm/types";
+import { type UpsertBusinessSettingDto } from '@crm/types';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
 
-@Controller('business-settings')
+@Controller('business-setting')
 export class BusinessSettingController {
   constructor(private readonly businessSettingService: BusinessSettingService) {}
-
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Post()
-  create(@Body() dto: CreateBusinessSettingDto) {
-    return this.businessSettingService.create(dto);
+  async upsertBusinessSetting(@Body() dto: UpsertBusinessSettingDto, @Req() req) {
+     const delaerId = req.user.id; 
+    return await this.businessSettingService.upsertSetting(dto,delaerId);
   }
-
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Get()
-  findAll() {
-    return this.businessSettingService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.businessSettingService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateBusinessSettingDto) {
-    return this.businessSettingService.update(id, dto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.businessSettingService.remove(id);
+  async getBusinessSetting(@Req() req) {
+    const delaerId = req.user.id;
+    return await this.businessSettingService.getByDealerId(delaerId);
   }
 }

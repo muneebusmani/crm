@@ -1,26 +1,24 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-@Entity({ name: 'business_settings' })
+@Entity('business_settings')
 export class BusinessSetting {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ nullable: false })
-  businessName!: string;
+  dealerId!: Number; // no foreign key constraint — safe in production
 
-  @Column({ nullable: true })
-  email?: string;
-
-  @Column({ nullable: true })
-  phone?: string;
-
-  // Privacy Policy field
   @Column({ type: 'text', nullable: true })
-  privacyPolicy?: string;
+  salesTerms!: string;
 
-  // Terms & Conditions field
   @Column({ type: 'text', nullable: true })
-  termsAndConditions?: string;
+  quotation!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
