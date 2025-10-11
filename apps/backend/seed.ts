@@ -1,4 +1,4 @@
-import { AppDataSource } from "data-source/data-source";
+import { AppDataSource } from "src/data-source/data-source";
 import DealerTierSeeder from "src/seeder/dealer-tier.seeder";
 
 AppDataSource.initialize()
