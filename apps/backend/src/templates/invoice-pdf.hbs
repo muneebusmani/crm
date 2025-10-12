@@ -6,142 +6,184 @@
   <style>
     body {
       font-family: 'Arial', sans-serif;
+      background-color: #fff;
       margin: 0;
       padding: 0;
-      background-color: #f5f6fa;
     }
-    .container {
-      max-width: 800px;
-      margin: 40px auto;
-      background-color: #ffffff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+    .invoice-container {
+      width: 800px;
+      margin: 30px auto;
+      border: 2px solid #000;
+      border-radius: 12px;
+      padding: 25px 40px;
     }
+
     h1 {
       text-align: center;
-      color: #2f3640;
-      margin-bottom: 5px;
-    }
-    .invoice-header, .invoice-footer {
-      width: 100%;
-      margin-bottom: 20px;
-    }
-    .invoice-header div {
-      display: inline-block;
-      width: 48%;
-      vertical-align: top;
-    }
-    .invoice-header div h3 {
-      margin: 0 0 5px 0;
-      font-size: 16px;
-      color: #2f3640;
-    }
-    .invoice-header div p {
       margin: 0;
-      font-size: 14px;
-      color: #636e72;
+      font-size: 22px;
+      font-weight: 700;
     }
+
+    .header-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .header-info div {
+      width: 48%;
+    }
+
+    .header-info strong {
+      display: inline-block;
+      width: 120px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #dcdde1;
-      padding: 10px;
-      text-align: left;
       font-size: 14px;
     }
+
+    th, td {
+      border: 1px solid #000;
+      padding: 8px;
+      text-align: center;
+    }
+
     th {
-      background-color: #f1f2f6;
+      background-color: #f3f3f3;
     }
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
+
     .total-row td {
       font-weight: bold;
       text-align: right;
     }
-    .summary {
-      margin-top: 20px;
-      width: 100%;
-      text-align: right;
-      font-size: 14px;
-    }
-    .summary p {
-      margin: 5px 0;
-    }
-    .bank-details {
-      margin-top: 30px;
+
+    .section {
+      margin-top: 25px;
+      border: 2px solid #000;
+      border-radius: 10px;
       padding: 15px;
-      background-color: #f1f2f6;
-      border-radius: 5px;
     }
-    .bank-details h3 {
+
+    .section h3 {
       margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .bank-seller {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .bank-seller .section {
+      flex: 1;
+      height: auto;
+    }
+
+    .terms-section {
+      margin-top: 20px;
+      font-size: 13px;
+    }
+
+    .terms-section h4 {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .grand-total {
+      text-align: right;
+      margin-top: 10px;
+      font-size: 15px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Invoice #{{invoiceData.invoiceNumber}}</h1>
-    <p style="text-align:center; font-size:14px; color:#636e72;">Date: {{invoiceData.date}}</p>
+  <div class="invoice-container">
+    <h1>Invoice</h1>
 
-    <div class="invoice-header">
+    <div class="header-info">
       <div>
-        <h3>Bill To:</h3>
-        <p>{{invoiceData.lead.name}}</p>
-        <p>{{invoiceData.lead.email}}</p>
+        <p><strong>Invoice No:</strong> {{invoiceData.invoiceNumber}}</p>
+        <p><strong>Company Name:</strong> {{invoiceData.dealer.name}}</p>
+        <p><strong>Phone:</strong></p>
       </div>
       <div>
-        <h3>Dealer:</h3>
-        <p>{{invoiceData.dealer.name}}</p>
-        <p>{{invoiceData.dealer.email}}</p>
+        <p><strong>Email:</strong> {{invoiceData.dealer.email}}</p>
+        <p><strong>Invoice Date:</strong> {{invoiceData.date}}</p>
       </div>
     </div>
 
     <table>
       <thead>
         <tr>
-          <th>Product</th>
-          <th>Details</th>
-          <th>Unit Price</th>
-          <th>Quantity</th>
+       
+          <th>Rate</th>
+          <th>Qty</th>
+          <th>Discount</th>
+          <th>Tax</th>
           <th>Total</th>
         </tr>
       </thead>
       <tbody>
         {{#each invoiceData.items}}
         <tr>
-          <td>{{this.productName}}</td>
-          <td>{{this.productDetails}}</td>
-          <td>{{this.unitPrice}}</td>
+      
+          <td>${{this.unitPrice}}</td>
           <td>{{this.quantity}}</td>
-          <td>{{this.totalPrice}}</td>
+          <td>{{this.discount}}</td>
+          <td>{{this.taxAmount}}</td>
+          <td>${{this.subTotal}}</td>
         </tr>
         {{/each}}
       </tbody>
     </table>
 
-    <div class="summary">
-      <p>Subtotal: {{invoiceData.subTotal}}</p>
-      <p>Tax: {{invoiceData.taxAmount}}</p>
-      <p><strong>Grand Total: {{invoiceData.grandTotal}}</strong></p>
+    <div class="grand-total">
+      Grand Total: ${{invoiceData.grandTotal}}
     </div>
 
-    {{#if invoiceData.bank}}
-    <div class="bank-details">
-      <h3>Bank Details (Optional)</h3>
-      <p>Account Holder: {{invoiceData.bank.accountHolderName}}</p>
-      <p>Account Number: {{invoiceData.bank.accountNumber}}</p>
-      <p>Bank Name: {{invoiceData.bank.bankName}}</p>
-      <p>Branch Name: {{invoiceData.bank.branchName}}</p>
-      <p>IFSC: {{invoiceData.bank.ifscCode}}</p>
-      <p>IBAN: {{invoiceData.bank.iban}}</p>
-      <p>SWIFT: {{invoiceData.bank.swiftCode}}</p>
+    <div class="bank-seller">
+      {{#if invoiceData.bank}}
+      <div class="section">
+        <h3>Bank Details</h3>
+        <p><strong>Account Holder:</strong> {{invoiceData.bank.accountHolderName}}</p>
+        <p><strong>Account Number:</strong> {{invoiceData.bank.accountNumber}}</p>
+        <p><strong>Bank Name:</strong> {{invoiceData.bank.bankName}}</p>
+        <p><strong>Branch Name:</strong> {{invoiceData.bank.branchName}}</p>
+        <p><strong>IFSC:</strong> {{invoiceData.bank.ifscCode}}</p>
+        <p><strong>IBAN:</strong> {{invoiceData.bank.iban}}</p>
+        <p><strong>SWIFT:</strong> {{invoiceData.bank.swiftCode}}</p>
+      </div>
+      {{/if}}
+
+      <div class="section">
+        <h3>Seller Note</h3>
+        <p>{{invoiceData.sellerNote}}</p>
+      </div>
     </div>
-    {{/if}}
+
+    <div class="terms-section">
+      <h4>Quotation Terms:</h4>
+      <p>{{invoiceData.quotationTerms}}</p>
+    </div>
+
+    <div class="terms-section">
+      <h4>Sales Terms:</h4>
+      <p>{{invoiceData.salesTerms}}</p>
+    </div>
   </div>
 </body>
 </html>

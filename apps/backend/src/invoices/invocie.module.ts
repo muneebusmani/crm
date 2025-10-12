@@ -16,9 +16,10 @@ import { BankDetails } from 'src/bank-details/entities/bank-details.entity'
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity'
 import { LeadsGateway } from 'src/leads/leads.gateway'
 import { DealerTierModule } from 'src/dealer-tier/dealer-tier.module'
+import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Lead, Invoice, InvoiceItem, Dealer, User, DealerLead, BankDetails, LeadMessage]), CustomMailerModule, DealerTierModule], // 👈 registers LeadRepository
+  imports: [TypeOrmModule.forFeature([Lead, Invoice, InvoiceItem, Dealer, User, DealerLead, BankDetails, LeadMessage, BusinessSetting]), CustomMailerModule, DealerTierModule], // 👈 registers LeadRepository
    controllers: [InvoiceController],
     providers: [InvoiceService, LeadsGateway],
     exports: [InvoiceService],

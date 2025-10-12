@@ -5,12 +5,15 @@ export const CreateInvoiceItemSchema = z.object({
   productDetails: z.string().optional().default(''),
   unitPrice: z.number().min(0, 'Unit price must be positive'),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+  discount: z.number().min(0, 'Discount cannot be negative').optional().default(0),
+  taxAmount: z.number().min(0, 'Tax amount cannot be negative').optional().default(0),
 });
 
 export type CreateInvoiceItemDto = z.infer<typeof CreateInvoiceItemSchema>;
 
 export const CreateInvoiceSchema = z.object({
   leadId: z.number('Invalid lead ID format'),
+  sellerNote : z.string(),
   date: z
     .string()
     .datetime('Invalid date format')

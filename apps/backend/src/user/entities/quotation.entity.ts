@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 @Entity('quotations')
@@ -33,6 +34,9 @@ export class Quotation {
   @ManyToOne('Lead', 'quotations')
   @JoinColumn({ name: 'leadId' })
   lead: any;
+
+  @OneToMany('QuotationItem', 'quotation')
+  items?: any[];
 
   @Column({
     name: 'createdAt',
