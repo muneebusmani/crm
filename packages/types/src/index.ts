@@ -19,6 +19,7 @@ export * from './schemas/admin.schema';
 export * from './schemas/dealer.schema';
 export * from './schemas/user.schema';
 export * from './schemas/lead.schema';
+export * from './schemas/business-settings.schema';
 export * from './schemas/invoice.schemas';
 export * from './schemas/quotation.schema';
 export * from './schemas/lead-message.schme';

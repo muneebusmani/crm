@@ -32,6 +32,8 @@ import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
+import { QuotationItem } from '../entities/quotation-item.entity';
+import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 @Injectable()
 export class DealerService {
@@ -58,6 +60,12 @@ export class DealerService {
 
     @InjectRepository(DealerTierCredit)
     private dealerTierCreditRepository: Repository<DealerTierCredit>,
+
+    @InjectRepository(QuotationItem)
+    private readonly quotationItemRepository: Repository<QuotationItem>,
+
+    @InjectRepository(BusinessSetting)
+    private readonly businessSettingRepository: Repository<BusinessSetting>,
 
     private readonly mailService: MailerService,
     private readonly configService: ConfigService, // 👈 inject here
@@ -316,65 +324,77 @@ export class DealerService {
     return await this.userRepository.delete(id);
   }
 
-  async createQuotation(dto: CreateQuotationDto, delaerId: number) {
-    try {
-      const dealer = await this.userRepository.findOne({
-        where: { id: delaerId },
-      });
-      console.log('Step 1');
-      if (!dealer) {
-        throw new Error('Dealer not found');
-      }
-      console.log('Step 2');
-      const lead = await this.leadRepository.findOne({
-        where: { id: dto.leadId },
-      });
-      console.log('Step 3');
-      if (!lead) {
-        throw new Error('Lead not found');
-      }
-      console.log('Step 4');
+  async createQuotation(dto: CreateQuotationDto, dealerId: number) {
+    // 1 Find dealer
+    const dealer = await this.userRepository.findOne({
+      where: { id: dealerId },
+    });
+    if (!dealer) throw new Error('Dealer not found');
 
-      const quotation = this.quotationRepository.create({
-        engineCodeName: lead.engine_code,
-        dealershipName: dealer.name,
-        quotationPrice: dto.quotationPrice,
-        message: dto.message,
-        subject: dto.subject,
-        dealer,
-        lead,
-      });
-      console.log('Step 5');
+    // 2 Find lead
+    const lead = await this.leadRepository.findOne({
+      where: { id: dto.leadId },
+    });
+    if (!lead) throw new Error('Lead not found');
 
-      const result = await this.quotationRepository.save(quotation);
+    // 3 Create quotation
+    const quotation = this.quotationRepository.create({
+      engineCodeName: lead.engine_code,
+      dealershipName: dealer.name,
+      quotationPrice: dto.quotationPrice,
+      subject: dto.subject,
+      message: dto.message,
+      dealer,
+      lead,
+    });
 
-      console.log('Step 6');
+    const savedQuotation = await this.quotationRepository.save(quotation);
 
-      this.mailService.sendMail({
-        to: lead.email, // 👈 you must have dealer.email field
-        subject: 'New Quotation Created',
-        template: 'quotation', // file: templates/quotation.hbs
-        context: {
-          dealershipName: dealer.name,
-          engineCodeName: result.engineCodeName,
-          quotationId: result.id,
-          quotationPrice: result.quotationPrice,
-          message: result.message,
-        },
-      });
-      console.log('Step 7');
+    // 4 Save items manually (Laravel-style hasMany)
+    let savedItems: any = [];
+    if (dto.items && dto.items.length > 0) {
+      const itemsToSave = dto.items.map((item) => ({
+        ...item,
+        totalAmount:
+          item.rate *
+          item.quantity *
+          (1 - (item.discountPercent || 0) / 100) *
+          (1 + (item.taxPercent || 0) / 100),
+        quotationId: savedQuotation.id,
+      }));
 
-      await this.ensureDealerLead(
-        dto.leadId,
-        delaerId!,
-        LeadStatus.QUOTATION_SENT,
-      );
-      console.log('Step 8');
-
-      return result;
-    } catch (error: unknown) {
-      throw new CustomError('Unable to create lead' + error);
+      savedItems = await this.quotationItemRepository.save(itemsToSave);
     }
+
+    //terms & constions
+    const setting = await this.businessSettingRepository.findOne({
+      where: { dealerId },
+    });
+    if (!setting) throw new NotFoundException('Business setting not found');
+
+    // 5 Send email
+    this.mailService.sendMail({
+      to: lead.email,
+      subject: 'New Quotation Created',
+      template: 'quotation',
+      context: {
+        inquiryId: savedQuotation.id,
+        companyName: lead.name || 'Example Garage',
+        email: lead.email,
+        contact: 'N/A',
+        vrm: lead.vehicle_vrm || 'N/A',
+        engineSize: lead.engine_code || 'N/A',
+        vehicleModel: lead.vehicle_model || 'N/A',
+        engineCode: savedQuotation.engineCodeName,
+        items: savedItems,
+        grandTotal: savedQuotation.quotationPrice,
+        sellerNote: dto.message,
+        quotationTerms: setting.quotation,
+        salesTerms: setting.salesTerms,
+      },
+    });
+
+    return savedQuotation;
   }
 
   async fetchQuotations(leadId: number, delaerId: number) {
@@ -399,6 +419,7 @@ export class DealerService {
           dealer: { id: delaerId },
           lead: { id: leadId },
         },
+        relations: ['items'],
       });
 
       if (!quotations) {

@@ -63,6 +63,9 @@ export class Invoice {
   @Column()
   grandTotal!: number;
 
+  @Column({nullable : true})
+  sellerNote! : string;
+
   @Column('timestamp')
   date!: Date;
 

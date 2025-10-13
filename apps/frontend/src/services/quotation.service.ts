@@ -5,6 +5,13 @@ export interface CreateQuotationParams {
   subject: string;
   message: string;
   quotationPrice: number;
+  items?: Array<{
+    itemDescription: string;
+    rate: number;
+    quantity: number;
+    discountPercent?: number;
+    taxPercent?: number;
+  }>;
 }
 
 export const quotationsApi = {
