@@ -7,10 +7,13 @@ export interface InvoiceItemDto {
   productDetails?: string;
   unitPrice: number;
   quantity: number;
+  discount?: number;
+  taxAmount?: number;
 }
 
 export interface CreateInvoiceDto {
   leadId: number;
+  sellerNote: string;
   date: string; // ISO
   taxAmount: number;
   items: InvoiceItemDto[];

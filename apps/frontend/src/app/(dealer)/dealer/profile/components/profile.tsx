@@ -53,6 +53,11 @@ const Profile = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [profileData, setProfileData] = useState<DealerInfo>();
   const [loading, setLoading] = useState(true);
+  // Business Settings state
+  const [salesTerms, setSalesTerms] = useState('');
+  const [quotationTerms, setQuotationTerms] = useState('');
+  const [bsLoading, setBsLoading] = useState(false);
+  const [bsSaving, setBsSaving] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -90,6 +95,48 @@ const Profile = () => {
     };
 
     fetchProfile();
+  }, []);
+
+  const saveBusinessSettings = async () => {
+    try {
+      setBsSaving(true);
+      const payload = {
+        salesTerms: salesTerms.trim(),
+        quotation: quotationTerms.trim(),
+      };
+      const resp = await fetch('/api/business-setting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error('Failed to save business settings');
+      alert('Business settings saved');
+    } catch (err) {
+      console.error('Saving business settings failed:', err);
+      alert('Failed to save business settings. Please try again.');
+    } finally {
+      setBsSaving(false);
+    }
+  };
+
+  // Load Business Settings (quotation + sales terms)
+  useEffect(() => {
+    const loadBusinessSettings = async () => {
+      try {
+        setBsLoading(true);
+        const resp = await fetch('/api/business-setting', { credentials: 'include' });
+        if (!resp.ok) throw new Error('Failed to load business settings');
+        const data = await resp.json();
+        setSalesTerms(data?.salesTerms ?? '');
+        setQuotationTerms(data?.quotation ?? '');
+      } catch (err) {
+        console.error('Failed to load business settings:', err);
+      } finally {
+        setBsLoading(false);
+      }
+    };
+    loadBusinessSettings();
   }, []);
 
   const [formData, setFormData] = useState({
@@ -458,6 +505,50 @@ const Profile = () => {
                       {profileData.website}
                     </Typography>
                   </Box>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Business Settings (Quotation & Sales Terms) */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Quotation & Sales Terms
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TextField
+                  label="Quotation Terms"
+                  value={quotationTerms}
+                  onChange={(e) => setQuotationTerms(e.target.value)}
+                  multiline
+                  minRows={4}
+                  placeholder="Enter quotation terms shown to customers in quotation emails"
+                  disabled={bsLoading}
+                  helperText={`${Math.max(0, quotationTerms.trim().length)} chars`}
+                />
+                <TextField
+                  label="Sales Terms"
+                  value={salesTerms}
+                  onChange={(e) => setSalesTerms(e.target.value)}
+                  multiline
+                  minRows={4}
+                  placeholder="Enter sales terms included in quotation emails"
+                  disabled={bsLoading}
+                  helperText={`${Math.max(0, salesTerms.trim().length)} chars`}
+                />
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    onClick={saveBusinessSettings}
+                    disabled={
+                      bsSaving ||
+                      quotationTerms.trim().length < 10 ||
+                      salesTerms.trim().length < 10
+                    }
+                  >
+                    {bsSaving ? 'Saving…' : 'Save Terms'}
+                  </Button>
                 </Box>
               </Box>
             </CardContent>

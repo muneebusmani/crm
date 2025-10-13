@@ -32,7 +32,7 @@ import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
-import { QuotationItem } from '../entities/QuotationItem.entity';
+import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 @Injectable()
@@ -66,8 +66,7 @@ export class DealerService {
 
     @InjectRepository(BusinessSetting)
     private readonly businessSettingRepository: Repository<BusinessSetting>,
-    
-    
+
     private readonly mailService: MailerService,
     private readonly configService: ConfigService, // 👈 inject here
 
@@ -325,16 +324,20 @@ export class DealerService {
     return await this.userRepository.delete(id);
   }
 
-    async createQuotation(dto: CreateQuotationDto, dealerId: number) {
-    // 1️⃣ Find dealer
-    const dealer = await this.userRepository.findOne({ where: { id: dealerId } });
+  async createQuotation(dto: CreateQuotationDto, dealerId: number) {
+    // 1 Find dealer
+    const dealer = await this.userRepository.findOne({
+      where: { id: dealerId },
+    });
     if (!dealer) throw new Error('Dealer not found');
 
-    // 2️⃣ Find lead
-    const lead = await this.leadRepository.findOne({ where: { id: dto.leadId } });
+    // 2 Find lead
+    const lead = await this.leadRepository.findOne({
+      where: { id: dto.leadId },
+    });
     if (!lead) throw new Error('Lead not found');
 
-    // 3️⃣ Create quotation
+    // 3 Create quotation
     const quotation = this.quotationRepository.create({
       engineCodeName: lead.engine_code,
       dealershipName: dealer.name,
@@ -347,10 +350,9 @@ export class DealerService {
 
     const savedQuotation = await this.quotationRepository.save(quotation);
 
-    // 4️⃣ Save items manually (Laravel-style hasMany)
+    // 4 Save items manually (Laravel-style hasMany)
     let savedItems: any = [];
     if (dto.items && dto.items.length > 0) {
-     
       const itemsToSave = dto.items.map((item) => ({
         ...item,
         totalAmount:
@@ -361,33 +363,35 @@ export class DealerService {
         quotationId: savedQuotation.id,
       }));
 
-       savedItems =  await this.quotationItemRepository.save(itemsToSave);
+      savedItems = await this.quotationItemRepository.save(itemsToSave);
     }
 
     //terms & constions
-    const setting = await this.businessSettingRepository.findOne({ where: { dealerId } });
+    const setting = await this.businessSettingRepository.findOne({
+      where: { dealerId },
+    });
     if (!setting) throw new NotFoundException('Business setting not found');
 
-    // 5️⃣ Send email
-     this.mailService.sendMail({
+    // 5 Send email
+    this.mailService.sendMail({
       to: lead.email,
       subject: 'New Quotation Created',
       template: 'quotation',
-       context: {
-      inquiryId: savedQuotation.id,
-      companyName: lead.name || 'Example Garage',
-      email: lead.email,
-      contact: 'N/A',
-      vrm: lead.vehicle_vrm || 'N/A',
-      engineSize: lead.engine_code || 'N/A',
-      vehicleModel: lead.vehicle_model || 'N/A',
-      engineCode: savedQuotation.engineCodeName,
-      items: savedItems,
-      grandTotal : savedQuotation.quotationPrice,
-      sellerNote: dto.message,
-      quotationTerms: setting.quotation,
-      salesTerms: setting.salesTerms,
-    },
+      context: {
+        inquiryId: savedQuotation.id,
+        companyName: lead.name || 'Example Garage',
+        email: lead.email,
+        contact: 'N/A',
+        vrm: lead.vehicle_vrm || 'N/A',
+        engineSize: lead.engine_code || 'N/A',
+        vehicleModel: lead.vehicle_model || 'N/A',
+        engineCode: savedQuotation.engineCodeName,
+        items: savedItems,
+        grandTotal: savedQuotation.quotationPrice,
+        sellerNote: dto.message,
+        quotationTerms: setting.quotation,
+        salesTerms: setting.salesTerms,
+      },
     });
 
     return savedQuotation;
@@ -415,7 +419,7 @@ export class DealerService {
           dealer: { id: delaerId },
           lead: { id: leadId },
         },
-        relations : ['items']
+        relations: ['items'],
       });
 
       if (!quotations) {
