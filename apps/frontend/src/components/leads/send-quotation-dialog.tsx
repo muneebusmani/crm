@@ -175,7 +175,7 @@ export default function SendQuotationDialog({ open, onClose, leadId, onSuccess }
   }, [open]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen>
       <DialogTitle>Send Quotation</DialogTitle>
       <DialogContent>
         <form onSubmit={handleSubmit}>

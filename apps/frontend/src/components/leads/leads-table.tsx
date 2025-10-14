@@ -16,7 +16,7 @@ import {
   Alert,
   Box,
   // Button,
-  Checkbox,
+  // Checkbox,
   Chip,
   IconButton,
   InputBase,
@@ -26,8 +26,8 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
+  TableContainer,
   TableRow,
   Typography,
   useTheme,
@@ -48,6 +48,9 @@ const LeadsTable: React.FC = () => {
   };
 
   const theme = useTheme();
+  const ACTION_COL_WIDTH = 320;
+  const STATUS_COL_WIDTH = 140;
+  const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -78,6 +81,7 @@ const LeadsTable: React.FC = () => {
       // console.log('Why Response is not okay', res.status);
       if (!res.ok) throw new Error('Failed to fetch leads');
       const leadsData = (await res.json()) as Lead[];
+      console.log('Leads Data:', leadsData);
       const sortedLeads = leadsData.sort(
         (a, b) =>
           new Date(b.createdAt as unknown as Date).getTime() -
@@ -334,7 +338,7 @@ const LeadsTable: React.FC = () => {
       (lead.vehicle_reg || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const rowsPerPage = 7;
+  const rowsPerPage = 10;
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
   const startIndex = (page - 1) * rowsPerPage;
   const currentLeads = filteredLeads.slice(
@@ -425,29 +429,55 @@ const LeadsTable: React.FC = () => {
         </Box>
 
         {/* Table */}
-        <TableContainer>
-          <Table stickyHeader aria-label="leads table">
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table
+            stickyHeader
+            aria-label="leads table"
+            sx={{
+              minWidth: TABLE_MIN_WIDTH,
+              tableLayout: 'auto',
+              '& th, & td': { whiteSpace: 'nowrap' },
+              '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
+              '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 240 }, // Email
+              '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
+              '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // Make
+              '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // Model
+              '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // VRM
+              '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Registration
+              '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 280 }, // Additional Notes
+              '& th:nth-of-type(9), & td:nth-of-type(9)': { minWidth: 140 }, // Fuel Type
+              '& th:nth-of-type(10), & td:nth-of-type(10)': { minWidth: 180 }, // Engine Title
+              '& th:nth-of-type(11), & td:nth-of-type(11)': { minWidth: 140 }, // Engine Capacity
+              '& th:nth-of-type(12), & td:nth-of-type(12)': { minWidth: 180 }, // Recieved at
+              '& th:nth-of-type(13), & td:nth-of-type(13)': {
+                minWidth: STATUS_COL_WIDTH,
+              }, // Status
+              '& th:nth-of-type(14), & td:nth-of-type(14)': {
+                minWidth: ACTION_COL_WIDTH,
+              }, // Action
+            }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    indeterminate={
-                      selectedRows.length > 0 &&
-                      selectedRows.length < currentLeads.length
-                    }
-                    checked={
-                      currentLeads.length > 0 &&
-                      selectedRows.length === currentLeads.length
-                    }
-                    onChange={() => {
-                      if (selectedRows.length === currentLeads.length) {
-                        setSelectedRows([]);
-                      } else {
-                        setSelectedRows(currentLeads.map((lead) => lead.id!));
-                      }
-                    }}
-                  />
-                </TableCell>
+                {/* <TableCell padding="checkbox"> */}
+                {/*   <Checkbox */}
+                {/*     indeterminate={ */}
+                {/*       selectedRows.length > 0 && */}
+                {/*       selectedRows.length < currentLeads.length */}
+                {/*     } */}
+                {/*     checked={ */}
+                {/*       currentLeads.length > 0 && */}
+                {/*       selectedRows.length === currentLeads.length */}
+                {/*     } */}
+                {/*     onChange={() => { */}
+                {/*       if (selectedRows.length === currentLeads.length) { */}
+                {/*         setSelectedRows([]); */}
+                {/*       } else { */}
+                {/*         setSelectedRows(currentLeads.map((lead) => lead.id!)); */}
+                {/*       } */}
+                {/*     }} */}
+                {/*   /> */}
+                {/* </TableCell> */}
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
                     Name
@@ -460,7 +490,23 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
-                    Vehicle Model
+                    Phone
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Make
+                  </Typography>
+                </TableCell>
+
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Model
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    VRM
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -470,15 +516,51 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
+                    Additional Notes
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Fuel Type
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Engine Title
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Engine Capacity
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Recieved at
+                  </Typography>
+                </TableCell>
+                <TableCell
+                  sx={{
+                    position: 'sticky',
+                    right: ACTION_COL_WIDTH,
+                    backgroundColor: theme.palette.background.paper,
+                    zIndex: 4,
+                    minWidth: STATUS_COL_WIDTH,
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight="bold">
                     Status
                   </Typography>
                 </TableCell>
-                {/* <TableCell> */}
-                {/*   <Typography variant="subtitle2" fontWeight="bold"> */}
-                {/*     Created Date */}
-                {/*   </Typography> */}
-                {/* </TableCell> */}
-                <TableCell>
+                <TableCell
+                  sx={{
+                    position: 'sticky',
+                    right: 0,
+                    backgroundColor: theme.palette.background.paper,
+                    zIndex: 4,
+                    minWidth: ACTION_COL_WIDTH,
+                  }}
+                >
                   <Typography variant="subtitle2" fontWeight="bold">
                     Action
                   </Typography>
@@ -488,27 +570,62 @@ const LeadsTable: React.FC = () => {
             <TableBody>
               {currentLeads.map((lead) => (
                 <TableRow key={lead.id}>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={selectedRows.includes(lead.id!)}
-                      onChange={() => handleRowSelect(lead.id!)}
-                    />
+                  {/* <TableCell padding="checkbox"> */}
+                  {/*   <Checkbox */}
+                  {/*     checked={selectedRows.includes(lead.id!)} */}
+                  {/*     onChange={() => handleRowSelect(lead.id!)} */}
+                  {/*   /> */}
+                  {/* </TableCell> */}
+                  <TableCell>
+                    <Typography>{lead.name || '-'}</Typography>
+                  </TableCell>
+                  <TableCell>{lead.email || '-'}</TableCell>
+                  <TableCell>{lead.number || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_brand || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_model || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_vrm || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_reg || '-'}</TableCell>
+                  <TableCell>
+                    {lead.description
+                      ? lead.description.length > 15
+                        ? `${lead.description.slice(0, 15)}...`
+                        : lead.description
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>{lead.fuelType || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_title || '-'}</TableCell>
+                  <TableCell>
+                    {lead.engin_capacity ? `${lead.engin_capacity}.0L` : '-'}
                   </TableCell>
                   <TableCell>
-                    <Typography>{lead.name || 'N/A'}</Typography>
+                    {new Date(
+                      lead.createdAt as unknown as string,
+                    ).toLocaleString()}
                   </TableCell>
-                  <TableCell>{lead.email || 'N/A'}</TableCell>
-                  <TableCell>{lead.vehicle_model || 'N/A'}</TableCell>
-                  <TableCell>{lead.vehicle_reg || 'N/A'}</TableCell>
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      right: ACTION_COL_WIDTH,
+                      backgroundColor: theme.palette.background.paper,
+                      zIndex: 3,
+                      minWidth: STATUS_COL_WIDTH,
+                    }}
+                  >
                     <Chip
                       label={lead.status || 'Unknown'}
                       color={getStatusColor(lead.status)}
                       size="small"
                     />
                   </TableCell>
-                  {/* <TableCell>{formatDate(lead.createdAt)}</TableCell> */}
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      right: 0,
+                      backgroundColor: theme.palette.background.paper,
+                      zIndex: 3,
+                      minWidth: ACTION_COL_WIDTH,
+                    }}
+                  >
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
                         size="small"

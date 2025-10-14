@@ -215,7 +215,7 @@ export default function SendInvoiceDialog({ open, onClose, leadId, onSuccess }: 
   }, [open]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen>
       <DialogTitle>Send Invoice</DialogTitle>
       <DialogContent>
         <form onSubmit={handleSubmit}>
