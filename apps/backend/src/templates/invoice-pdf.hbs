@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Invoice {{invoiceData.invoiceNumber}}</title>
@@ -51,7 +52,8 @@
       font-size: 14px;
     }
 
-    th, td {
+    th,
+    td {
       border: 1px solid #000;
       padding: 8px;
       text-align: center;
@@ -110,6 +112,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="invoice-container">
     <h1>Invoice</h1>
@@ -129,7 +132,8 @@
     <table>
       <thead>
         <tr>
-       
+          <th>Name</th>
+          <th>Details</th>
           <th>Rate</th>
           <th>Qty</th>
           <th>Discount</th>
@@ -140,9 +144,11 @@
       <tbody>
         {{#each invoiceData.items}}
         <tr>
-      
+
+          <td>{{this.productName}}</td>
+          <td>{{this.productDetails}}</td>
           <td>${{this.unitPrice}}</td>
-          <td>{{this.quantity}}</td>
+          <td>{{this.quantity}}</td>3
           <td>{{this.discount}}</td>
           <td>{{this.taxAmount}}</td>
           <td>${{this.subTotal}}</td>
@@ -186,4 +192,5 @@
     </div>
   </div>
 </body>
+
 </html>

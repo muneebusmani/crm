@@ -145,7 +145,6 @@ async create(
       discount: Math.round(item.discount || 0),
       taxAmount: Math.round(item.taxAmount || 0),
       subTotal: Math.round(item.unitPrice * item.quantity),
-      
       totalPrice: Math.round(
         item.unitPrice * item.quantity -
           (item.discount || 0) +
