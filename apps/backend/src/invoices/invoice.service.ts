@@ -60,138 +60,140 @@ export class InvoiceService {
     private readonly leadsGateway: LeadsGateway,
 
     private readonly dealerTierService: DealerTierService, // inject service
-
   ) {}
 
-async create(
-  createInvoiceDto: CreateInvoiceDto,
-  dealerId: number,
-): Promise<Invoice> {
-  // 🔍 1. Verify lead ownership
-  const lead = await this.leadRepository.findOne({
-    where: {
-      id: createInvoiceDto.leadId,
-      is_deleted: false,
-      dealerLeads: { dealer: { id: dealerId } },
-    },
-    relations: ['dealerLeads', 'dealerLeads.dealer'],
-  });
+  async create(
+    createInvoiceDto: CreateInvoiceDto,
+    dealerId: number,
+  ): Promise<Invoice> {
+    // 🔍 1. Verify lead ownership
+    const lead = await this.leadRepository.findOne({
+      where: {
+        id: createInvoiceDto.leadId,
+        is_deleted: false,
+        dealerLeads: { dealer: { id: dealerId } },
+      },
+      relations: ['dealerLeads', 'dealerLeads.dealer'],
+    });
 
-  if (!lead) {
-    throw new NotFoundException(
-      'Lead not found or does not belong to this dealer',
-    );
-  }
+    if (!lead) {
+      throw new NotFoundException(
+        'Lead not found or does not belong to this dealer',
+      );
+    }
 
-  // 🔍 2. Find dealer
-  const dealer = await this.userRepository.findOne({
-    where: { id: dealerId },
-  });
+    // 🔍 2. Find dealer
+    const dealer = await this.userRepository.findOne({
+      where: { id: dealerId },
+    });
 
-  if (!dealer) {
-    throw new NotFoundException('Dealer not found');
-  }
+    if (!dealer) {
+      throw new NotFoundException('Dealer not found');
+    }
 
-   const setting = await this.businessSettingRepository.findOne({ where: { dealerId } });
+    const setting = await this.businessSettingRepository.findOne({
+      where: { dealerId },
+    });
     if (!setting) throw new NotFoundException('Business setting not found');
 
-  // 🧾 3. Generate unique invoice number
-  const invoiceNumber = await this.generateInvoiceNumber();
+    // 🧾 3. Generate unique invoice number
+    const invoiceNumber = await this.generateInvoiceNumber();
 
-  // 💰 4. Calculate totals
-  let subTotal = 0;
-  let totalTax = 0;
-  let totalDiscount = 0;
+    // 💰 4. Calculate totals
+    let subTotal = 0;
+    let totalTax = 0;
+    let totalDiscount = 0;
 
-  for (const item of createInvoiceDto.items) {
-    const itemSubTotal = item.unitPrice * item.quantity;
-    const itemDiscount = item.discount || 0;
-    const itemTax = item.taxAmount || 0;
+    for (const item of createInvoiceDto.items) {
+      const itemSubTotal = item.unitPrice * item.quantity;
+      const itemDiscount = item.discount || 0;
+      const itemTax = item.taxAmount || 0;
 
-    subTotal += itemSubTotal;
-    totalDiscount += itemDiscount;
-    totalTax += itemTax;
+      subTotal += itemSubTotal;
+      totalDiscount += itemDiscount;
+      totalTax += itemTax;
+    }
+
+    // 🧮 Round to integers to match production schema (integer columns)
+    subTotal = Math.round(subTotal);
+    totalTax = Math.round(totalTax);
+    totalDiscount = Math.round(totalDiscount);
+    const grandTotal = Math.round(subTotal - totalDiscount + totalTax);
+
+    // 🧾 5. Create invoice
+    const invoice = this.invoiceRepository.create({
+      invoiceNumber,
+      date: createInvoiceDto.date,
+      lead,
+      dealer,
+      sellerNote: createInvoiceDto.sellerNote,
+      subTotal,
+      taxAmount: totalTax,
+      grandTotal,
+      status: InvoiceStatus.PENDING,
+    });
+
+    const savedInvoice = await this.invoiceRepository.save(invoice);
+
+    // 📦 6. Create invoice items
+    const invoiceItems = createInvoiceDto.items.map((item) =>
+      this.invoiceItemRepository.create({
+        invoiceId: savedInvoice.id,
+        productName: item.productName,
+        productDetails: item.productDetails || '',
+        unitPrice: Math.round(item.unitPrice),
+        quantity: item.quantity,
+        discount: Math.round(item.discount || 0),
+        taxAmount: Math.round(item.taxAmount || 0),
+        subTotal: Math.round(item.unitPrice * item.quantity),
+        totalPrice: Math.round(
+          item.unitPrice * item.quantity -
+            (item.discount || 0) +
+            (item.taxAmount || 0),
+        ),
+      }),
+    );
+
+    await this.invoiceItemRepository.save(invoiceItems);
+
+    // 🏦 7. Get bank details
+    const bankDetails = await this.bankDetailsRepository.findOne({
+      where: { user: { id: dealerId } },
+      relations: ['user'],
+    });
+
+    const date = new Date(savedInvoice.date).toLocaleDateString();
+
+    // 📄 8. Build data for PDF/email
+    const invoiceData = {
+      invoiceNumber: savedInvoice.invoiceNumber,
+      date,
+      lead: { name: lead.name, email: lead.email },
+      dealer: { name: dealer.name, email: dealer.email },
+      items: invoiceItems,
+      sellerNote: createInvoiceDto.sellerNote,
+      subTotal,
+      totalDiscount,
+      totalTax,
+      quotationTerms: setting.quotation,
+      salesTerms: setting.salesTerms,
+      grandTotal,
+      bank: bankDetails || null,
+    };
+
+    // 📧 9. Send invoice mail
+    await this.mailService.sendMail({
+      to: lead.email,
+      subject: `Invoice #${invoice.invoiceNumber}`,
+      template: 'invoice-pdf',
+      context: { invoiceData },
+    });
+
+    // 🔒 10. Close lead
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+
+    return savedInvoice;
   }
-
-  // 🧮 Round to integers to match production schema (integer columns)
-  subTotal = Math.round(subTotal);
-  totalTax = Math.round(totalTax);
-  totalDiscount = Math.round(totalDiscount);
-  const grandTotal = Math.round(subTotal - totalDiscount + totalTax);
-
-  // 🧾 5. Create invoice
-  const invoice = this.invoiceRepository.create({
-    invoiceNumber,
-    date: createInvoiceDto.date,
-    lead,
-    dealer,
-    sellerNote : createInvoiceDto.sellerNote,
-    subTotal,
-    taxAmount: totalTax,
-    grandTotal,
-    status: InvoiceStatus.PENDING,
-  });
-
-  const savedInvoice = await this.invoiceRepository.save(invoice);
-
-  // 📦 6. Create invoice items
-  const invoiceItems = createInvoiceDto.items.map((item) =>
-    this.invoiceItemRepository.create({
-      invoiceId: savedInvoice.id,
-      productName: item.productName,
-      productDetails: item.productDetails || '',
-      unitPrice: Math.round(item.unitPrice),
-      quantity: item.quantity,
-      discount: Math.round(item.discount || 0),
-      taxAmount: Math.round(item.taxAmount || 0),
-      subTotal: Math.round(item.unitPrice * item.quantity),
-      totalPrice: Math.round(
-        item.unitPrice * item.quantity -
-          (item.discount || 0) +
-          (item.taxAmount || 0),
-      ),
-    }),
-  );
-
-  await this.invoiceItemRepository.save(invoiceItems);
-
-  // 🏦 7. Get bank details
-  const bankDetails = await this.bankDetailsRepository.findOne({
-    where: { user: { id: dealerId } },
-    relations: ['user'],
-  });
-
-  // 📄 8. Build data for PDF/email
-  const invoiceData = {
-    invoiceNumber: savedInvoice.invoiceNumber,
-    date: savedInvoice.date,
-    lead: { name: lead.name, email: lead.email },
-    dealer: { name: dealer.name, email: dealer.email },
-    items: invoiceItems,
-    sellerNote : createInvoiceDto.sellerNote,
-    subTotal,
-    totalDiscount,
-    totalTax,
-    quotationTerms: setting.quotation,
-    salesTerms : setting.salesTerms,
-    grandTotal,
-    bank: bankDetails || null,
-  };
-
-  // 📧 9. Send invoice mail
-  await this.mailService.sendMail({
-    to:  lead.email,
-    subject: `Invoice #${invoice.invoiceNumber}`,
-    template: 'invoice-pdf',
-    context: { invoiceData },
-  });
-
-  // 🔒 10. Close lead
-  await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
-
-  return savedInvoice;
-}
-
 
   async findAll(dealerId: number): Promise<Invoice[]> {
     return this.invoiceRepository.find({
@@ -216,7 +218,10 @@ async create(
     if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
-    const dealer = await this.userRepository.findOne({ where : { id: dealerId} ,  relations: ['dealer']});;
+    const dealer = await this.userRepository.findOne({
+      where: { id: dealerId },
+      relations: ['dealer'],
+    });
     if (!dealer)
       throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
