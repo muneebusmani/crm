@@ -133,7 +133,7 @@ export default function SendQuotationDialog({ open, onClose, leadId, onSuccess }
       };
       const res = await post2('/dealers/quotations',dataToSend);
       console.log("Res:",res)
-      if (!res.ok) throw new Error('Failed to create quotation');
+      // post2 throws on non-2xx; reaching here means success
       if (onSuccess) onSuccess();
       reset();
       onClose();
