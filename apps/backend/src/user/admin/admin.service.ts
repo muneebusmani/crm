@@ -65,6 +65,11 @@ export class AdminService {
     });
   }
 
+
+  updateDeviceLimit(dealerId : number, limit: number){
+    return this.userRepository.update(dealerId, {allowedDevices : limit});
+  }
+
   async getAllAdmins() {
     return await this.userRepository.find({
       where: {

@@ -31,10 +31,25 @@ export class AdminController {
       return { error: message, success: false };
     }
   }
+  
 
   @Post()
   create(@Body() dto: CreateAdminDto) {
     return this.adminService.createAdmin(dto);
+  }
+
+  
+
+  @Patch("/dealers/:id/device-limit")
+  updateDeviceLimit(@Param("id") id: number, @Body() {limit} : {limit : number}){
+    try{
+      const deviceLimit = this.adminService.updateDeviceLimit(id, limit);
+      return this.buildResponse(deviceLimit);
+    }catch (error) {
+      const message =
+        error instanceof CustomError ? error.message : 'Internal server error';
+      return { error: message, success: false };
+    }
   }
 
   @Get()
