@@ -6,10 +6,12 @@ import { User } from 'src/user/entities';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { UserDevice } from 'src/user/entities/user_device.entity';
+import { LeadsGateway } from 'src/leads/leads.gateway';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserDevice]),
     ConfigModule, // needed if you use ConfigService
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -20,7 +22,7 @@ import { JwtStrategy } from './jwt.strategy';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, LeadsGateway],
   controllers: [AuthController],
 })
 export class AuthModule {}

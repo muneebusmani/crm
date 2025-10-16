@@ -33,4 +33,12 @@ export class LeadsGateway {
   emitRemoveLead(id: number) {
     this.clients.forEach((client) => client.emit('removedLeadResponse', id));
   }
+
+  emitForceLogout(deviceId: string, userId: number) {
+    this.clients.forEach((client) => {
+      if (client.data.deviceId === deviceId && client.data.userId === userId) {
+        client.emit('FORCE_LOGOUT');
+      }
+    });
+  }
 }
