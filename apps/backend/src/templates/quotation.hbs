@@ -1,60 +1,109 @@
-<div style="font-family: Arial, sans-serif; max-width: 700px; margin: auto; border: 1px solid #ccc; border-radius: 10px; padding: 20px;">
-  <h2 style="text-align: center;">Quotation</h2>
+<div style="font-family: Arial, sans-serif; max-width: 800px; margin: auto; border: 1px solid #ccc; border-radius: 10px; padding: 25px; background-color: #ffffff;">
 
-  <table width="100%" style="margin-bottom: 20px;">
+  <h2 style="text-align: center; color: #007b8f; margin-bottom: 25px;">Quotation</h2>
+
+  <!-- Header Info Section -->
+  <table width="100%" style="margin-bottom: 20px; border-collapse: collapse;">
     <tr>
-      <td><strong>Inquiry:</strong> #{{inquiryId}}</td>
-      <td><strong>VRM:</strong> {{vrm}}</td>
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Inquiry:</strong> #{{inquiryId}}
+      </td>
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">VRM:</strong> {{vrm}}
+      </td>
+    </tr>
+    <tr style="background-color: #f9f9f9;">
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Company:</strong> {{companyName}}
+      </td>
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Engine Size:</strong> {{engineSize}}
+      </td>
     </tr>
     <tr>
-      <td><strong>Company:</strong> {{companyName}}</td>
-      <td><strong>Engine Size:</strong> {{engineSize}}</td>
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Email:</strong> {{email}}
+      </td>
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Vehicle Model:</strong> {{vehicleModel}}
+      </td>
     </tr>
-    <tr>
-      <td><strong>Email:</strong> {{email}}</td>
-      <td><strong>Vehicle Model:</strong> {{vehicleModel}}</td>
-    </tr>
-    <tr>
-      <td><strong>Contact:</strong> {{contact}}</td>
-      <td><strong>Engine Code:</strong> {{engineCode}}</td>
+    <tr style="background-color: #f9f9f9;">
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Contact:</strong> {{contact}}
+      </td>
+      <td style="padding: 8px 10px; width: 50%; vertical-align: top;">
+        <strong style="color:#007b8f;">Engine Code:</strong> {{engineCode}}
+      </td>
     </tr>
   </table>
 
-  <table width="100%" border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; text-align: center;">
-    <thead style="background-color: #f9f9f9;">
+  <!-- Item Table -->
+  <table width="100%" border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; text-align: center; border: 1px solid #ddd;">
+    <thead style="background-color: #007b8f; color: white;">
       <tr>
-        <th>Item Description</th>
-        <th>Rate</th>
-        <th>Qty</th>
-        <th>Discount</th>
-        <th>Tax</th>
-        <th>Total</th>
+        <th style="padding: 10px;">Item Description</th>
+        <th style="padding: 10px;">Rate</th>
+        <th style="padding: 10px;">Qty</th>
+        <th style="padding: 10px;">Discount</th>
+        <th style="padding: 10px;">Tax</th>
+        <th style="padding: 10px;">Total</th>
       </tr>
     </thead>
     <tbody>
       {{#each items}}
-      <tr>
-        <td>{{itemDescription}}</td>
-        <td>${{rate}}</td>
-        <td>{{quantity}}</td>
-        <td>{{discountPercent}}%</td>
-        <td>{{taxPercent}}%</td>
-        <td>${{totalAmount}}</td>
+      <tr style="background-color: {{#if @odd}}#ffffff{{else}}#f9f9f9{{/if}};">
+        <td style="padding: 10px;">{{itemDescription}}</td>
+        <td style="padding: 10px;">${{rate}}</td>
+        <td style="padding: 10px;">{{quantity}}</td>
+        <td style="padding: 10px;">{{discountPercent}}%</td>
+        <td style="padding: 10px;">{{taxPercent}}%</td>
+        <td style="padding: 10px;">${{totalAmount}}</td>
       </tr>
       {{/each}}
     </tbody>
   </table>
 
-  <h3 style="text-align: right; margin-top: 10px;">Grand Total: ${{grandTotal}}</h3>
+  <h3 style="text-align: right; margin-top: 15px; color:#007b8f;">Grand Total: ${{grandTotal}}</h3>
 
-  <hr>
+  <hr style="margin: 25px 0; border: none; border-top: 1px solid #ccc;">
 
-  <h4>Seller Note:</h4>
-  <p>{{sellerNote}}</p>
+  <!-- Notes Section -->
+  <div style="margin-top: 10px;">
+    <h4 style="color:#007b8f;">Seller Note:</h4>
+    <p style="margin: 5px 0 15px 0; color:#555;">{{sellerNote}}</p>
 
-  <h4>Quotation Terms:</h4>
-  <p>{{quotationTerms}}</p>
+    <h4 style="color:#007b8f;">Quotation Terms:</h4>
+    <p style="margin: 5px 0 15px 0; color:#555;">{{quotationTerms}}</p>
 
-  <h4>Sales Terms:</h4>
-  <p>{{salesTerms}}</p>
+    <h4 style="color:#007b8f;">Sales Terms:</h4>
+    <p style="margin: 5px 0; color:#555;">{{salesTerms}}</p>
+  </div>
+
+  <!-- Responsive Design (Inline Simulation for Email Clients) -->
+  <div style="display:none; max-height:0px; overflow:hidden;">
+    <!-- This dummy block helps prevent email clipping -->
+  </div>
+
+  <!-- Inline Responsive Fallback for Email Clients -->
+  {{!-- <div style="width:100%; text-align:center; margin-top:15px; font-size:12px; color:#999;">
+    <p style="margin:0;">This quotation adjusts automatically for mobile devices.</p>
+  </div> --}}
+
+  <!-- Inline Responsive Logic for Email -->
+  {{!-- <div style="max-width:100%; width:100%;">
+    <!-- Mobile-friendly stacking simulation -->
+    <div style="display:block; width:100%; box-sizing:border-box;">
+      <!-- For narrow screens (mobile clients), force each cell to block -->
+      <!-- Email clients don't support media queries well, so use 100% width tables -->
+      <table width="100%" style="border-collapse: collapse; margin-top:15px;">
+        <tr>
+          <td style="display:block; width:100%; padding:10px 0; text-align:center; font-size:13px; color:#777;">
+            <em>Responsive design enabled for mobile screens</em>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div> --}}
+
 </div>

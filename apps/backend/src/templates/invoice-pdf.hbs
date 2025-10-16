@@ -4,193 +4,114 @@
 <head>
   <meta charset="UTF-8">
   <title>Invoice {{invoiceData.invoiceNumber}}</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #fff;
-      margin: 0;
-      padding: 0;
-    }
-
-    .invoice-container {
-      width: 800px;
-      margin: 30px auto;
-      border: 2px solid #000;
-      border-radius: 12px;
-      padding: 25px 40px;
-    }
-
-    h1 {
-      text-align: center;
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .header-info {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 10px;
-      border-bottom: 2px solid #000;
-      padding-bottom: 8px;
-      font-size: 14px;
-    }
-
-    .header-info div {
-      width: 48%;
-    }
-
-    .header-info strong {
-      display: inline-block;
-      width: 120px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-
-    th,
-    td {
-      border: 1px solid #000;
-      padding: 8px;
-      text-align: center;
-    }
-
-    th {
-      background-color: #f3f3f3;
-    }
-
-    .total-row td {
-      font-weight: bold;
-      text-align: right;
-    }
-
-    .section {
-      margin-top: 25px;
-      border: 2px solid #000;
-      border-radius: 10px;
-      padding: 15px;
-    }
-
-    .section h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .bank-seller {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-      margin-top: 25px;
-    }
-
-    .bank-seller .section {
-      flex: 1;
-      height: auto;
-    }
-
-    .terms-section {
-      margin-top: 20px;
-      font-size: 13px;
-    }
-
-    .terms-section h4 {
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    .grand-total {
-      text-align: right;
-      margin-top: 10px;
-      font-size: 15px;
-      font-weight: bold;
-    }
-  </style>
 </head>
 
-<body>
-  <div class="invoice-container">
-    <h1>Invoice</h1>
+<body style="font-family: 'Arial', sans-serif; background-color: #f4f8fb; margin: 0; padding: 0;">
 
-    <div class="header-info">
-      <div>
-        <p><strong>Invoice No:</strong> {{invoiceData.invoiceNumber}}</p>
-        <p><strong>Company Name:</strong> {{invoiceData.dealer.name}}</p>
-        {{!-- <p><strong>Phone:</strong></p> --}}
-      </div>
-      <div>
-        <p><strong>Email:</strong> {{invoiceData.dealer.email}}</p>
-        <p><strong>Invoice Date:</strong> {{invoiceData.date}}</p>
-      </div>
-    </div>
+  <div style="max-width:850px; width:100%; margin:30px auto; background-color:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); overflow:hidden; padding:20px 25px;">
 
-    <table>
-      <thead>
+    <!-- Header -->
+    <div style="border-bottom:4px solid #007b8f; padding-bottom:15px;">
+      <table style="width:100%; border-collapse:collapse;">
         <tr>
-          <th>Name</th>
-          <th>Details</th>
-          <th>Rate</th>
-          <th>Qty</th>
-          <th>Discount</th>
-          <th>Tax</th>
-          <th>Total</th>
+          <td style="vertical-align:top; width:60%;">
+            <h1 style="margin:0; font-size:26px; color:#007b8f; letter-spacing:1px;">INVOICE</h1>
+            <p style="margin:4px 0 0 0; font-size:13px; color:#555;">Engines Finder UK</p>
+          </td>
+          <td style="vertical-align:top; text-align:right; width:40%;">
+            <p style="margin:0; font-size:14px; color:#555;">
+              <strong>Invoice No:</strong>
+              <span style="color:#007b8f;">#{{invoiceData.invoiceNumber}}</span>
+            </p>
+            <p style="margin:5px 0 0 0; font-size:14px; color:#555;">
+              <strong>Invoice Date:</strong> {{invoiceData.date}}
+            </p>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        {{#each invoiceData.items}}
-        <tr>
-
-          <td>{{this.productName}}</td>
-          <td>{{this.productDetails}}</td>
-          <td>${{this.unitPrice}}</td>
-          <td>{{this.quantity}}</td>3
-          <td>{{this.discount}}</td>
-          <td>{{this.taxAmount}}</td>
-          <td>${{this.subTotal}}</td>
-        </tr>
-        {{/each}}
-      </tbody>
-    </table>
-
-    <div class="grand-total">
-      Grand Total: ${{invoiceData.grandTotal}}
+      </table>
     </div>
 
-    <div class="bank-seller">
-      {{#if invoiceData.bank}}
-      <div class="section">
-        <h3>Bank Details</h3>
-        <p><strong>Account Holder:</strong> {{invoiceData.bank.accountHolderName}}</p>
-        <p><strong>Account Number:</strong> {{invoiceData.bank.accountNumber}}</p>
-        <p><strong>Bank Name:</strong> {{invoiceData.bank.bankName}}</p>
-        <p><strong>Branch Name:</strong> {{invoiceData.bank.branchName}}</p>
-        <p><strong>IFSC:</strong> {{invoiceData.bank.ifscCode}}</p>
-        <p><strong>IBAN:</strong> {{invoiceData.bank.iban}}</p>
-        <p><strong>SWIFT:</strong> {{invoiceData.bank.swiftCode}}</p>
-      </div>
-      {{/if}}
+    <!-- To Section -->
+    <div style="margin-top:25px; background-color:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:15px;">
+      <h3 style="margin:0 0 10px 0; color:#007b8f; font-size:17px;">Dealer Details</h3>
+      <p style="margin:2px 0; font-size:14px;"><strong>Name:</strong> {{invoiceData.dealer.name}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>Email:</strong> {{invoiceData.dealer.email}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>Company:</strong> {{invoiceData.dealer.name}}</p>
+    </div>
+    
 
-      <div class="section">
-        <h3>Seller Note</h3>
-        <p>{{invoiceData.sellerNote}}</p>
-      </div>
+    <!-- Table -->
+    <div style="overflow-x:auto; margin-top:25px;">
+      <table style="width:100%; border-collapse:collapse; font-size:14px; min-width:600px;">
+        <thead>
+          <tr style="background-color:#007b8f; color:white;">
+            <th style="padding:10px; text-align:left;">Name</th>
+            <th style="padding:10px; text-align:left;">Details</th>
+            <th style="padding:10px; text-align:center;">Rate</th>
+            <th style="padding:10px; text-align:center;">Qty</th>
+            <th style="padding:10px; text-align:center;">Discount</th>
+            <th style="padding:10px; text-align:center;">Tax</th>
+            <th style="padding:10px; text-align:center;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each invoiceData.items}}
+          <tr style="border-bottom:1px solid #ddd; background-color:#fff;">
+            <td style="padding:10px;">{{this.productName}}</td>
+            <td style="padding:10px;">{{this.productDetails}}</td>
+            <td style="padding:10px; text-align:center;">${{this.unitPrice}}</td>
+            <td style="padding:10px; text-align:center;">{{this.quantity}}</td>
+            <td style="padding:10px; text-align:center;">{{this.discount}}</td>
+            <td style="padding:10px; text-align:center;">{{this.taxAmount}}</td>
+            <td style="padding:10px; text-align:center;">${{this.subTotal}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
     </div>
 
-    <div class="terms-section">
-      <h4>Quotation Terms:</h4>
-      <p>{{invoiceData.quotationTerms}}</p>
+    <!-- Grand Total -->
+    <div style="text-align:right; margin-top:25px;">
+      <p style="font-size:18px; font-weight:bold; color:#007b8f;">Grand Total: ${{invoiceData.grandTotal}}</p>
     </div>
 
-    <div class="terms-section">
-      <h4>Sales Terms:</h4>
-      <p>{{invoiceData.salesTerms}}</p>
+    <!-- Bank Details -->
+    {{#if invoiceData.bank}}
+    <div style="margin-top:25px; background-color:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:15px;">
+      <h3 style="margin:0 0 10px 0; color:#007b8f; font-size:17px;">Bank Details</h3>
+      <p style="margin:2px 0; font-size:14px;"><strong>Account Holder:</strong> {{invoiceData.bank.accountHolderName}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>Account Number:</strong> {{invoiceData.bank.accountNumber}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>Bank Name:</strong> {{invoiceData.bank.bankName}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>Branch Name:</strong> {{invoiceData.bank.branchName}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>IFSC:</strong> {{invoiceData.bank.ifscCode}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>IBAN:</strong> {{invoiceData.bank.iban}}</p>
+      <p style="margin:2px 0; font-size:14px;"><strong>SWIFT:</strong> {{invoiceData.bank.swiftCode}}</p>
+    </div>
+    {{/if}}
+
+    <!-- Seller Note -->
+    <div style="margin-top:20px; background-color:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:15px;">
+      <h3 style="margin:0 0 10px 0; color:#007b8f; font-size:17px;">Seller Note</h3>
+      <p style="margin:2px 0; font-size:14px;">{{invoiceData.sellerNote}}</p>
+    </div>
+
+    <!-- Terms -->
+    <div style="margin-top:25px;">
+      <h4 style="margin-bottom:6px; color:#007b8f; font-size:16px;">Quotation Terms:</h4>
+      <p style="margin-top:0; font-size:14px; color:#444;">{{invoiceData.quotationTerms}}</p>
+    </div>
+
+    <div style="margin-top:15px;">
+      <h4 style="margin-bottom:6px; color:#007b8f; font-size:16px;">Sales Terms:</h4>
+      <p style="margin-top:0; font-size:14px; color:#444;">{{invoiceData.salesTerms}}</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top:35px; text-align:center; border-top:2px solid #007b8f; padding-top:15px;">
+      <p style="margin:0; color:#007b8f; font-weight:bold;">Thank You For Your Purchase From Us!</p>
     </div>
   </div>
+
 </body>
 
 </html>
