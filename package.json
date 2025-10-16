@@ -5,7 +5,8 @@
   "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67",
   "scripts": {
     "dev": "turbo dev",
-    "build": "TURBO_SCM_BASE=origin/master turbo build --affected",
+    "build": "turbo build --affected",
+    "build-server": "turbo build --force",
     "start": "turbo start",
     "lint": "turbo lint",
     "format": "turbo format"
@@ -13,11 +14,5 @@
   "devDependencies": {
     "cross-env": "^10.0.0",
     "turbo": "^2.5.7"
-  },
-  "dependencies": {
-    "next": "15.5.2",
-    "next-axis": "^0.0.6",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
   }
 }

@@ -1,35 +1,53 @@
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import SendIcon from '@mui/icons-material/Send'
-import { Box, IconButton, TextField, useTheme } from '@mui/material'
-import { useState } from 'react'
+'use client';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import SendIcon from '@mui/icons-material/Send';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Tooltip,
+  useTheme,
+} from '@mui/material';
+import { useState } from 'react';
 
 interface ChatInputProps {
-  onSend: (text: string) => void
-  onAttach: () => void // New callback
-  disabled?: boolean
+  onSend: (text: string) => void | Promise<void>;
+  onQuoteClick?: () => void;
+  onInvoiceClick?: () => void;
+  disabled?: boolean;
+  isSending?: boolean;
 }
 
 export default function ChatInput({
   onSend,
-  onAttach,
+  onQuoteClick,
+  onInvoiceClick,
   disabled = false,
+  isSending = false,
 }: ChatInputProps) {
-  const [inputValue, setInputValue] = useState('')
-  const theme = useTheme()
+  const [inputValue, setInputValue] = useState('');
+  const theme = useTheme();
 
-  const handleSend = () => {
-    if (inputValue.trim()) {
-      onSend(inputValue)
-      setInputValue('')
+  const handleSend = async () => {
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue && !isSending) {
+      try {
+        await onSend(trimmedValue);
+        setInputValue('');
+      } catch (error) {
+        console.error('Failed to send message:', error);
+      }
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   return (
     <Box
@@ -41,52 +59,109 @@ export default function ChatInput({
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <IconButton
-        onClick={onAttach}
-        disabled={disabled}
-        sx={{
-          color: theme.palette.text.secondary,
-          marginRight: 1,
-        }}
-      >
-        <AttachFileIcon />
-      </IconButton>
+      <Tooltip title="Send Quotation">
+        <span>
+          <IconButton
+            disabled={isSending}
+            onClick={onQuoteClick}
+            sx={{
+              color: theme.palette.success.main,
+              marginRight: 1,
+              '&:disabled': {
+                opacity: 0.5,
+              },
+            }}
+          >
+            <RequestQuoteIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
 
-      <TextField
-        fullWidth
-        size="small"
-        variant="outlined"
-        placeholder="Type a message..."
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyPress}
-        disabled={disabled}
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 20,
-            backgroundColor: theme.palette.grey[50],
-          },
-        }}
-      />
+      <Tooltip title="Send Invoice">
+        <span>
+          <IconButton
+            disabled={isSending}
+            onClick={onInvoiceClick}
+            sx={{
+              color: theme.palette.warning.main,
+              marginRight: 1,
+              '&:disabled': {
+                opacity: 0.5,
+              },
+            }}
+          >
+            <ReceiptLongIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
 
-      <IconButton
-        color="primary"
-        onClick={handleSend}
-        disabled={!inputValue.trim() || disabled}
-        sx={{
-          backgroundColor: inputValue.trim()
-            ? theme.palette.primary.main
-            : theme.palette.grey[200],
-          color: theme.palette.common.white,
-          '&:hover': {
-            backgroundColor: inputValue.trim()
-              ? theme.palette.primary.dark
-              : theme.palette.grey[300],
-          },
-        }}
-      >
-        <SendIcon />
-      </IconButton>
+      <Box sx={{ flex: 1, position: 'relative' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder={isSending ? 'Sending...' : 'Type a message...'}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyPress}
+          disabled={disabled || isSending}
+          multiline
+          maxRows={4}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 4,
+              backgroundColor: theme.palette.background.paper,
+              pr: 6, // Make room for the send button
+              '&.Mui-disabled': {
+                backgroundColor: theme.palette.action.disabledBackground,
+              },
+            },
+          }}
+        />
+        {isSending && (
+          <CircularProgress
+            size={20}
+            sx={{
+              position: 'absolute',
+              right: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: theme.palette.text.disabled,
+            }}
+          />
+        )}
+      </Box>
+
+      <Tooltip title="Send message">
+        <span>
+          <IconButton
+            color="primary"
+            onClick={handleSend}
+            disabled={!inputValue.trim() || disabled || isSending}
+            sx={{
+              marginLeft: 1,
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+              '&:hover': {
+                backgroundColor: theme.palette.primary.dark,
+              },
+              '&:disabled': {
+                backgroundColor: theme.palette.action.disabledBackground,
+                color: theme.palette.text.disabled,
+              },
+              transition: 'all 0.2s ease-in-out',
+              '&:active': {
+                transform: 'scale(0.95)',
+              },
+            }}
+          >
+            {isSending ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <SendIcon />
+            )}
+          </IconButton>
+        </span>
+      </Tooltip>
     </Box>
-  )
+  );
 }

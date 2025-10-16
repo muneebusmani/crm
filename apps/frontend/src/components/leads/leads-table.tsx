@@ -3,19 +3,20 @@
 
 import type { Lead } from '@crm/types';
 import {
-  // Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Email as EmailIcon,
-  // FilterList as FilterListIcon,
   Info as InfoIcon,
+  ReceiptLong as ReceiptLongIcon,
+  RequestQuote as RequestQuoteIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import ChatIcon from '@mui/icons-material/Chat';
+
 import {
   Alert,
   Box,
   // Button,
-  Checkbox,
+  // Checkbox,
   Chip,
   IconButton,
   InputBase,
@@ -25,21 +26,31 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
+  TableContainer,
   TableRow,
   Typography,
   useTheme,
 } from '@mui/material';
+import { useRouter } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState } from 'react';
-import { leadsApi } from '@/services/leads.service';
 import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
+import SendInvoiceDialog from './send-invoice-dialog';
+import SendQuotationDialog from './send-quotation-dialog';
 
 const LeadsTable: React.FC = () => {
+  const router = useRouter();
+  const handleOpenChat = (leadId: number) => {
+    router.push(`/dealer/messages?leadId=${leadId}`);
+  };
+
   const theme = useTheme();
+  const ACTION_COL_WIDTH = 320;
+  const STATUS_COL_WIDTH = 140;
+  const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -51,6 +62,9 @@ const LeadsTable: React.FC = () => {
   const [openEmailDialog, setOpenEmailDialog] = useState(false);
   const [openInfoDialog, setOpenInfoDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
+  const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
+  const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -63,8 +77,20 @@ const LeadsTable: React.FC = () => {
   const fetchLeads = async () => {
     setLoading(true); // start loading
     try {
-      const leadsData = await leadsApi.getAll();
-      setLeads(leadsData);
+      const res = await fetch('/api/leads');
+      // console.log('Why Response is not okay', res.status);
+      if (!res.ok) throw new Error('Failed to fetch leads');
+      const leadsData = (await res.json()) as Lead[];
+      console.log('Leads Data:', leadsData);
+      const sortedLeads = leadsData.sort(
+        (a, b) =>
+          new Date(b.createdAt as unknown as Date).getTime() -
+          new Date(a.createdAt as unknown as Date).getTime(),
+      );
+      setLeads(sortedLeads);
+      // setLeads(leadsData); regular leads
+      // const reversedleads = leadsData.reverse();
+      // setLeads(reversedleads); reverse leads
     } catch (error) {
       setSnackbar({
         open: true,
@@ -80,7 +106,9 @@ const LeadsTable: React.FC = () => {
   const fetchLeadById = async (id: number) => {
     setLoading(true);
     try {
-      const leadData = await leadsApi.getOne(id);
+      const res = await fetch(`/api/leads/${id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch lead info');
+      const leadData = (await res.json()) as Lead;
       setSelectedLead(leadData);
       return leadData;
     } catch (error) {
@@ -170,21 +198,45 @@ const LeadsTable: React.FC = () => {
   };
 
   const handleActionClick = async (action: string, lead: Lead) => {
-    setSelectedLead(lead);
     switch (action) {
-      case 'email':
-        setOpenEmailDialog(true);
-        break;
       case 'edit':
+        setSelectedLead(lead);
         setOpenEditDialog(true);
         break;
+
       case 'info': {
-        const detailedLead = await fetchLeadById(lead.id!);
-        if (detailedLead) {
-          setOpenInfoDialog(true);
+        // Set the selected lead with basic info
+        setSelectedLead(lead);
+        setOpenInfoDialog(true);
+
+        // Load detailed info in the background
+        if (!lead.email || !lead.vehicle_brand) {
+          // Only fetch if we don't have basic details
+          try {
+            setIsInfoDialogLoading(true);
+            const detailedLead = await fetchLeadById(lead.id!);
+            if (detailedLead) {
+              setSelectedLead((prev) => ({
+                ...prev,
+                ...detailedLead,
+                // Preserve any existing fields that might be missing in the detailed response
+                ...(prev?.name && !detailedLead.name
+                  ? { name: prev.name }
+                  : {}),
+                ...(prev?.email && !detailedLead.email
+                  ? { email: prev.email }
+                  : {}),
+              }));
+            }
+          } catch (error) {
+            console.error('Error fetching lead details:', error);
+          } finally {
+            setIsInfoDialogLoading(false);
+          }
         }
         break;
       }
+
       default:
         break;
     }
@@ -192,10 +244,13 @@ const LeadsTable: React.FC = () => {
 
   const handleLeadSave = async (updatedLead: Lead) => {
     try {
-      await leadsApi.update({
-        // id: updatedLead.id,
-        ...updatedLead,
+      const res = await fetch('/api/leads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...updatedLead }),
       });
+      if (!res.ok) throw new Error('Failed to update lead');
       setSnackbar({
         open: true,
         message: `Lead "${updatedLead.name}" updated successfully`,
@@ -213,7 +268,11 @@ const LeadsTable: React.FC = () => {
 
   const handleLeadDelete = async (leadId: number) => {
     try {
-      await leadsApi.delete(leadId);
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete lead');
       setSnackbar({
         open: true,
         message: `Lead #${leadId} deleted successfully`,
@@ -279,7 +338,7 @@ const LeadsTable: React.FC = () => {
       (lead.vehicle_reg || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const rowsPerPage = 7;
+  const rowsPerPage = 10;
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
   const startIndex = (page - 1) * rowsPerPage;
   const currentLeads = filteredLeads.slice(
@@ -370,29 +429,55 @@ const LeadsTable: React.FC = () => {
         </Box>
 
         {/* Table */}
-        <TableContainer>
-          <Table stickyHeader aria-label="leads table">
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table
+            stickyHeader
+            aria-label="leads table"
+            sx={{
+              minWidth: TABLE_MIN_WIDTH,
+              tableLayout: 'auto',
+              '& th, & td': { whiteSpace: 'nowrap' },
+              '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
+              '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 240 }, // Email
+              '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
+              '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // Make
+              '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // Model
+              '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // VRM
+              '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Registration
+              '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 280 }, // Additional Notes
+              '& th:nth-of-type(9), & td:nth-of-type(9)': { minWidth: 140 }, // Fuel Type
+              '& th:nth-of-type(10), & td:nth-of-type(10)': { minWidth: 180 }, // Engine Title
+              '& th:nth-of-type(11), & td:nth-of-type(11)': { minWidth: 140 }, // Engine Capacity
+              '& th:nth-of-type(12), & td:nth-of-type(12)': { minWidth: 180 }, // Recieved at
+              '& th:nth-of-type(13), & td:nth-of-type(13)': {
+                minWidth: STATUS_COL_WIDTH,
+              }, // Status
+              '& th:nth-of-type(14), & td:nth-of-type(14)': {
+                minWidth: ACTION_COL_WIDTH,
+              }, // Action
+            }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    indeterminate={
-                      selectedRows.length > 0 &&
-                      selectedRows.length < currentLeads.length
-                    }
-                    checked={
-                      currentLeads.length > 0 &&
-                      selectedRows.length === currentLeads.length
-                    }
-                    onChange={() => {
-                      if (selectedRows.length === currentLeads.length) {
-                        setSelectedRows([]);
-                      } else {
-                        setSelectedRows(currentLeads.map((lead) => lead.id!));
-                      }
-                    }}
-                  />
-                </TableCell>
+                {/* <TableCell padding="checkbox"> */}
+                {/*   <Checkbox */}
+                {/*     indeterminate={ */}
+                {/*       selectedRows.length > 0 && */}
+                {/*       selectedRows.length < currentLeads.length */}
+                {/*     } */}
+                {/*     checked={ */}
+                {/*       currentLeads.length > 0 && */}
+                {/*       selectedRows.length === currentLeads.length */}
+                {/*     } */}
+                {/*     onChange={() => { */}
+                {/*       if (selectedRows.length === currentLeads.length) { */}
+                {/*         setSelectedRows([]); */}
+                {/*       } else { */}
+                {/*         setSelectedRows(currentLeads.map((lead) => lead.id!)); */}
+                {/*       } */}
+                {/*     }} */}
+                {/*   /> */}
+                {/* </TableCell> */}
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
                     Name
@@ -405,7 +490,23 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
-                    Vehicle Model
+                    Phone
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Make
+                  </Typography>
+                </TableCell>
+
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Model
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    VRM
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -415,15 +516,51 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
+                    Additional Notes
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Fuel Type
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Engine Title
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Engine Capacity
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Recieved at
+                  </Typography>
+                </TableCell>
+                <TableCell
+                  sx={{
+                    position: 'sticky',
+                    right: ACTION_COL_WIDTH,
+                    backgroundColor: theme.palette.background.paper,
+                    zIndex: 4,
+                    minWidth: STATUS_COL_WIDTH,
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight="bold">
                     Status
                   </Typography>
                 </TableCell>
-                {/* <TableCell> */}
-                {/*   <Typography variant="subtitle2" fontWeight="bold"> */}
-                {/*     Created Date */}
-                {/*   </Typography> */}
-                {/* </TableCell> */}
-                <TableCell>
+                <TableCell
+                  sx={{
+                    position: 'sticky',
+                    right: 0,
+                    backgroundColor: theme.palette.background.paper,
+                    zIndex: 4,
+                    minWidth: ACTION_COL_WIDTH,
+                  }}
+                >
                   <Typography variant="subtitle2" fontWeight="bold">
                     Action
                   </Typography>
@@ -433,35 +570,84 @@ const LeadsTable: React.FC = () => {
             <TableBody>
               {currentLeads.map((lead) => (
                 <TableRow key={lead.id}>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={selectedRows.includes(lead.id!)}
-                      onChange={() => handleRowSelect(lead.id!)}
-                    />
+                  {/* <TableCell padding="checkbox"> */}
+                  {/*   <Checkbox */}
+                  {/*     checked={selectedRows.includes(lead.id!)} */}
+                  {/*     onChange={() => handleRowSelect(lead.id!)} */}
+                  {/*   /> */}
+                  {/* </TableCell> */}
+                  <TableCell>
+                    <Typography>{lead.name || '-'}</Typography>
+                  </TableCell>
+                  <TableCell>{lead.email || '-'}</TableCell>
+                  <TableCell>{lead.number || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_brand || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_model || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_vrm || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_reg || '-'}</TableCell>
+                  <TableCell>
+                    {lead.description
+                      ? lead.description.length > 15
+                        ? `${lead.description.slice(0, 15)}...`
+                        : lead.description
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>{lead.fuelType || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_title || '-'}</TableCell>
+                  <TableCell>
+                    {lead.engin_capacity ? `${lead.engin_capacity}.0L` : '-'}
                   </TableCell>
                   <TableCell>
-                    <Typography>{lead.name || 'N/A'}</Typography>
+                    {new Date(
+                      lead.createdAt as unknown as string,
+                    ).toLocaleString()}
                   </TableCell>
-                  <TableCell>{lead.email || 'N/A'}</TableCell>
-                  <TableCell>{lead.vehicle_model || 'N/A'}</TableCell>
-                  <TableCell>{lead.vehicle_reg || 'N/A'}</TableCell>
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      right: ACTION_COL_WIDTH,
+                      backgroundColor: theme.palette.background.paper,
+                      zIndex: 3,
+                      minWidth: STATUS_COL_WIDTH,
+                    }}
+                  >
                     <Chip
                       label={lead.status || 'Unknown'}
                       color={getStatusColor(lead.status)}
                       size="small"
                     />
                   </TableCell>
-                  {/* <TableCell>{formatDate(lead.createdAt)}</TableCell> */}
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      right: 0,
+                      backgroundColor: theme.palette.background.paper,
+                      zIndex: 3,
+                      minWidth: ACTION_COL_WIDTH,
+                    }}
+                  >
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
                         size="small"
-                        onClick={() => handleActionClick('email', lead)}
-                        title="Send Email"
-                        disabled={!lead.email}
+                        color="primary"
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setOpenQuotationDialog(true);
+                        }}
+                        title="Send Quotation"
                       >
-                        <EmailIcon fontSize="small" />
+                        <RequestQuoteIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="warning"
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setOpenInvoiceDialog(true);
+                        }}
+                        title="Send Invoice"
+                      >
+                        <ReceiptLongIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
@@ -476,6 +662,14 @@ const LeadsTable: React.FC = () => {
                         title="View Info"
                       >
                         <InfoIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleOpenChat(lead.id!)}
+                        title="Open Chat"
+                      >
+                        <ChatIcon />
                       </IconButton>
                       <IconButton
                         size="small"
@@ -542,6 +736,33 @@ const LeadsTable: React.FC = () => {
             open={openInfoDialog}
             onClose={() => setOpenInfoDialog(false)}
             lead={selectedLead}
+            isLoading={isInfoDialogLoading}
+          />
+
+          <SendQuotationDialog
+            open={openQuotationDialog}
+            onClose={() => setOpenQuotationDialog(false)}
+            leadId={selectedLead.id ?? null}
+            onSuccess={() =>
+              setSnackbar({
+                open: true,
+                message: 'Quotation sent successfully',
+                severity: 'success',
+              })
+            }
+          />
+
+          <SendInvoiceDialog
+            open={openInvoiceDialog}
+            onClose={() => setOpenInvoiceDialog(false)}
+            leadId={selectedLead.id ?? null}
+            onSuccess={() =>
+              setSnackbar({
+                open: true,
+                message: 'Invoice sent successfully',
+                severity: 'success',
+              })
+            }
           />
         </>
       )}

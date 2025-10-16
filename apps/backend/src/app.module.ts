@@ -12,6 +12,12 @@ import { LeadsModule } from './leads/leads.module';
 import { LeadMessageModule } from './leads-messages/lead-message.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
+import { InvoiceModule } from './invoices/invocie.module';
+import { BankDeatil } from './bank-details/bank-detail.module';
+import { SeederModule } from './seeder/seeder.module';
+import { DealerTierModule } from './dealer-tier/dealer-tier.module';
+import { MessagesModule } from './dealer-chat/messages.module';
+import { BusinessSettingModule } from './business-setting/business-setting.module';
 
 @Module({
   imports: [
@@ -29,6 +35,7 @@ import { DealerModule } from './user/dealer/dealer.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        // synchronize: true,
         entities: [`${__dirname}/**/*.entity{.ts,.js}`],
         logging: configService.get('NODE_ENV') === 'development',
       }),
@@ -38,9 +45,15 @@ import { DealerModule } from './user/dealer/dealer.module';
     AuthModule,
     AdminModule,
     DealerModule,
+    MessagesModule,
     ActivityLogModule,
     LeadMessageModule,
+    BusinessSettingModule,
+    DealerTierModule,
+    SeederModule,
     AnalyticsModule,
+    InvoiceModule,
+    BankDeatil,
   ],
   controllers: [AppController],
   providers: [

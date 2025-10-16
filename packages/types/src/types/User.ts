@@ -15,5 +15,6 @@ export interface User {
 export interface Login {
   data: User;
   accessToken: string;
+  refreshToken: string;
 }
 export type Register = Login;

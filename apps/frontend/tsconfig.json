@@ -20,8 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
+      "@redux/*": ["./src/lib/redux/*"],
       "@actions/*": ["./src/actions/*"],
-      "@adapters/*": ["./src/adapters/*"],
       "@lib/*": ["./src/lib/*"],
       "@services/*": ["./src/services/*"],
       "@components/*": ["./src/components/*"],

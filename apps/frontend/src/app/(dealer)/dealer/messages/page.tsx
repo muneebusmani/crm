@@ -1,5 +1,18 @@
-import ChatStateProvider from "./components/chat-state-provider";
+// @ts-nocheck
+import { cookies, type UnsafeUnwrappedCookies } from 'next/headers';
+import { use } from 'react';
+import { get } from '@/lib/api';
+import ChatContainer from './components/chat-container';
 
+function getDealer(): { name: string } {
+  return use(
+    get(
+      `/dealers/${use(cookies() as unknown as UnsafeUnwrappedCookies).get('id')?.value}`,
+    ),
+  );
+}
 export default function ChatPage() {
-  return <ChatStateProvider />;
+  const { name: dealerName } = getDealer();
+
+  return <ChatContainer dealerName={dealerName} />;
 }

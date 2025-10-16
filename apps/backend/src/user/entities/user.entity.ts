@@ -1,5 +1,11 @@
 import { UserType, UserStatus } from '@crm/types';
-import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('user')
 export class User {
@@ -25,7 +31,7 @@ export class User {
   })
   type!: UserType;
 
-    @Column({
+  @Column({
     type: 'enum',
     enum: UserStatus,
     default: UserStatus.ACTIVE,
@@ -43,7 +49,6 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   resetPasswordToken!: string | null;
 
-
   @Column({ type: 'timestamptz', nullable: true })
   resetPasswordExpires!: Date | null;
 
@@ -53,7 +58,22 @@ export class User {
   @OneToMany('Quotation', 'dealer') // 'Quotation' is the target, 'dealer' is property in Quotation
   quotations!: any[];
 
+  @OneToMany('invoices', 'dealer') // 'Quotation' is the target, 'dealer' is property in Quotation
+  invoices!: any[];
+
   @OneToMany('LeadMessage', 'dealer')
   messages!: any[];
+
+  @OneToMany('BankDetails', 'user')
+  bankDetails!: any[];
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at!: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at!: Date;
+  
+  @Column({ nullable: true })
+  refreshToken!: string
 
 }

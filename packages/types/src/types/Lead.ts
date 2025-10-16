@@ -2,6 +2,7 @@
 
 export interface Lead {
   id: number;
+  number: string;
   vehicle_model?: string;
   vehicle_reg?: string;
   vehicle_brand?: string;
@@ -30,4 +31,6 @@ export interface Lead {
   assigned_to?: string;
   follow_up_date?: Date;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

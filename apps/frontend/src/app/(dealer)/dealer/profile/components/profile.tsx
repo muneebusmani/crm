@@ -1,6 +1,16 @@
+// @ts-nocheck
 'use client';
-import type { Dealer } from '@crm/types';
-import { Close, LocationOn, Person, Settings, Web } from '@mui/icons-material';
+import type { Dealer, User } from '@crm/types';
+import {
+  EmojiEvents,
+  MilitaryTech,
+  WorkspacePremium,
+  LocationOn,
+  Person,
+  Settings,
+  Web,
+  Close,
+} from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -11,54 +21,72 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   Grid,
   IconButton,
   TextField,
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type React from 'react';
 import { useEffect, useState } from 'react';
-import * as api from '@/lib/api';
-import axios from 'axios';
+import { get, put } from '@/lib/api';
+import BankDetailsSection from './bank-details-selection';
 
-// biome-ignore lint/suspicious/noExplicitAny: <any>
-const Profile = ({ id }: { id: any }) => {
+interface DealerData extends User {
+  dealer: Dealer;
+}
+interface DealerInfo {
+  id: number;
+  email: string;
+  username: string;
+  name: string;
+  owner: string;
+  location: string;
+  logo: string;
+  website: string;
+  contactEmail: string;
+  tierId?: number;
+  tierName?: string;
+}
+
+const Profile = () => {
   const theme = useTheme();
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [profileData, setProfileData] = useState<Dealer | null>(null);
+  const [profileData, setProfileData] = useState<DealerInfo>();
   const [loading, setLoading] = useState(true);
+  // Business Settings state
+  const [salesTerms, setSalesTerms] = useState('');
+  const [quotationTerms, setQuotationTerms] = useState('');
+  const [bsLoading, setBsLoading] = useState(false);
+  const [bsSaving, setBsSaving] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        console.log(id);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
-        );
-        console.log(response.data);
-        if (response.status !== 200) throw new Error('Failed to fetch profile');
+        const userData = await get<DealerData>('/dealers/profile/me');
+        console.log('response: ', userData);
 
-        const userData = await response.data;
+        const {
+          id,
+          email,
+          username,
+          dealer: { dealerTierCredits, ...dealerRest },
+        } = userData;
 
-        const dealer = userData.dealer;
+        // Extract tier data from dealerTierCredits[0].tier if available
+        const tierData = dealerTierCredits?.[0]?.tier;
+        const tierId = tierData?.id ?? dealerRest.tierId;
+        const tierName = tierData?.name ?? 'No Tier Assigned';
+
         const profile = {
-          id: userData.id,
-          email: userData.email,
-          username: userData.username,
-          name: dealer?.name || '',
-          owner: dealer?.owner || '',
-          location: dealer?.location || '',
-          logo: dealer?.logo || '/static/images/avatar/default.jpg',
-          website: dealer?.website || '',
-          contactEmail: dealer?.contactEmail || '',
-          tierId: dealer?.tier?.id,
+          id,
+          email,
+          username,
+          ...dealerRest,
+          tierId,
+          tierName,
         };
-        console.log('Logo===>', profile.logo);
-
-        setProfileData(profile as Dealer);
+        setProfileData(profile);
       } catch (err) {
         console.error('Failed to load profile:', err);
       } finally {
@@ -67,7 +95,49 @@ const Profile = ({ id }: { id: any }) => {
     };
 
     fetchProfile();
-  }, [id]);
+  }, []);
+
+  const saveBusinessSettings = async () => {
+    try {
+      setBsSaving(true);
+      const payload = {
+        salesTerms: salesTerms.trim(),
+        quotation: quotationTerms.trim(),
+      };
+      const resp = await fetch('/api/business-setting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error('Failed to save business settings');
+      alert('Business settings saved');
+    } catch (err) {
+      console.error('Saving business settings failed:', err);
+      alert('Failed to save business settings. Please try again.');
+    } finally {
+      setBsSaving(false);
+    }
+  };
+
+  // Load Business Settings (quotation + sales terms)
+  useEffect(() => {
+    const loadBusinessSettings = async () => {
+      try {
+        setBsLoading(true);
+        const resp = await fetch('/api/business-setting', { credentials: 'include' });
+        if (!resp.ok) throw new Error('Failed to load business settings');
+        const data = await resp.json();
+        setSalesTerms(data?.salesTerms ?? '');
+        setQuotationTerms(data?.quotation ?? '');
+      } catch (err) {
+        console.error('Failed to load business settings:', err);
+      } finally {
+        setBsLoading(false);
+      }
+    };
+    loadBusinessSettings();
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -80,6 +150,13 @@ const Profile = ({ id }: { id: any }) => {
     website: '',
     contactEmail: '',
     tierId: 1,
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    phone: '',
+    fax: '',
   });
 
   if (loading) {
@@ -111,6 +188,13 @@ const Profile = ({ id }: { id: any }) => {
         website: profileData.website,
         contactEmail: profileData.contactEmail,
         tierId: profileData.tierId || 1,
+        address: profileData.address || '',
+        city: profileData.city || '',
+        state: profileData.state || '',
+        zip: profileData.zip || '',
+        country: profileData.country || '',
+        phone: profileData.phone || '',
+        fax: profileData.fax || '',
       });
     }
     setOpenEditDialog(true);
@@ -139,38 +223,33 @@ const Profile = ({ id }: { id: any }) => {
         password: formData.password || '',
       };
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/dealers/${profileData.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(dataToSend),
-        },
+      const updatedData = await put<DealerData>(
+        '/dealers/profile/me',
+        dataToSend,
       );
 
-      if (!response.ok) throw new Error('Failed to update profile');
+      const {
+        id,
+        email,
+        username,
+        dealer: { dealerTierCredits, ...dealerRest },
+      } = updatedData;
 
-      const updatedData = await response.json();
+      // Extract tier data from dealerTierCredits[0].tier if available
+      const tierData = dealerTierCredits?.[0]?.tier;
+      const tierId = tierData?.id ?? dealerRest.tierId;
+      const tierName = tierData?.name ?? 'No Tier Assigned';
 
-      const dealer = updatedData.dealer;
       const updatedProfile = {
-        id: updatedData.id,
-        email: updatedData.email,
-        username: updatedData.username,
-        name: dealer?.name || profileData.name,
-        owner: dealer?.owner || profileData.owner,
-        location: dealer?.location || profileData.location,
-        logo: dealer?.logo || profileData.logo,
-        website: dealer?.website || profileData.website,
-        contactEmail: dealer?.contactEmail || profileData.contactEmail,
-        tierId: dealer?.tier?.id || profileData.tierId,
+        id,
+        email,
+        username,
+        ...dealerRest,
+        tierId,
+        tierName,
       };
 
-      setProfileData(updatedProfile as Dealer);
+      setProfileData(updatedProfile);
       setOpenEditDialog(false);
       alert('Profile updated successfully!');
     } catch (err) {
@@ -256,47 +335,69 @@ const Profile = ({ id }: { id: any }) => {
       {/* </Box> */}
 
       {/* MAIN GRID */}
-      <Grid container spacing={3}>
+      <Grid spacing={3}>
         {/* LEFT COLUMN */}
         <Grid size={{ xs: 12, md: 4 }}>
-          {/* <Card sx={{ mb: 2 }}> */}
-          {/*   <CardContent> */}
-          {/*     <Typography variant="h6" gutterBottom> */}
-          {/*       Dealer Tier Status */}
-          {/*     </Typography> */}
-          {/* Progress bar logic can be dynamic later */}
-          {/*     <Box sx={{ width: '100%', mb: 2 }}> */}
-          {/*       <Box */}
-          {/*         sx={{ */}
-          {/*           display: 'flex', */}
-          {/*           justifyContent: 'space-between', */}
-          {/*           mb: 1, */}
-          {/*         }} */}
-          {/*       > */}
-          {/*         <Typography variant="body2">65%</Typography> */}
-          {/*         <Typography variant="body2">Tier Progress</Typography> */}
-          {/*       </Box> */}
-          {/*       <Box */}
-          {/*         sx={{ */}
-          {/*           width: '100%', */}
-          {/*           height: 8, */}
-          {/*           bgcolor: '#e0e0e0', */}
-          {/*           borderRadius: 1, */}
-          {/*         }} */}
-          {/*       > */}
-          {/*         <Box */}
-          {/*           sx={{ */}
-          {/*             width: '65%', */}
-          {/*             height: '100%', */}
-          {/*             bgcolor: theme.palette.success.main, */}
-          {/*             borderRadius: 1, */}
-          {/*           }} */}
-          {/*         /> */}
-          {/*       </Box> */}
-          {/*     </Box> */}
-          {/*   </CardContent> */}
-          {/* </Card> */}
+          {/* Tier Status Card */}
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Tier
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    bgcolor: profileData.tierName
+                      ?.toLowerCase()
+                      .includes('gold')
+                      ? '#FFD700'
+                      : profileData.tierName?.toLowerCase().includes('silver')
+                        ? '#C0C0C0'
+                        : profileData.tierName?.toLowerCase().includes('bronze')
+                          ? '#CD7F32'
+                          : theme.palette.primary.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: theme.palette.getContrastText(
+                      profileData.tierName?.toLowerCase().includes('gold')
+                        ? '#FFD700'
+                        : profileData.tierName?.toLowerCase().includes('silver')
+                          ? '#C0C0C0'
+                          : profileData.tierName
+                                ?.toLowerCase()
+                                .includes('bronze')
+                            ? '#CD7F32'
+                            : theme.palette.primary.main,
+                    ),
+                  }}
+                >
+                  {profileData.tierName?.toLowerCase().includes('gold') ? (
+                    <EmojiEvents fontSize="small" />
+                  ) : profileData.tierName?.toLowerCase().includes('silver') ? (
+                    <MilitaryTech fontSize="small" />
+                  ) : profileData.tierName?.toLowerCase().includes('bronze') ? (
+                    <WorkspacePremium fontSize="small" />
+                  ) : (
+                    <Typography fontWeight="bold">N/A</Typography>
+                  )}
+                </Box>
+                <Box>
+                  <Typography variant="body1" fontWeight="bold">
+                    {profileData.tierName || 'No Tier Assigned'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Current subscription level
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
 
+          {/* Info Card */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -396,6 +497,10 @@ const Profile = ({ id }: { id: any }) => {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
+                      sx={{
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
                     >
                       {profileData.website}
                     </Typography>
@@ -405,44 +510,54 @@ const Profile = ({ id }: { id: any }) => {
             </CardContent>
           </Card>
 
-          {/* Recent Activity (unchanged) */}
-          <Card>
+          {/* Business Settings (Quotation & Sales Terms) */}
+          <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 2,
-                }}
-              >
-                <Typography variant="h6">Recent Activity</Typography>
-                <Box>
-                  <Button size="small">Today</Button>
-                  <Button size="small">Weekly</Button>
-                  <Button size="small">Monthly</Button>
-                </Box>
-              </Box>
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'start', mb: 2 }}>
-                <Avatar
-                  src="/static/images/avatar/jacqueline.jpg"
-                  alt="Jacqueline Steve"
-                />
-                <Box>
-                  <Typography variant="subtitle2">Jacqueline Steve</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Updated product catalog at 05:16 PM
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-                Bought Something
+              <Typography variant="h6" gutterBottom>
+                Quotation & Sales Terms
               </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TextField
+                  label="Quotation Terms"
+                  value={quotationTerms}
+                  onChange={(e) => setQuotationTerms(e.target.value)}
+                  multiline
+                  minRows={4}
+                  placeholder="Enter quotation terms shown to customers in quotation emails"
+                  disabled={bsLoading}
+                  helperText={`${Math.max(0, quotationTerms.trim().length)} chars`}
+                />
+                <TextField
+                  label="Sales Terms"
+                  value={salesTerms}
+                  onChange={(e) => setSalesTerms(e.target.value)}
+                  multiline
+                  minRows={4}
+                  placeholder="Enter sales terms included in quotation emails"
+                  disabled={bsLoading}
+                  helperText={`${Math.max(0, salesTerms.trim().length)} chars`}
+                />
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    onClick={saveBusinessSettings}
+                    disabled={
+                      bsSaving ||
+                      quotationTerms.trim().length < 10 ||
+                      salesTerms.trim().length < 10
+                    }
+                  >
+                    {bsSaving ? 'Saving…' : 'Save Terms'}
+                  </Button>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
+
+          {/* Bank Details Section */}
+          <Box sx={{ mt: 3 }}>
+            <BankDetailsSection />
+          </Box>
         </Grid>
       </Grid>
 
@@ -578,19 +693,14 @@ const Profile = ({ id }: { id: any }) => {
                 />
               </Grid>
             </Grid>
+            <DialogActions>
+              <Button onClick={handleCloseEditDialog}>Cancel</Button>
+              <Button type="submit" variant="contained" color="primary">
+                Save Changes
+              </Button>
+            </DialogActions>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
       </Dialog>
     </Box>
   );

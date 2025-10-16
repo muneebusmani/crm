@@ -6,10 +6,13 @@ networks:
 
 services:
   frontend:
-    build: ./apps/frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-runtime
     container_name: crm-frontend
     env_file:
-      - .env.frontend
+      - ./apps/frontend/.env.production
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm-frontend.rule=Host(`crm.enginesmarket.co.uk`)"
@@ -23,14 +26,19 @@ services:
     networks:
       - web
     restart: unless-stopped
+    volumes:
+      - frontend_node_modules:/app/node_modules
     depends_on:
       - backend
 
   backend:
-    build: ./apps/backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-runtime
     container_name: crm-backend
     env_file:
-      - .env.backend
+      - ./apps/backend/.env.production
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm-backend.rule=Host(`api-crm.enginesmarket.co.uk`)"
@@ -44,3 +52,8 @@ services:
     networks:
       - web
     restart: unless-stopped
+    volumes:
+      - backend_node_modules:/app/node_modules
+volumes:
+  frontend_node_modules:
+  backend_node_modules:

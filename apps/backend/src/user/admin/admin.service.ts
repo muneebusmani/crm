@@ -1,6 +1,16 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <idk> */
-import { UserStatus, UserType, type CreateAdminDto, type UpdateAdminDto, type UpdateUserDto } from '@crm/types';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  UserStatus,
+  UserType,
+  type CreateAdminDto,
+  type UpdateAdminDto,
+  type UpdateUserDto,
+} from '@crm/types';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
@@ -16,7 +26,7 @@ export class AdminService {
     private adminRepository: Repository<Admin>,
     @InjectRepository(AdminRole)
     private adminRoleRepository: Repository<AdminRole>,
-  ) { }
+  ) {}
 
   async createAdmin(dto: CreateAdminDto) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -120,8 +130,6 @@ export class AdminService {
     });
   }
 
-
-
   async deleteAdmin(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -160,7 +168,7 @@ export class AdminService {
       }
       return await this.userRepository.save(user);
     } catch (error: unknown) {
-      throw new CustomError('Unable to update dealer status')
+      throw new CustomError('Unable to update dealer status');
     }
   }
 
@@ -174,9 +182,7 @@ export class AdminService {
 
       return await this.userRepository.save(user);
     } catch (error: unknown) {
-      throw new CustomError('Unable to suspend leads')
+      throw new CustomError('Unable to suspend leads');
     }
   }
-
-
 }

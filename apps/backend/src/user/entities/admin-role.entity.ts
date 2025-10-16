@@ -4,14 +4,20 @@ import { Admin } from './admin.entity';
 @Entity('admin_role')
 export class AdminRole {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  name: string;
+  name!: string;
 
   @OneToMany(
     () => Admin,
     (admin) => admin.adminRole,
   )
-  admins: Admin[];
+  admins!: Admin[];
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at!: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at!: Date;
 }

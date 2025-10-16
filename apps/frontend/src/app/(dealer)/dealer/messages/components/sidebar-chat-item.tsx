@@ -1,3 +1,4 @@
+'use client';
 import { Box, styled, Typography } from '@mui/material';
 import Image from 'next/image';
 
@@ -18,7 +19,6 @@ interface SidebarChatItemProps {
   lastMessage: string;
   timestamp: string;
   avatarUrl: string;
-  isSelected: boolean;
   onClick: () => void;
 }
 
@@ -27,7 +27,6 @@ export default function SidebarChatItem({
   lastMessage,
   timestamp,
   avatarUrl,
-  isSelected,
   onClick,
 }: SidebarChatItemProps) {
   return (

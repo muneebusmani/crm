@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity('lead_messages')
 export class LeadMessage {
@@ -14,6 +20,13 @@ export class LeadMessage {
   @ManyToOne('Lead', 'messages', { eager: true })
   lead!: any;
 
-  @CreateDateColumn()
+  @Column({ default: 'message' })
+  type!: string;
+
+  @Column({
+    name: 'createdAt',
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt!: Date;
 }

@@ -1,17 +1,23 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Dealer } from './dealer.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
 @Entity('dealer_tier')
 export class DealerTier {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
-  @Column({ unique: true })
-  name: string;
+  @Column()
+  name!: string;
 
-  @OneToMany(
-    () => Dealer,
-    (dealer) => dealer.tier,
-  )
-  dealers: Dealer[];
+  @Column({ type: 'int' })
+  creditLimit!: number;
+
+  // Relation with DealerTierCredit
+  @OneToMany('DealerTierCredit', 'tier')
+  dealerTierCredits!: any[];
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at!: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at!: Date;
 }

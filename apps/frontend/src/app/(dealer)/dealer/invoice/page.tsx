@@ -1048,4 +1048,3 @@ const InvoiceDialog: React.FC = () => {
 };
 
 export default InvoiceDialog;
-

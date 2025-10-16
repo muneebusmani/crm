@@ -1,12 +1,22 @@
+import { Dealer, Lead } from '@crm/types';
+
 export interface Message {
   id: string;
-  text: string;
-  sender: "user" | "other";
-  timestamp: Date;
+  content: string;
+  type: 'message' | 'quotation' | 'invoice';
+  createdAt: string;
+  dealer?: Dealer;
+  lead?: Lead;
 }
 
-export type ChatContextType = {
-  messages: Message[];
-  addMessage: (text: string) => void;
-  isLoading: boolean;
-};
+export interface QuotationMessage {
+  id: string;
+  type: 'quotation';
+  sender: string;
+  timestamp: string; // ISO string from API
+  senderName: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  subject: string;
+  message: string;
+  price: number;
+}

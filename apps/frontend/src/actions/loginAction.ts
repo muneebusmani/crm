@@ -1,23 +1,26 @@
+// @ts-nocheck
+// WARN: DO Not Touch This File
 'use server';
 
 import { type Login, type LoginDto, UserType } from '@crm/types';
 import axios from 'axios';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import * as api from '@/lib/api';
+import { post2 } from '@/lib/api';
 
-export async function loginAction(formData: FormData) {
+export async function loginAction(_, formData: FormData) {
   try {
-    const formdata = {
+    const formdata: LoginDto = {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
     };
-    const data = (await api.post('/auth/login', formdata)) as any;
-    // console.log('data ===>', data);
-    const userType = data?.user.type as UserType;
-    const token = data?.accessToken as string;
+    // const data = await post2(
+    const {
+      user: { type: userType, id },
+      accessToken,
+      refreshToken,
+    } = await post2<Login, LoginDto>(`/auth/login`, formdata);
 
-    // expiry values in seconds (to match cookie maxAge)
     const expiryMap: Record<UserType | 'DEFAULT', number> = {
       [UserType.ADMIN]: 24 * 60 * 60, // 24 hrs
       [UserType.DEALER]: 7 * 24 * 60 * 60, // 7 days
@@ -34,11 +37,12 @@ export async function loginAction(formData: FormData) {
       path: '/',
       sameSite: 'strict' as const,
     };
-    if (!token) console.error('Token not sent from API');
+    if (!accessToken) console.error('Token not sent from API');
 
-    cookieStore.set('token', token, commonOptions);
+    cookieStore.set('id', id.toString(), commonOptions);
     cookieStore.set('user_type', userType, commonOptions);
-    cookieStore.set('id', data?.user.id.toString() as string, commonOptions);
+    cookieStore.set('access_token', accessToken, commonOptions);
+    cookieStore.set('refresh_token', refreshToken, commonOptions);
 
     const redirectMap: Record<UserType, string> = {
       [UserType.ADMIN]: '/admin',
@@ -47,84 +51,19 @@ export async function loginAction(formData: FormData) {
 
     const target = redirectMap[userType];
     if (target) {
-      redirect(target);
+      return { success: true, target, message: 'Login successful' };
+      // redirect(target);
     }
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-      throw error; // Re-throw redirect errors
+      throw error;
     }
     if (axios.isAxiosError(error)) {
-      console.error(error.response?.data); // server response error
+      console.error(error.response?.data);
+      return { message: error.response?.data };
     } else {
-      console.error(error); // other errors
+      console.error(error);
+      return { message: error };
     }
   }
 }
-
-// 'use server';
-//
-// import { type Login, type LoginDto, UserType } from '@crm/types';
-// import axios from 'axios';
-// import { cookies } from 'next/headers';
-// import { redirect } from 'next/navigation';
-// import * as api from '@/lib/api';
-//
-// export async function loginAction(formData: FormData) {
-//   try {
-//     const formdata = {
-//       email: formData.get('email') as string,
-//       password: formData.get('password') as string,
-//     };
-//     const res = await axios.post(
-//       `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-//       formdata,
-//     );
-//     const data = res.data;
-//     console.log('data ===>', data);
-//     const userType = data?.data.type as UserType;
-//     const token = data?.accessToken as string;
-//
-//     // expiry values in seconds (to match cookie maxAge)
-//     const expiryMap: Record<UserType | 'DEFAULT', number> = {
-//       [UserType.ADMIN]: 24 * 60 * 60, // 24 hrs
-//       [UserType.DEALER]: 7 * 24 * 60 * 60, // 7 days
-//       DEFAULT: 8 * 60 * 60, // 8 hrs
-//     };
-//
-//     const expiry = expiryMap[userType] ?? expiryMap.DEFAULT;
-//
-//     const cookieStore = await cookies();
-//     const commonOptions = {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       maxAge: expiry,
-//       path: '/',
-//       sameSite: 'strict' as const,
-//     };
-//     if (!token) console.error('Token not sent from API');
-//
-//     cookieStore.set('token', token, commonOptions);
-//     cookieStore.set('user_type', userType, commonOptions);
-//     cookieStore.set('id', data?.data.id.toString() as string, commonOptions);
-//
-//     const redirectMap: Record<UserType, string> = {
-//       [UserType.ADMIN]: '/admin',
-//       [UserType.DEALER]: '/dealer',
-//     };
-//
-//     const target = redirectMap[userType];
-//     if (target) {
-//       redirect(target);
-//     }
-//   } catch (error) {
-//     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-//       throw error; // Re-throw redirect errors
-//     }
-//     if (axios.isAxiosError(error)) {
-//       console.error(error.response?.data); // server response error
-//     } else {
-//       console.error(error); // other errors
-//     }
-//   }
-// }
-//

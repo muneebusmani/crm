@@ -5,16 +5,20 @@ import {
   type UpdateUserDto,
   type CreateQuotationDto,
   type UpdateQuotationDto,
-  UserType
+  UserType,
 } from '@crm/types';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { DealerTier } from '../entities/dealer-tier.entity';
 import { User } from '../entities/user.entity';
 import { Quotation } from '../../user/entities/quotation.entity';
-import { Dealer } from '../../user/entities/dealer.entity';  // 👈 direct import is fine, but relation must be wrapped
+import { Dealer } from '../../user/entities/dealer.entity'; // 👈 direct import is fine, but relation must be wrapped
 
 import { CustomError } from 'src/common/custom-error';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -26,7 +30,10 @@ import { DealerLead } from '../entities/dealer-lead.entity';
 import type { Multer } from 'multer';
 import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
-
+import { LeadsGateway } from 'src/leads/leads.gateway';
+import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
+import { QuotationItem } from '../entities/quotation-item.entity';
+import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 @Injectable()
 export class DealerService {
@@ -38,8 +45,6 @@ export class DealerService {
 
     @InjectRepository(Lead)
     private leadRepository: Repository<Lead>,
-
-
 
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
@@ -53,16 +58,95 @@ export class DealerService {
     @InjectRepository(LeadMessage)
     private leadMessageRepository: Repository<LeadMessage>,
 
+    @InjectRepository(DealerTierCredit)
+    private dealerTierCreditRepository: Repository<DealerTierCredit>,
+
+    @InjectRepository(QuotationItem)
+    private readonly quotationItemRepository: Repository<QuotationItem>,
+
+    @InjectRepository(BusinessSetting)
+    private readonly businessSettingRepository: Repository<BusinessSetting>,
+
     private readonly mailService: MailerService,
-    private readonly configService: ConfigService,   // 👈 inject here
+    private readonly configService: ConfigService, // 👈 inject here
 
+    private readonly leadsGateway: LeadsGateway,
+  ) {}
 
-  ) { }
+  // dealer.service.ts
 
-  async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
+  // async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
+  //   const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+  //   // Create user
+  //   const user = this.userRepository.create({
+  //     name: dto.name,
+  //     email: dto.email,
+  //     username: dto.username,
+  //     password: hashedPassword,
+  //   });
+  //   const savedUser = await this.userRepository.save(user);
+
+  //   // Handle logo upload
+  //   let logoUrl = '';
+  //   if (logoFile) {
+  //     const ext = extname(logoFile.originalname);
+  //     const baseName = basename(logoFile.originalname, ext)
+  //       .replace(/\s+/g, '-')
+  //       .replace(/[^\w\-]/g, '');
+  //     const filename = `${Date.now()}-${baseName}${ext}`;
+
+  //     const uploadDir = join(process.cwd(), 'uploads');
+  //     if (!fs.existsSync(uploadDir)) {
+  //       fs.mkdirSync(uploadDir, { recursive: true });
+  //     }
+  //     fs.writeFileSync(join(uploadDir, filename), logoFile.buffer);
+  //     logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+  //   }
+
+  //   // Find tier with credits
+  //   const dealerTier = await this.dealerTierRepository.findOne({
+  //     where: { id: dto.tierId },
+  //     relations: ['dealerTierCredits'],
+  //   });
+  //   if (!dealerTier) throw new BadRequestException('Invalid dealer tier');
+
+  //   // Get default credit config
+  //   const tierCredit =
+  //     dealerTier.dealerTierCredits.length > 0
+  //       ? dealerTier.dealerTierCredits[0]
+  //       : null;
+  //   if (!tierCredit)
+  //     throw new BadRequestException('Tier has no credit configuration');
+
+  //   // Create dealer with credits from dealer_tier_credit table
+  //   const dealer = this.dealerRepository.create({
+  //     name: dto.name,
+  //     owner: dto.owner,
+  //     location: dto.location,
+  //     logo: logoUrl,
+  //     website: dto.website,
+  //     contactEmail: dto.contactEmail,
+  //     tierId: dto.tierId,
+  //     credits: tierCredit.credit, // ✅ matches Dealer entity
+  //     user: savedUser, // ✅ one-to-one with User
+  //   });
+
+  //   await this.dealerRepository.save(dealer);
+
+  //   return this.userRepository.findOne({
+  //     where: { id: savedUser.id },
+  //     relations: ['dealer'],
+  //   });
+  // }
+
+  async createDealer(
+    dto: Omit<CreateDealerDto, 'logo'>,
+    logoFile?: Multer.File,
+  ) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Save user
+    // 1 Create user
     const user = this.userRepository.create({
       name: dto.name,
       email: dto.email,
@@ -71,54 +155,66 @@ export class DealerService {
     });
     const savedUser = await this.userRepository.save(user);
 
-    // Handle logo file
+    // 2 Handle logo upload
     let logoUrl = '';
     if (logoFile) {
-      // Make filename URL-safe
-      const ext = extname(logoFile.originalname); // e.g., .jpeg
-      const baseName = basename(logoFile.originalname, ext) // removes extension
-        .replace(/\s+/g, '-')     // replace spaces
-        .replace(/[^\w\-]/g, ''); // remove special chars
+      const ext = extname(logoFile.originalname);
+      const baseName = basename(logoFile.originalname, ext)
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]/g, '');
+      const filename = `${Date.now()}-${baseName}${ext}`;
 
-      const filename = `${Date.now()}-${baseName}${ext}`; // Add extension once
-
-      // Save to public uploads folder (outside src)
       const uploadDir = join(process.cwd(), 'uploads');
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
-
-      const uploadPath = join(uploadDir, filename);
-      fs.writeFileSync(uploadPath, logoFile.buffer);
-
+      fs.writeFileSync(join(uploadDir, filename), logoFile.buffer);
       logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
     }
 
-    // Handle dealer tier
-    let dealerTier: DealerTier | null = null;
-    if (dto.tierId) {
-      dealerTier = await this.dealerTierRepository.findOne({ where: { id: dto.tierId } });
+    // 3 Find tier
+    const dealerTier = await this.dealerTierRepository.findOne({
+      where: { id: dto.tierId },
+      relations: ['dealerTierCredits'],
+    });
+    if (!dealerTier) throw new BadRequestException('Invalid dealer tier');
+
+    // 4 Determine starting credit
+    let credit = dealerTier.creditLimit; // fallback
+    if (dealerTier.dealerTierCredits.length > 0) {
+      credit = dealerTier.dealerTierCredits[0].credit;
     }
 
-    // Save dealer
+    // 5 Create dealer
     const dealer = this.dealerRepository.create({
       name: dto.name,
       owner: dto.owner,
       location: dto.location,
-      logo: logoUrl, // store full URL
+      logo: logoUrl,
       website: dto.website,
       contactEmail: dto.contactEmail,
       tierId: dto.tierId,
+      credits: credit,
       user: savedUser,
-      tier: dealerTier || undefined,
     });
 
-    await this.dealerRepository.save(dealer);
+    const savedDealer = await this.dealerRepository.save(dealer);
 
-    // Return user with dealer relation
+    // 6 Insert dealer_tier_credit record for tracking
+    const dealerTierCredit = this.dealerTierCreditRepository.create({
+      dealerId: savedDealer.id,
+      tierId: dealerTier.id,
+      credit: credit,
+    });
+    await this.dealerTierCreditRepository.save(dealerTierCredit);
+
+    // 7 Return dealer with relations
     return this.userRepository.findOne({
       where: { id: savedUser.id },
-      relations: ['dealer', 'dealer.tier'],
+      relations: [
+        'dealer',
+        'dealer.dealerTierCredits', // ✅ belongs to Dealer, not User
+      ],
     });
   }
 
@@ -129,14 +225,14 @@ export class DealerService {
           id: undefined, // Find users who have a dealer relationship
         },
       },
-      relations: ['dealer', 'dealer.tier'],
+      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
     });
   }
 
   async getDealerById(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['dealer', 'dealer.tier'],
+      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
     });
 
     if (!user || !user.dealer) {
@@ -195,7 +291,8 @@ export class DealerService {
     if (dto.owner !== undefined) updateDealer.owner = dto.owner;
     if (dto.location !== undefined) updateDealer.location = dto.location;
     if (dto.website !== undefined) updateDealer.website = dto.website;
-    if (dto.contactEmail !== undefined) updateDealer.contactEmail = dto.contactEmail;
+    if (dto.contactEmail !== undefined)
+      updateDealer.contactEmail = dto.contactEmail;
     if (dto.tierId !== undefined) updateDealer.tierId = dto.tierId;
     updateDealer['logo'] = logoUrl;
 
@@ -206,10 +303,9 @@ export class DealerService {
     // Return updated user with dealer relation
     return this.userRepository.findOne({
       where: { id },
-      relations: ['dealer', 'dealer.tier'],
+      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
     });
   }
-
 
   async deleteDealer(id: number) {
     const user = await this.userRepository.findOne({
@@ -228,53 +324,118 @@ export class DealerService {
     return await this.userRepository.delete(id);
   }
 
-  async createQuotation(dto: CreateQuotationDto, delaerId: number) {
-    try {
+  async createQuotation(dto: CreateQuotationDto, dealerId: number) {
+    // 1 Find dealer
+    const dealer = await this.userRepository.findOne({
+      where: { id: dealerId },
+    });
+    if (!dealer) throw new Error('Dealer not found');
 
-      const dealer = await this.userRepository.findOne({ where: { id: delaerId } });
+    // 2 Find lead
+    const lead = await this.leadRepository.findOne({
+      where: { id: dto.leadId },
+    });
+    if (!lead) throw new Error('Lead not found');
+
+    // 3 Create quotation
+    const quotation = this.quotationRepository.create({
+      engineCodeName: lead.engine_code,
+      dealershipName: dealer.name,
+      quotationPrice: dto.quotationPrice,
+      subject: dto.subject,
+      message: dto.message,
+      dealer,
+      lead,
+    });
+
+    const savedQuotation = await this.quotationRepository.save(quotation);
+
+    // 4 Save items manually (Laravel-style hasMany)
+    let savedItems: any = [];
+    if (dto.items && dto.items.length > 0) {
+      const itemsToSave = dto.items.map((item) => ({
+        ...item,
+        totalAmount:
+          item.rate *
+          item.quantity *
+          (1 - (item.discountPercent || 0) / 100) *
+          (1 + (item.taxPercent || 0) / 100),
+        quotationId: savedQuotation.id,
+      }));
+
+      savedItems = await this.quotationItemRepository.save(itemsToSave);
+    }
+
+    //terms & constions
+    const setting = await this.businessSettingRepository.findOne({
+      where: { dealerId },
+    });
+    if (!setting) throw new NotFoundException('Business setting not found');
+
+    // 5 Send email
+    this.mailService.sendMail({
+      to: lead.email,
+      subject: 'New Quotation Created',
+      template: 'quotation',
+      context: {
+        inquiryId: savedQuotation.id,
+        companyName: lead.name || 'Example Garage',
+        email: lead.email,
+        contact: 'N/A',
+        vrm: lead.vehicle_vrm || 'N/A',
+        engineSize: lead.engine_code || 'N/A',
+        vehicleModel: lead.vehicle_model || 'N/A',
+        engineCode: savedQuotation.engineCodeName,
+        items: savedItems,
+        grandTotal: savedQuotation.quotationPrice,
+        sellerNote: dto.message,
+        quotationTerms: setting.quotation,
+        salesTerms: setting.salesTerms,
+      },
+    });
+
+    return savedQuotation;
+  }
+
+  async fetchQuotations(leadId: number, delaerId: number) {
+    try {
+      const dealer = await this.userRepository.findOne({
+        where: { id: delaerId },
+      });
+
       if (!dealer) {
         throw new Error('Dealer not found');
       }
-      const lead = await this.leadRepository.findOne({ where: { id: dto.leadId } });
+      const lead = await this.leadRepository.findOne({
+        where: { id: leadId },
+      });
+
       if (!lead) {
         throw new Error('Lead not found');
       }
 
-        const quotation = this.quotationRepository.create({
-          engineCodeName : lead.engine_code,
-          dealershipName : dealer.name,
-          quotationPrice : dto.quotationPrice,
-          message : dto.message,
-          subject : dto.subject,
-          dealer,
-          lead,
-        });
-
-      const result = await this.quotationRepository.save(quotation);
-      this.mailService.sendMail({
-        to: lead.email, // 👈 you must have dealer.email field
-        subject: 'New Quotation Created',
-        template: 'quotation', // file: templates/quotation.hbs
-        context: {
-          dealershipName: dealer.name,
-          engineCodeName: result.engineCodeName,
-          quotationId: result.id,
-          quotationPrice: result.quotationPrice,
-          message: result.message
+      const quotations = await this.quotationRepository.find({
+        where: {
+          dealer: { id: delaerId },
+          lead: { id: leadId },
         },
+        relations: ['items'],
       });
-      await this.ensureDealerLead(dto.leadId, delaerId!, LeadStatus.QUOTATION_SENT);
-      await this.leadMessage(lead.id, dealer.id, dto.message);
-      return result;
-    }
-    catch (error: unknown) {
+
+      if (!quotations) {
+        throw new Error('Quotations not found');
+      }
+      return quotations;
+    } catch (error: unknown) {
       throw new CustomError('Unable to create lead' + error);
     }
   }
 
   async forgotPassword(email: string) {
-    const dealer = await this.userRepository.findOne({ where: { email: email, type: UserType.DEALER } });
-    if (!dealer) throw new NotFoundException("Dealer not found"); // don't reveal
+    const dealer = await this.userRepository.findOne({
+      where: { email: email, type: UserType.DEALER },
+    });
+    if (!dealer) throw new NotFoundException('Dealer not found'); // don't reveal
     try {
       const token = crypto.randomBytes(32).toString('hex');
       dealer.resetPasswordToken = token;
@@ -283,7 +444,7 @@ export class DealerService {
 
       const resetLink = `${this.configService.get('FRONTEND_URL')}/reset-password/${token}`;
       this.mailService.sendMail({
-        to: "alamhamza873@gmail.com",
+        to: email,
         subject: 'Reset your password',
         template: 'forgot-password', // templates/forgot-password.hbs
         context: {
@@ -292,8 +453,7 @@ export class DealerService {
         },
       });
       return dealer;
-    }
-    catch (error: unknown) {
+    } catch (error: unknown) {
       throw new CustomError('Unable to forgot password');
     }
   }
@@ -307,8 +467,11 @@ export class DealerService {
         },
       });
 
-
-      if (!dealer || !dealer.resetPasswordExpires || dealer.resetPasswordExpires < new Date()) {
+      if (
+        !dealer ||
+        !dealer.resetPasswordExpires ||
+        dealer.resetPasswordExpires < new Date()
+      ) {
         throw new Error('Invalid or expired token');
       }
 
@@ -316,8 +479,7 @@ export class DealerService {
       dealer.resetPasswordToken = null;
       dealer.resetPasswordExpires = null;
       return await this.userRepository.save(dealer);
-    }
-    catch (error: unknown) {
+    } catch (error: unknown) {
       throw new CustomError('Unable to reset password');
     }
   }
@@ -342,7 +504,11 @@ export class DealerService {
    * Ensure dealer_leads pivot entry exists for dealer+lead.
    * If not, create it with status=open.
    */
-  private async ensureDealerLead(leadId: number, dealerId: number, status: string) {
+  private async ensureDealerLead(
+    leadId: number,
+    dealerId: number,
+    status: string,
+  ) {
     // check if already exists
 
     const existing = await this.dealerLeadRepository.findOne({
@@ -350,12 +516,12 @@ export class DealerService {
       relations: ['dealer', 'lead'],
     });
 
-
     if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOneBy({ id: dealerId });
-    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+    if (!dealer)
+      throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
@@ -367,36 +533,35 @@ export class DealerService {
       status: status,
     });
 
-    return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    lead.status = status;
+    this.leadsGateway.emitUpdateLead(lead);
+    return result;
   }
 
-
-   private async leadMessage(leadId: number, dealerId: number, content: string) {
+  private async leadMessage(leadId: number, dealerId: number, content: string) {
     // check if already exists
 
     const existing = await this.leadMessageRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }},
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
       relations: ['dealer', 'lead'],
     });
-
 
     if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOneBy({ id: dealerId });
-    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+    if (!dealer)
+      throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
-   const message = this.leadMessageRepository.create({
-        content: content,
-        dealer,
-        lead,
-      });
-      return await  this.leadMessageRepository.save(message);
+    const message = this.leadMessageRepository.create({
+      content: content,
+      dealer,
+      lead,
+    });
+    return await this.leadMessageRepository.save(message);
   }
-
-
-
 }

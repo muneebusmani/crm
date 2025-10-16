@@ -10,7 +10,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LeadMessageService } from './lead-message.service';
-import type { ApiResponse, CreateLeadMessageDto, UpdateLeadMessageDto } from  '@crm/types';
+import type {
+  ApiResponse,
+  CreateLeadMessageDto,
+  UpdateLeadMessageDto,
+} from '@crm/types';
 import { CustomError } from 'src/common/custom-error';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { DealerGuard } from 'src/auth/guards/dealer.guard';
@@ -21,33 +25,35 @@ export class LeadMessageController {
 
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
     try {
-      return { data, success: true }
+      return { data, success: true };
     } catch (error) {
       const message =
-        error instanceof CustomError ? error.message : 'Internal server error'
-      return { error: message, success: false }
+        error instanceof CustomError ? error.message : 'Internal server error';
+      return { error: message, success: false };
     }
   }
-  
+
   @UseGuards(JwtAuthGuard, DealerGuard)
   @Post()
   async create(@Body() dto: CreateLeadMessageDto, @Req() req) {
     const dealerId = req.user.id;
+    console.log('user ===>', req.user);
     const result = await this.leadMessageService.create(dto, dealerId);
     return this.buildResponse(result);
   }
-
+  @UseGuards(JwtAuthGuard, DealerGuard)
   @Get()
-  findAll() {
-    return this.leadMessageService.findAll();
+  async findAll(@Req() req) {
+    const dealerId = req.user.id;
+    const result = await this.leadMessageService.findAll(dealerId);
+    return this.buildResponse(result);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, DealerGuard)
-  @Post()
   async findOne(@Param('id') id: number, @Req() req) {
     const dealerId = req.user.id;
-    return await this.leadMessageService.findOne(id,dealerId);
+    return await this.leadMessageService.findOne(id, dealerId);
   }
 
   @Patch(':id')
@@ -64,7 +70,7 @@ export class LeadMessageController {
 
   @Get('/lead/:leadId')
   findByLead(@Param('leadId') leadId: number) {
-    const result = this.leadMessageService.findByLead(leadId)
+    const result = this.leadMessageService.findByLead(leadId);
     return this.buildResponse(result);
   }
 }
