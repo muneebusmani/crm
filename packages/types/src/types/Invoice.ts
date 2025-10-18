@@ -1,7 +1,7 @@
 export interface InvoiceItemResponse {
   id: string; // assuming DB-generated
   productName: string;
-  productDetails?: string;
+  // productDetails?: string;
   unitPrice: number;
   quantity: number;
   total: number; // computed (unitPrice * quantity)
@@ -21,4 +21,3 @@ export interface InvoiceResponse {
   createdAt: Date;
   updatedAt: Date;
 }
-

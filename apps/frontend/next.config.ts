@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
         port: '3001',
         pathname: '/**', // Keep this as backup
       },
+      {
+        protocol: 'https',
+        hostname: 'api-crm.enginesmarket.co.uk',
+        port: '',
+        pathname: '/uploads/**', // API uploads path
+      },
     ],
   },
 };
