@@ -431,6 +431,49 @@ export class DealerService {
     }
   }
 
+  // Get all quotations for a dealer
+  async getAllQuotations(dealerId: number): Promise<Quotation[]> {
+    try {
+      const quotations = await this.quotationRepository.find({
+        where: {
+          dealer: { id: dealerId },
+        },
+        relations: ['items', 'lead', 'dealer'],
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+
+      return quotations;
+    } catch (error: unknown) {
+      throw new CustomError('Unable to fetch quotations: ' + error);
+    }
+  }
+
+  // Get a single quotation by ID
+  async getQuotationById(
+    quotationId: number,
+    dealerId: number,
+  ): Promise<Quotation> {
+    try {
+      const quotation = await this.quotationRepository.findOne({
+        where: {
+          id: quotationId,
+          dealer: { id: dealerId },
+        },
+        relations: ['items', 'lead', 'dealer'],
+      });
+
+      if (!quotation) {
+        throw new NotFoundException('Quotation not found');
+      }
+
+      return quotation;
+    } catch (error: unknown) {
+      throw new CustomError('Unable to fetch quotation: ' + error);
+    }
+  }
+
   async forgotPassword(email: string) {
     const dealer = await this.userRepository.findOne({
       where: { email: email, type: UserType.DEALER },

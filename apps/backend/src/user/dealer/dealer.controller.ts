@@ -118,6 +118,25 @@ export class DealerController {
     return this.buildResponse(result);
   }
 
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('all/quotations')
+  async getAllQuotations(@Req() req): Promise<ApiResponse<Quotation[]>> {
+    const dealerId = req.user.id;
+    const result = await this.dealerService.getAllQuotations(dealerId);
+    return this.buildResponse(result);
+  }
+
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('quotations/:id')
+  async getQuotationById(
+    @Param('id') id: number,
+    @Req() req,
+  ): Promise<ApiResponse<Quotation>> {
+    const dealerId = req.user.id;
+    const result = await this.dealerService.getQuotationById(id, dealerId);
+    return this.buildResponse(result);
+  }
+
   @Post('forgot-password')
   async forgotPassword(
     @Body('email') email: string,
