@@ -82,9 +82,10 @@ export class InvoiceService {
       );
     }
 
-    // 🔍 2. Find dealer
+    // 🔍 2. Find dealer with profile
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
+      relations: ['dealer'],
     });
 
     if (!dealer) {
@@ -162,14 +163,45 @@ export class InvoiceService {
       relations: ['user'],
     });
 
-    const date = new Date(savedInvoice.date).toLocaleDateString();
+    const invoiceDate = new Date(savedInvoice.date).toLocaleDateString();
+    const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // 📄 8. Build data for PDF/email
     const invoiceData = {
       invoiceNumber: savedInvoice.invoiceNumber,
-      date,
-      lead: { name: lead.name, email: lead.email },
-      dealer: { name: dealer.name, email: dealer.email },
+      invoiceDate,
+      orderDate,
+      lead: {
+        id: lead.id,
+        name: lead.name,
+        email: lead.email,
+        number: lead.number,
+        postcode: lead.postcode,
+        vehicle_vrm: lead.vehicle_vrm,
+        vehicle_reg: lead.vehicle_reg,
+        vehicle_brand: lead.vehicle_brand,
+        vehicle_model: lead.vehicle_model,
+        fuelType: lead.fuelType,
+        engine_code: lead.engine_code,
+        engin_capacity: lead.engin_capacity,
+        description: lead.description,
+        notes: lead.notes,
+        createdAt: lead.createdAt,
+      },
+      dealer: {
+        name: dealer.name,
+        email: dealer.email,
+        profile: dealer.dealer
+          ? {
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: dealer.dealer.logo,
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
+          : null,
+      },
       items: invoiceItems,
       sellerNote: createInvoiceDto.sellerNote,
       subTotal,

@@ -88,9 +88,9 @@ export default function LoginPage() {
       });
 
       // Redirect after short delay
-      setTimeout(() => {
-        router.push((message as any).target);
-      }, 1500);
+      // setTimeout(() => {
+      router.push((message as any).target);
+      // }, 1500);
       return;
     }
 

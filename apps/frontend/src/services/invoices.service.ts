@@ -4,7 +4,7 @@ import type { ApiResponse } from '@crm/types';
 
 export interface InvoiceItemDto {
   productName: string;
-  productDetails?: string;
+  // productDetails?: string;
   unitPrice: number;
   quantity: number;
   discount?: number;
@@ -26,7 +26,7 @@ export interface InvoiceResponseDTO {
   items: Array<{
     id: number | string;
     productName: string;
-    productDetails?: string;
+    // productDetails?: string;
     unitPrice: number;
     quantity: number;
     total: number;
@@ -43,7 +43,9 @@ const BASE = '/invoices';
 
 export const invoicesApi = {
   async create(dto: CreateInvoiceDto): Promise<InvoiceResponseDTO> {
-    return handleResponse(post<InvoiceResponseDTO, CreateInvoiceDto>(BASE, dto));
+    return handleResponse(
+      post<InvoiceResponseDTO, CreateInvoiceDto>(BASE, dto),
+    );
   },
   async getAll(): Promise<InvoiceResponseDTO[]> {
     return handleResponse(get<ApiResponse<InvoiceResponseDTO[]>>(BASE));
