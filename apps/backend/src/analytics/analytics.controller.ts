@@ -50,7 +50,22 @@ export class AnalyticsController {
     return await this.buildResponse(totalRevenue);
   }
 
-  
+  @UseGuards(JwtAuthGuard)
+  @Get("dealer/conversation/rate")
+
+  async getDealerRemainingLeads(@Req() req){
+    const dealerId = req.user.id;
+    const totalRevenue = await this.analytics.getDealerConversionRate(dealerId);
+    return await this.buildResponse(totalRevenue);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("dealer/credits")
+  async getDealerCredits(@Req() req){
+    const dealerId = req.user.id;
+    const totalCredits = await this.analytics.getDealerTierCreditsByUser(dealerId);
+    return await this.buildResponse(totalCredits);
+  }
 
   @Get('leads/monthly')
   async getMonthlyLeads() {

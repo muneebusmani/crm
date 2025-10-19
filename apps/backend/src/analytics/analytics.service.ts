@@ -8,7 +8,7 @@ import { LeadStatus, type ApiResponse } from '@crm/types';
 import moment from 'moment';
 import { Invoice } from 'src/invoices/entities/invoice.entity';
 import { DealerLead } from 'src/user/entities/dealer-lead.entity';
-import { Quotation } from 'src/user/entities';
+import { Dealer, Quotation } from 'src/user/entities';
 
 @Injectable()
 export class AnalyticsService {
@@ -19,46 +19,75 @@ export class AnalyticsService {
     private readonly invoiceRepo: Repository<Invoice>,
 
     @InjectRepository(DealerLead)
-    private readonly dealerLeadRepo : Repository<DealerLead>,
+    private readonly dealerLeadRepo: Repository<DealerLead>,
 
     @InjectRepository(DealerLead)
-    private readonly quotationRepo : Repository<Quotation>
-  ) {}
+    private readonly quotationRepo: Repository<Quotation>,
 
-  
+    @InjectRepository(Dealer)
+    private readonly dealerRepo: Repository<Dealer>
+  ) { }
+
+
   // Count leads by status
   async getTotalLeadsCount() {
     return this.leadRepo.count(); // just returns a number
   }
-  async getTodayUnassignedLeadsCount(dealerId: Number){
- 
-   const count = await this.leadRepo
-    .createQueryBuilder('leads')
-    .where('DATE("leads"."createdAt") = CURRENT_DATE')
-    .andWhere(qb => {
-      const subQuery = qb
-        .subQuery()
-        .select('"dealerLead"."leadId"')
-        .from('dealer_leads', 'dealerLead')
-        .where('"dealerLead"."userId" = :dealerId')
-        .getQuery();
-      return `"leads"."id" NOT IN ${subQuery}`;
-    })
-    .setParameter('dealerId', dealerId)
-    .getCount();
+  async getTodayUnassignedLeadsCount(dealerId: Number) {
+
+    const count = await this.leadRepo
+      .createQueryBuilder('leads')
+      .where('DATE("leads"."createdAt") = CURRENT_DATE')
+      .andWhere(qb => {
+        const subQuery = qb
+          .subQuery()
+          .select('"dealerLead"."leadId"')
+          .from('dealer_leads', 'dealerLead')
+          .where('"dealerLead"."userId" = :dealerId')
+          .getQuery();
+        return `"leads"."id" NOT IN ${subQuery}`;
+      })
+      .setParameter('dealerId', dealerId)
+      .getCount();
     return {
       total: count,
     };
   }
 
-  
+  async getDealerTierCreditsByUser(userId: number) {
+    const dealer = await this.dealerRepo.findOne({
+      where: {
+        user: { id: userId }, // ✅ condition on OneToOne user relation
+      },
+      relations: ['user', 'dealerTierCredits', 'dealerTierCredits.tier'],
+    });
 
-   async getDealerTotalRevenue(userId: Number){
-   const totalRevenue = await this.invoiceRepo
-    .createQueryBuilder('invoice')
-    .select('SUM(invoice.grandTotal)', 'total')
-    .where('invoice.userId = :userId', { userId })
-    .getRawOne();
+    if (!dealer) {
+      throw new Error('Dealer not found for this user');
+    }
+
+    // const totalCreditsUsed = dealer.dealerTierCredits.reduce(
+    //   (sum, credit) => sum + credit.credit,
+    //   0,
+    // );
+
+    return {
+      dealerId: dealer.id,
+      dealerName: dealer.name,
+      remainingCredits: dealer.credits ,
+      tierName: dealer.dealerTierCredits[0]?.tier?.name || null,
+      creditLimit: dealer.dealerTierCredits[0]?.tier?.creditLimit || null,
+      userId: dealer.user.id,
+      userName: dealer.user.name,
+    };
+  }
+
+  async getDealerTotalRevenue(userId: Number) {
+    const totalRevenue = await this.invoiceRepo
+      .createQueryBuilder('invoice')
+      .select('SUM(invoice.grandTotal)', 'total')
+      .where('invoice.userId = :userId', { userId })
+      .getRawOne();
     return totalRevenue;
   }
 
@@ -84,51 +113,51 @@ export class AnalyticsService {
   }
 
 
-async  getDealerConversionRate(dealerId: number) {
-  // Step 1: Get all leads that are already won by any dealer
-  const wonLeads = await this.dealerLeadRepo
-    .createQueryBuilder('dl')
-    .select('DISTINCT dl.leadId', 'leadId')
-    .where('dl.status = :status', { status: 'won' })
-    .getRawMany();
+  async getDealerConversionRate(dealerId: number) {
+    // Step 1: Get all leads that are already won by any dealer
+    const wonLeads = await this.dealerLeadRepo
+      .createQueryBuilder('dl')
+      .select('DISTINCT dl.leadId', 'leadId')
+      .where('dl.status = :status', { status: 'won' })
+      .getRawMany();
 
-  const wonLeadIds = wonLeads.map((x) => x.leadId);
-  const wonLeadIdsList = wonLeadIds.length ? wonLeadIds : [0]; // fallback
+    const wonLeadIds = wonLeads.map((x) => x.leadId);
+    const wonLeadIdsList = wonLeadIds.length ? wonLeadIds : [0]; // fallback
 
-  // Step 2: Get all quoted (but not already won) leads by this dealer
-  const quoted = await this.quotationRepo
-  .createQueryBuilder('q')
-  .innerJoin('q.dealer', 'dealer')
-  .select('dealer.id', 'dealerId')
-  .addSelect('COUNT(DISTINCT q.leadId)', 'quotedCount')
-  .where('dealer.id = :dealerId', { dealerId })
-  .andWhere('q.leadId NOT IN (:...wonLeadIds)', { wonLeadIds: wonLeadIdsList })
-  .groupBy('dealer.id')
-  .getRawOne();
+    // Step 2: Get all quoted (but not already won) leads by this dealer
+    const quoted = await this.quotationRepo
+      .createQueryBuilder('q')
+      .innerJoin('q.dealer', 'dealer')
+      .select('dealer.id', 'dealerId')
+      .addSelect('COUNT(DISTINCT q.leadId)', 'quotedCount')
+      .where('dealer.id = :dealerId', { dealerId })
+      .andWhere('q.leadId NOT IN (:...wonLeadIds)', { wonLeadIds: wonLeadIdsList })
+      .groupBy('dealer.id')
+      .getRawOne();
 
-  const quotedCount = Number(quoted?.quotedCount || 0);
+    const quotedCount = Number(quoted?.quotedCount || 0);
 
-  // Step 3: Get how many leads this dealer actually won
-  const won = await this.dealerLeadRepo
-    .createQueryBuilder('dl')
-    .select('COUNT(DISTINCT dl.leadId)', 'wonCount')
-    .where('dl.userId = :dealerId', { dealerId })
-    .andWhere('dl.status = :status', { status: LeadStatus.CLOSE })
-    .getRawOne();
+    // Step 3: Get how many leads this dealer actually won
+    const won = await this.dealerLeadRepo
+      .createQueryBuilder('dl')
+      .select('COUNT(DISTINCT dl.leadId)', 'wonCount')
+      .where('dl.userId = :dealerId', { dealerId })
+      .andWhere('dl.status = :status', { status: LeadStatus.CLOSE })
+      .getRawOne();
 
-  const wonCount = Number(won?.wonCount || 0);
+    const wonCount = Number(won?.wonCount || 0);
 
-  // Step 4: Compute conversion rate
-  const conversionRate = quotedCount > 0 ? ((wonCount / quotedCount) * 100).toFixed(2) : '0.00';
+    // Step 4: Compute conversion rate
+    const conversionRate = quotedCount > 0 ? ((wonCount / quotedCount) * 100).toFixed(2) : '0.00';
 
-  // Step 5: Return a structured response
-  return {
-    dealerId,
-    quotedCount,
-    wonCount,
-    conversionRate: `${conversionRate}%`,
-  };
-}
+    // Step 5: Return a structured response
+    return {
+      dealerId,
+      quotedCount,
+      wonCount,
+      conversionRate: `${conversionRate}%`,
+    };
+  }
 
   // ✅ Leads between date range
   async getLeadsByDateRange(start: Date, end: Date) {
