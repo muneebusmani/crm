@@ -19,6 +19,7 @@ import {
   Divider,
 } from '@mui/material';
 import { get } from '@/lib/api';
+import InvoicePreviewDialog from './invoice-preview-dialog';
 
 interface SendInvoiceDialogProps {
   open: boolean;
@@ -94,6 +95,10 @@ export default function SendInvoiceDialog({
   const [deliveryLocation, setDeliveryLocation] = useState<string>('');
   const [vatPercentage, setVatPercentage] = useState<number>(10);
   const [discountPercentage, setDiscountPercentage] = useState<number>(10);
+  const [previewHtml, setPreviewHtml] = useState<string>('');
+  const [openPreview, setOpenPreview] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // computed - using global percentages
   const lineTotal = (it: ItemRow) => {
@@ -162,6 +167,105 @@ export default function SendInvoiceDialog({
     setLead(null);
     setRecoveryLocation('');
     setDeliveryLocation('');
+    setPreviewHtml('');
+    setOpenPreview(false);
+  };
+
+  const buildInvoicePayload = () => {
+    const itemsWithCalculatedValues = items.map((it) => {
+      const itemSubtotal = lineTotal(it);
+      const itemDiscount = (itemSubtotal * discountPercentage) / 100;
+      const itemTax = (itemSubtotal * vatPercentage) / 100;
+      return {
+        productName: it.productName,
+        unitPrice: Number(it.unitPrice) || 0,
+        quantity: Number(it.quantity) || 1,
+        discount: itemDiscount,
+        taxAmount: itemTax,
+      };
+    });
+
+    return {
+      leadId,
+      date: new Date(invoiceDate).toISOString(),
+      sellerNote: sellerNote,
+      items: itemsWithCalculatedValues,
+      taxAmount: Number(totalVAT) || 0,
+    };
+  };
+
+  const handlePreview = async () => {
+    if (
+      !leadId ||
+      items.length === 0 ||
+      items.some((it) => !it.productName) ||
+      grandTotal <= 0
+    )
+      return;
+
+    try {
+      setIsLoadingPreview(true);
+      const payload = buildInvoicePayload();
+
+      const res = await fetch('/api/invoices/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate preview');
+      const html = await res.text();
+      setPreviewHtml(html);
+      setOpenPreview(true);
+    } catch (error) {
+      console.error('Failed to generate preview:', error);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (
+      !leadId ||
+      items.length === 0 ||
+      items.some((it) => !it.productName) ||
+      grandTotal <= 0
+    )
+      return;
+
+    try {
+      setIsDownloadingPdf(true);
+      const payload = buildInvoicePayload();
+
+      const res = await fetch('/api/invoices/download-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('Failed to download PDF');
+      
+      // Create a blob from the response
+      const blob = await res.blob();
+      
+      // Create a download link and trigger it
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoiceNumber || Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -420,10 +524,20 @@ export default function SendInvoiceDialog({
               </Box>
 
               {/* Buyer Info & Recovery & Collection - Side by Side */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 3,
+                  mb: 2,
+                }}
+              >
                 {/* Buyer Info */}
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, mb: 1 }}
+                  >
                     Buyer Info:
                   </Typography>
                   <Typography variant="body2">
@@ -442,7 +556,10 @@ export default function SendInvoiceDialog({
 
                 {/* Recovery & Collection */}
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, mb: 1 }}
+                  >
                     Recovery & Collection:
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>
@@ -798,11 +915,29 @@ export default function SendInvoiceDialog({
           {/* Footer Actions */}
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="contained" disabled>
-                Download PDF
+              <Button 
+                variant="contained" 
+                onClick={handleDownloadPdf}
+                disabled={
+                  isDownloadingPdf ||
+                  items.length === 0 ||
+                  items.some((it) => !it.productName) ||
+                  grandTotal <= 0
+                }
+              >
+                {isDownloadingPdf ? 'Downloading...' : 'Download PDF'}
               </Button>
-              <Button variant="contained" disabled>
-                Preview
+              <Button
+                variant="contained"
+                onClick={handlePreview}
+                disabled={
+                  isLoadingPreview ||
+                  items.length === 0 ||
+                  items.some((it) => !it.productName) ||
+                  grandTotal <= 0
+                }
+              >
+                {isLoadingPreview ? 'Loading...' : 'Preview'}
               </Button>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -824,6 +959,13 @@ export default function SendInvoiceDialog({
             </Box>
           </Box>
         </form>
+
+        {/* Preview Dialog */}
+        <InvoicePreviewDialog
+          open={openPreview}
+          onClose={() => setOpenPreview(false)}
+          htmlContent={previewHtml}
+        />
       </DialogContent>
     </Dialog>
   );

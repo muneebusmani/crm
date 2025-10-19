@@ -11,5 +11,6 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - bcrypt
   - prisma
+  - puppeteer
   - sharp
   - unrs-resolver

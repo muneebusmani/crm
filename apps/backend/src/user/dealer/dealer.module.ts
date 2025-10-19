@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DealerTier, User } from '../entities';
 import { DealerController } from './dealer.controller';
 import { DealerService } from './dealer.service';
-import { Quotation } from '../../user/entities/quotation.entity'; // 👈 direct import is fine, but relation must be wrapped
+// import { Quotation } from '../../user/entities/quotation.entity'; // 👈 direct import is fine, but relation must be wrapped
 import { Dealer } from '../../user/entities/dealer.entity'; // 👈 direct import is fine, but relation must be wrapped
 import { CustomMailerModule } from 'src/mailer/mailer.module';
 import { Lead } from 'src/leads/entities/lead.entity';
@@ -12,7 +12,7 @@ import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { BankDetails } from '../../bank-details/entities/bank-details.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
-import { QuotationItem } from '../entities/quotation-item.entity';
+// import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 @Module({
@@ -21,12 +21,12 @@ import { BusinessSetting } from 'src/business-setting/entities/business-setting.
       User,
       Dealer,
       DealerTier,
-      Quotation,
+      // Quotation,
       Lead,
       DealerLead,
       LeadMessage,
       DealerTierCredit,
-      QuotationItem,
+      // QuotationItem,
       BusinessSetting,
     ]),
     CustomMailerModule,

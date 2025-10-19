@@ -7,14 +7,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from 'src/leads/entities/lead.entity';
-import { InvoiceItem } from './entities/invoice-item.entity';
-import { Invoice } from './entities/invoice.entity';
+import { QuotationItem } from './entities/quotation-item.entity';
+import { Quotation } from './entities/quotation.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 import {
-  CreateInvoiceDto,
-  InvoiceResponse,
-  InvoiceStatus,
+  CreateQuotationDto,
+  QuotationResponse,
+  QuotationStatus,
   LeadMessageType,
   LeadStatus,
 } from '@crm/types';
@@ -32,14 +32,14 @@ import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierService } from 'src/dealer-tier/dealer-tier.service';
 
 @Injectable()
-export class InvoiceService {
+export class QuotationService {
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
-    @InjectRepository(Invoice)
-    private readonly invoiceRepository: Repository<Invoice>,
-    @InjectRepository(InvoiceItem)
-    private readonly invoiceItemRepository: Repository<InvoiceItem>,
+    @InjectRepository(Quotation)
+    private readonly quotationRepository: Repository<Quotation>,
+    @InjectRepository(QuotationItem)
+    private readonly quotationItemRepository: Repository<QuotationItem>,
     @InjectRepository(Dealer)
     private readonly dealerRespository: Repository<Dealer>,
 
@@ -68,13 +68,13 @@ export class InvoiceService {
   ) {}
 
   async create(
-    createInvoiceDto: CreateInvoiceDto,
+    createQuotationDto: CreateQuotationDto,
     dealerId: number,
-  ): Promise<Invoice> {
+  ): Promise<Quotation> {
     // 🔍 1. Verify lead ownership
     const lead = await this.leadRepository.findOne({
       where: {
-        id: createInvoiceDto.leadId,
+        id: createQuotationDto.leadId,
         is_deleted: false,
         dealerLeads: { dealer: { id: dealerId } },
       },
@@ -102,15 +102,15 @@ export class InvoiceService {
     });
     if (!setting) throw new NotFoundException('Business setting not found');
 
-    // 🧾 3. Generate unique invoice number
-    const invoiceNumber = await this.generateInvoiceNumber();
+    // 🧾 3. Generate unique quotation number
+    const quotationNumber = await this.generateQuotationNumber();
 
     // 💰 4. Calculate totals
     let subTotal = 0;
     let totalTax = 0;
     let totalDiscount = 0;
 
-    for (const item of createInvoiceDto.items) {
+    for (const item of createQuotationDto.items) {
       const itemSubTotal = item.unitPrice * item.quantity;
       const itemDiscount = item.discount || 0;
       const itemTax = item.taxAmount || 0;
@@ -126,25 +126,25 @@ export class InvoiceService {
     totalDiscount = Math.round(totalDiscount);
     const grandTotal = Math.round(subTotal - totalDiscount + totalTax);
 
-    // 🧾 5. Create invoice
-    const invoice = this.invoiceRepository.create({
-      invoiceNumber,
-      date: createInvoiceDto.date,
+    // 🧾 5. Create quotation
+    const quotation = this.quotationRepository.create({
+      quotationNumber,
+      date: createQuotationDto.date,
       lead,
       dealer,
-      sellerNote: createInvoiceDto.sellerNote,
+      sellerNote: createQuotationDto.sellerNote,
       subTotal,
       taxAmount: totalTax,
       grandTotal,
-      status: InvoiceStatus.PENDING,
+      status: QuotationStatus.PENDING,
     });
 
-    const savedInvoice = await this.invoiceRepository.save(invoice);
+    const savedQuotation = await this.quotationRepository.save(quotation);
 
-    // 📦 6. Create invoice items
-    const invoiceItems = createInvoiceDto.items.map((item) =>
-      this.invoiceItemRepository.create({
-        invoiceId: savedInvoice.id,
+    // 📦 6. Create quotation items
+    const quotationItems = createQuotationDto.items.map((item) =>
+      this.quotationItemRepository.create({
+        quotationId: savedQuotation.id,
         productName: item.productName,
         productDetails: item.productDetails || '',
         unitPrice: Math.round(item.unitPrice),
@@ -160,7 +160,7 @@ export class InvoiceService {
       }),
     );
 
-    await this.invoiceItemRepository.save(invoiceItems);
+    await this.quotationItemRepository.save(quotationItems);
 
     // 🏦 7. Get bank details
     const bankDetails = await this.bankDetailsRepository.findOne({
@@ -168,7 +168,7 @@ export class InvoiceService {
       relations: ['user'],
     });
 
-    const invoiceDate = new Date(savedInvoice.date).toLocaleDateString();
+    const quotationDate = new Date(savedQuotation.date).toLocaleDateString();
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // Calculate percentages for display
@@ -176,9 +176,9 @@ export class InvoiceService {
     const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 8. Build data for PDF/email
-    const invoiceData = {
-      invoiceNumber: savedInvoice.invoiceNumber,
-      invoiceDate,
+    const quotationData = {
+      quotationNumber: savedQuotation.quotationNumber,
+      quotationDate,
       orderDate,
       lead: {
         id: lead.id,
@@ -211,8 +211,8 @@ export class InvoiceService {
             }
           : null,
       },
-      items: invoiceItems,
-      sellerNote: createInvoiceDto.sellerNote,
+      items: quotationItems,
+      sellerNote: createQuotationDto.sellerNote,
       subTotal,
       totalDiscount,
       totalTax,
@@ -224,22 +224,22 @@ export class InvoiceService {
       bank: bankDetails || null,
     };
 
-    // 📧 9. Send invoice mail
+    // 📧 9. Send quotation mail
     await this.mailService.sendMail({
       to: lead.email,
-      subject: `Invoice #${invoice.invoiceNumber}`,
-      template: 'invoice-pdf',
-      context: { invoiceData },
+      subject: `Quotation #${quotation.quotationNumber}`,
+      template: 'quotation-pdf',
+      context: { quotationData },
     });
 
     // 🔒 10. Close lead
     await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
 
-    return savedInvoice;
+    return savedQuotation;
   }
 
-  async findAll(dealerId: number): Promise<Invoice[]> {
-    return this.invoiceRepository.find({
+  async findAll(dealerId: number): Promise<Quotation[]> {
+    return this.quotationRepository.find({
       where: { dealer: { id: dealerId } },
       relations: ['dealer', 'lead', 'items'], // ✅ fixed
       order: { createdAt: 'DESC' },
@@ -284,63 +284,63 @@ export class InvoiceService {
     return result;
   }
 
-  async findOne(id: string, dealerId: string): Promise<Invoice> {
-    const invoice = await this.invoiceRepository.findOne({
+  async findOne(id: string, dealerId: string): Promise<Quotation> {
+    const quotation = await this.quotationRepository.findOne({
       where: { dealer: { id: dealerId } },
       relations: ['lead', 'items', 'dealer'],
     });
 
-    if (!invoice) {
-      throw new NotFoundException('Invoice not found');
+    if (!quotation) {
+      throw new NotFoundException('Quotation not found');
     }
 
-    return invoice;
+    return quotation;
   }
 
   async updateStatus(
     id: string,
-    status: InvoiceStatus,
+    status: QuotationStatus,
     dealerId: number,
-  ): Promise<Invoice> {
-    const invoice = await this.invoiceRepository.findOne({
+  ): Promise<Quotation> {
+    const quotation = await this.quotationRepository.findOne({
       where: { dealer: { id, dealerId } },
     });
 
-    if (!invoice) {
-      throw new NotFoundException('Invoice not found');
+    if (!quotation) {
+      throw new NotFoundException('Quotation not found');
     }
 
     // Business logic for status transitions
     if (
-      invoice.status === InvoiceStatus.CANCELLED &&
-      status !== InvoiceStatus.PENDING
+      quotation.status === QuotationStatus.CANCELLED &&
+      status !== QuotationStatus.PENDING
     ) {
       throw new BadRequestException(
-        'Cannot change status of cancelled invoice',
+        'Cannot change status of cancelled quotation',
       );
     }
 
     if (
-      invoice.status === InvoiceStatus.PAID &&
-      status === InvoiceStatus.CANCELLED
+      quotation.status === QuotationStatus.PAID &&
+      status === QuotationStatus.CANCELLED
     ) {
-      throw new BadRequestException('Cannot cancel paid invoice');
+      throw new BadRequestException('Cannot cancel paid quotation');
     }
 
-    invoice.status = status;
-    await this.invoiceRepository.save(invoice);
+    quotation.status = status;
+    await this.quotationRepository.save(quotation);
 
-    return invoice;
+    return quotation;
   }
 
-  private async generateInvoiceNumber(): Promise<string> {
-    const count = await this.invoiceRepository.count();
+  private async generateQuotationNumber(): Promise<string> {
+    const count = await this.quotationRepository.count();
     const nextNumber = count + 1;
     return `#VL${nextNumber.toString().padStart(7, '0')}`;
   }
 
   async generatePdf(
-    previewData: CreateInvoiceDto,
+    previewData: CreateQuotationDto,
     dealerId: number,
   ): Promise<Buffer> {
     console.log('🔍 generatePdf - Starting with previewData:', JSON.stringify(previewData, null, 2));
@@ -382,8 +382,8 @@ export class InvoiceService {
     console.log('🔍 generatePdf - Business setting found:', setting ? 'YES' : 'NO');
     if (!setting) throw new NotFoundException('Business setting not found');
 
-    // 🧾 3. Generate temporary invoice number for preview
-    const invoiceNumber = `INV-PREVIEW-${Date.now()}`;
+    // 🧾 3. Generate temporary quotation number for preview
+    const quotationNumber = `QUO-PREVIEW-${Date.now()}`;
 
     // 💰 4. Calculate totals
     let subTotal = 0;
@@ -415,19 +415,19 @@ export class InvoiceService {
     console.log('🔍 generatePdf - Bank details found:', bankDetails ? `Account: ${bankDetails.accountNumber}` : 'NULL');
     console.log('🔍 generatePdf - Calculated totals - subTotal:', subTotal, 'totalTax:', totalTax, 'totalDiscount:', totalDiscount, 'grandTotal:', grandTotal);
 
-    const invoiceDate = new Date(previewData.date).toLocaleDateString();
+    const quotationDate = new Date(previewData.date).toLocaleDateString();
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
-    console.log('🔍 generatePdf - Dates - invoiceDate:', invoiceDate, 'orderDate:', orderDate);
+    console.log('🔍 generatePdf - Dates - quotationDate:', quotationDate, 'orderDate:', orderDate);
 
     // Calculate percentages for display
     const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
     const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 6. Build data for PDF
-    const invoiceData = {
-      invoiceNumber,
-      invoiceDate,
+    const quotationData = {
+      quotationNumber,
+      quotationDate,
       orderDate,
       lead: {
         id: lead.id,
@@ -487,14 +487,14 @@ export class InvoiceService {
     };
 
     // 📄 7. Generate PDF using PdfService
-    console.log('🔍 generatePdf - Sending data to PdfService:', JSON.stringify(invoiceData, null, 2));
-    const pdfBuffer = await this.pdfService.generateInvoicePdf(invoiceData);
+    console.log('🔍 generatePdf - Sending data to PdfService:', JSON.stringify(quotationData, null, 2));
+    const pdfBuffer = await this.pdfService.generateQuotationPdf(quotationData);
 
     return pdfBuffer;
   }
 
   async generatePreview(
-    previewData: CreateInvoiceDto,
+    previewData: CreateQuotationDto,
     dealerId: number,
   ): Promise<string> {
     // 🔍 1. Verify lead ownership
@@ -528,8 +528,8 @@ export class InvoiceService {
     });
     if (!setting) throw new NotFoundException('Business setting not found');
 
-    // 🧾 3. Generate temporary invoice number for preview
-    const invoiceNumber = `INV-PREVIEW-${Date.now()}`;
+    // 🧾 3. Generate temporary quotation number for preview
+    const quotationNumber = `QUO-PREVIEW-${Date.now()}`;
 
     // 💰 4. Calculate totals
     let subTotal = 0;
@@ -558,7 +558,7 @@ export class InvoiceService {
       relations: ['user'],
     });
 
-    const invoiceDate = new Date(previewData.date).toLocaleDateString();
+    const quotationDate = new Date(previewData.date).toLocaleDateString();
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // Calculate percentages for display
@@ -566,9 +566,9 @@ export class InvoiceService {
     const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 6. Build data for preview
-    const invoiceData = {
-      invoiceNumber,
-      invoiceDate,
+    const quotationData = {
+      quotationNumber,
+      quotationDate,
       orderDate,
       lead: {
         id: lead.id,
@@ -624,12 +624,12 @@ export class InvoiceService {
     const templatePath = path.join(
       process.cwd(),
       process.env.NODE_ENV !== 'production'
-        ? 'src/templates/invoice-pdf.hbs'
-        : 'dist/templates/templates/invoice-pdf.hbs',
+        ? 'src/templates/quotation-pdf.hbs'
+        : 'dist/templates/templates/quotation-pdf.hbs',
     );
     const templateSource = fs.readFileSync(templatePath, 'utf8');
     const template = Handlebars.compile(templateSource);
-    const html = template({ invoiceData });
+    const html = template({ quotationData });
 
     return html;
   }

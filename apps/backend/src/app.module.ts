@@ -13,6 +13,7 @@ import { LeadMessageModule } from './leads-messages/lead-message.module';
 import { AdminModule } from './user/admin/admin.module';
 import { DealerModule } from './user/dealer/dealer.module';
 import { InvoiceModule } from './invoices/invocie.module';
+import { QuotationModule } from './quotations/quotation.module';
 import { BankDeatil } from './bank-details/bank-detail.module';
 import { SeederModule } from './seeder/seeder.module';
 import { DealerTierModule } from './dealer-tier/dealer-tier.module';
@@ -34,8 +35,8 @@ import { BusinessSettingModule } from './business-setting/business-setting.modul
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
-        // synchronize: true,
+        // synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: false,
         entities: [`${__dirname}/**/*.entity{.ts,.js}`],
         logging: configService.get('NODE_ENV') === 'development',
       }),
@@ -53,6 +54,7 @@ import { BusinessSettingModule } from './business-setting/business-setting.modul
     SeederModule,
     AnalyticsModule,
     InvoiceModule,
+    QuotationModule,
     BankDeatil,
   ],
   controllers: [AppController],

@@ -16,6 +16,8 @@ import {
   MenuOpen,
   Message as MessageIcon,
   Person as PersonIcon,
+  ReceiptLong as ReceiptLongIcon,
+  RequestQuote as RequestQuoteIcon,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -186,6 +188,8 @@ const userRoutesMap: Record<UserType, NavigationItem[]> = {
   dealer: [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
     { text: 'Leads', icon: <Groups2Icon />, path: '/leads' },
+    { text: 'Invoices', icon: <ReceiptLongIcon />, path: '/invoices' },
+    { text: 'Quotations', icon: <RequestQuoteIcon />, path: '/quotations' },
     { text: 'Messages', icon: <MessageIcon />, path: '/messages' },
     {
       text: 'Packages',

@@ -1,10 +1,7 @@
 import {
+  ApiResponse,
   type CreateDealerDto,
   type UpdateDealerDto,
-  type CreateQuotationDto,
-  CreateQuotationSchema,
-  ApiResponse,
-  Quotation,
   User,
 } from '@crm/types';
 import {
@@ -20,17 +17,15 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DealerService } from './dealer.service';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { CustomError } from 'src/common/custom-error';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { DealerGuard } from 'src/auth/guards/dealer.guard';
-import { Lead } from 'src/leads/entities/lead.entity';
 import type { Multer } from 'multer';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { CustomError } from 'src/common/custom-error';
 import type { AuthenticatedRequest } from 'src/common/user.interface';
+import { Lead } from 'src/leads/entities/lead.entity';
+import { DealerService } from './dealer.service';
 
 @Controller('dealers')
 export class DealerController {
@@ -95,28 +90,47 @@ export class DealerController {
     return this.dealerService.deleteDealer(id);
   }
 
-  @UseGuards(JwtAuthGuard, DealerGuard)
-  @Post('quotations')
-  @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
-  async createQuotation(
-    @Body() dto: CreateQuotationDto,
-    @Req() req,
-  ): Promise<ApiResponse<Quotation>> {
-    const delaerId = req.user.id; // cast to 'any' if TS complains
-    const result = await this.dealerService.createQuotation(dto, delaerId);
-    return this.buildResponse(result);
-  }
+  // @UseGuards(JwtAuthGuard, DealerGuard)
+  // @Post('quotations')
+  // @UsePipes(new ZodValidationPipe(CreateQuotationSchema))
+  // async createQuotation(
+  //   @Body() dto: CreateQuotationDto,
+  //   @Req() req,
+  // ): Promise<ApiResponse<Quotation>> {
+  //   const delaerId = req.user.id; // cast to 'any' if TS complains
+  //   const result = await this.dealerService.createQuotation(dto, delaerId);
+  //   return this.buildResponse(result);
+  // }
 
-  @UseGuards(JwtAuthGuard, DealerGuard)
-  @Get('quotations/leads/:id')
-  async fetchQuotations(
-    @Param('id') id: number,
-    @Req() req,
-  ): Promise<ApiResponse<Quotation[]>> {
-    const delaerId = req.user.id; // cast to 'any' if TS complains
-    const result = await this.dealerService.fetchQuotations(id, delaerId);
-    return this.buildResponse(result);
-  }
+  // @UseGuards(JwtAuthGuard, DealerGuard)
+  // @Get('quotations/leads/:id')
+  // async fetchQuotations(
+  //   @Param('id') id: number,
+  //   @Req() req,
+  // ): Promise<ApiResponse<Quotation[]>> {
+  //   const delaerId = req.user.id; // cast to 'any' if TS complains
+  //   const result = await this.dealerService.fetchQuotations(id, delaerId);
+  //   return this.buildResponse(result);
+  // }
+  //
+  // @UseGuards(JwtAuthGuard, DealerGuard)
+  // @Get('all/quotations')
+  // async getAllQuotations(@Req() req): Promise<ApiResponse<Quotation[]>> {
+  //   const dealerId = req.user.id;
+  //   const result = await this.dealerService.getAllQuotations(dealerId);
+  //   return this.buildResponse(result);
+  // }
+
+  // @UseGuards(JwtAuthGuard, DealerGuard)
+  // @Get('quotations/:id')
+  // async getQuotationById(
+  //   @Param('id') id: number,
+  //   @Req() req,
+  // ): Promise<ApiResponse<Quotation>> {
+  //   const dealerId = req.user.id;
+  //   const result = await this.dealerService.getQuotationById(id, dealerId);
+  //   return this.buildResponse(result);
+  // }
 
   @Post('forgot-password')
   async forgotPassword(

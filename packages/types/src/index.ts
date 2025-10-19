@@ -12,6 +12,7 @@ export * from './types/BankDetailsResponse';
 export * from './types/UserStatus';
 export * from './types/LeadTypes';
 export * from './types/InvoiceStatus';
+export * from './types/QuotationStatus';
 export * from './schemas/bank-detail.schema';
 export * from './types/LeadMessage';
 export * from './schemas/auth.schema';
