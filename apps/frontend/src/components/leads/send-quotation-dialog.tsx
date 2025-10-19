@@ -75,11 +75,12 @@ export default function SendQuotationDialog({
   onSuccess,
 }: SendQuotationDialogProps) {
   const [quotationDate, setQuotationDate] = useState<string>(
-    new Date().toLocaleDateString(),
-  );
-  const [orderDate, setOrderDate] = useState<string>(
-    new Date().toLocaleDateString(),
-  );
+  new Date().toISOString().slice(0, 10)
+);
+const [orderDate, setOrderDate] = useState<string>(
+  new Date().toISOString().slice(0, 10)
+);
+
   const [items, setItems] = useState<ItemRow[]>([]);
   const [sellerNote, setSellerNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

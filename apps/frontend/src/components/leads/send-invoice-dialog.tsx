@@ -75,11 +75,12 @@ export default function SendInvoiceDialog({
   onSuccess,
 }: SendInvoiceDialogProps) {
   const [invoiceDate, setInvoiceDate] = useState<string>(
-    new Date().toLocaleDateString(),
-  );
-  const [orderDate, setOrderDate] = useState<string>(
-    new Date().toLocaleDateString(),
-  );
+  new Date().toISOString().slice(0, 10)
+);
+const [orderDate, setOrderDate] = useState<string>(
+  new Date().toISOString().slice(0, 10)
+);
+
   const [items, setItems] = useState<ItemRow[]>([]);
   const [sellerNote, setSellerNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -422,7 +423,19 @@ export default function SendInvoiceDialog({
   }, [open, invoiceNumber]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog 
+  open={open} 
+  onClose={onClose} 
+  fullScreen
+  PaperProps={{
+    sx: {
+      width: '100%',
+      height: '100%',
+      m: 0,
+      borderRadius: 0,
+    },
+  }}
+>
       <DialogContent sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', gap: 3 }}>

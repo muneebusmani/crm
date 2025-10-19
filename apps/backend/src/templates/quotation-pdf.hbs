@@ -9,137 +9,160 @@
       size: A4;
       margin: 10mm;
     }
+
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
       font-size: 11px;
+      background-color: #f5f5f5;
     }
+
     .container {
-      width: 100%;
-      max-width: 100%;
+      width: auto;
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
       box-sizing: border-box;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
     }
-    td, th {
+
+    td,
+    th {
       word-wrap: break-word;
       overflow-wrap: break-word;
+    }
+
+    @media only screen and (max-width: 600px) {
+      body {
+        font-size: 10px;
+      }
+
+      .container {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 18px !important;
+      }
+
+      h3 {
+        font-size: 12px !important;
+      }
+
+      table td {
+        padding: 2px 0 !important;
+      }
     }
   </style>
 </head>
 
 <body>
-
-  <div class="container" style="background-color:#fff; border-radius:8px; padding:16px;">
-
-    <!-- Main Container -->
-    <table style="width:100%; border-collapse:collapse;">
+  <div class="container">
+    <table style="border:2px solid #ddd; border-radius:8px;">
       <tr>
-        <!-- Quotation Content -->
-        <td style="vertical-align:top; border:2px solid #ddd; border-radius:8px; padding:16px;">
+        <td style="vertical-align:top; padding:16px;">
 
           <!-- Header -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+          <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
             <tr>
-              <td style="vertical-align:top; width:50%;">
-                <!-- Logo -->
+              <!-- Logo / Company -->
+              <td style="vertical-align:top; width:48%; padding-right:8px;">
                 {{#if quotationData.dealer.profile.logo}}
-                <div
-                  style="width:80px; height:60px; display:inline-block; overflow:hidden; margin-bottom:8px;">
+                <div style="width:80px; height:60px; overflow:hidden; margin-bottom:4px;">
                   <img src="{{quotationData.dealer.profile.logo}}" alt="Company Logo"
                     style="width:100%; height:100%; object-fit:contain;" />
                 </div>
                 {{else}}
                 <div
-                  style="width:80px; height:60px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999; margin-bottom:8px;">
-                  Logo</div>
+                  style="width:80px; height:60px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999; background:#f0f0f0; margin-bottom:4px;">
+                  Logo
+                </div>
                 {{/if}}
-                <p style="margin:4px 0; font-size:14px; font-weight:600; color:#333;">
+                <p style="margin:4px 0 0 0; font-size:14px; font-weight:600; color:#007b8f;">
                   {{#if quotationData.dealer.profile}}{{quotationData.dealer.profile.name}}{{else}}Company Name{{/if}}
                 </p>
                 <p style="margin:2px 0; font-size:12px; color:#666;">
                   {{#if quotationData.dealer.profile}}{{quotationData.dealer.profile.location}}{{else}}Plot 145, street 1,
-                  london{{/if}}
+                  London{{/if}}
                 </p>
               </td>
-              <td style="vertical-align:top; text-align:center; width:50%;">
-                <h1 style="margin:0 0 8px 0; font-size:24px; font-weight:600; color:#333;">Quotation</h1>
-                <p style="margin:2px 0; font-size:12px; color:#666;">Quotation #: {{quotationData.quotationNumber}}</p>
-                <p style="margin:2px 0; font-size:12px; color:#666;">Quotation Date: {{quotationData.quotationDate}}</p>
-                <p style="margin:2px 0; font-size:12px; color:#666;">Order Date: {{quotationData.orderDate}}</p>
+
+              <!-- Quotation Info -->
+              <td style="vertical-align:top; width:52%; text-align:right; padding-left:8px;">
+                <h1 style="margin:0 0 6px 0; font-size:22px; font-weight:700; color:#007b8f;">QUOTATION</h1>
+                <p style="margin:2px 0; font-size:12px; color:#333;">Quotation #: <strong>{{quotationData.quotationNumber}}</strong></p>
+                <p style="margin:2px 0; font-size:12px; color:#333;">Quotation Date: {{quotationData.quotationDate}}</p>
+                <p style="margin:2px 0; font-size:12px; color:#333;">Order Date: {{quotationData.orderDate}}</p>
               </td>
             </tr>
           </table>
 
           <!-- Vehicle Info -->
-          <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#333;">Vehicle Info:</h3>
-          <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+          <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Vehicle Info</h3>
+          <table style="margin-bottom:16px;">
             <tr>
-              <td style="width:33%; font-size:13px; color:#555; padding:2px 0;">Reg No: {{#if
+              <td style="width:33%; font-size:13px; color:#555;">Reg No: {{#if
                 quotationData.lead.vehicle_reg}}{{quotationData.lead.vehicle_reg}}{{else if
                 quotationData.lead.vehicle_vrm}}{{quotationData.lead.vehicle_vrm}}{{else}}23A13{{/if}}</td>
-              <td style="width:33%; font-size:13px; color:#555; padding:2px 0;">Make: {{#if
+              <td style="width:33%; font-size:13px; color:#555;">Make: {{#if
                 quotationData.lead.vehicle_brand}}{{quotationData.lead.vehicle_brand}}{{else}}Audi{{/if}}</td>
-              <td style="width:34%; font-size:13px; color:#555; padding:2px 0;">Model: {{#if
+              <td style="width:34%; font-size:13px; color:#555;">Model: {{#if
                 quotationData.lead.vehicle_model}}{{quotationData.lead.vehicle_model}}{{else}}m3{{/if}}</td>
             </tr>
             <tr>
-              <td style="font-size:13px; color:#555; padding:2px 0;">Reg Year: 2016</td>
-              <td style="font-size:13px; color:#555; padding:2px 0;">Fuel Type: {{#if
+              <td style="font-size:13px; color:#555;">Reg Year: 2016</td>
+              <td style="font-size:13px; color:#555;">Fuel Type: {{#if
                 quotationData.lead.fuelType}}{{quotationData.lead.fuelType}}{{else}}Petrol{{/if}}</td>
-              <td style="font-size:13px; color:#555; padding:2px 0;">Car Type: Engine</td>
+              <td style="font-size:13px; color:#555;">Car Type: Engine</td>
             </tr>
           </table>
 
-          <!-- Buyer Info & Recovery & Collection Side by Side -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+          <!-- Buyer + Recovery Section -->
+          <table style="width:100%; margin-bottom:16px;">
             <tr>
-              <!-- Buyer Info -->
-              <td style="width:50%; vertical-align:top; padding-right:16px;">
-                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#333;">Buyer Info:</h3>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Name: {{#if
-                  quotationData.lead.name}}{{quotationData.lead.name}}{{else}}John{{/if}}</p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Phone: {{#if
-                  quotationData.lead.number}}{{quotationData.lead.number}}{{else}}+129730283{{/if}}</p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Email: {{#if
-                  quotationData.lead.email}}{{quotationData.lead.email}}{{else}}john@gmail.com{{/if}}</p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Post: {{#if
-                  quotationData.lead.postcode}}{{quotationData.lead.postcode}}{{else}}3251{{/if}}</p>
+              <td style="width:50%; vertical-align:top; padding-right:10px;">
+                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Buyer Info</h3>
+                <p style="margin:2px 0; font-size:13px; color:#555;">Name: {{quotationData.lead.name}}</p>
+                <p style="margin:2px 0; font-size:13px; color:#555;">Phone: {{quotationData.lead.number}}</p>
+                <p style="margin:2px 0; font-size:13px; color:#555;">Email: {{quotationData.lead.email}}</p>
+                <p style="margin:2px 0; font-size:13px; color:#555;">Post: {{quotationData.lead.postcode}}</p>
               </td>
-              <!-- Recovery & Collection -->
+
               <td style="width:50%; vertical-align:top;">
-                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#333;">Recovery & Collection:</h3>
+                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Recovery & Collection</h3>
                 <p style="margin:2px 0; font-size:13px; color:#555;">Recovery Location:</p>
-                <p style="margin:2px 0 8px 0; font-size:12px; color:#666; font-style:italic;">plot123, street 4, london
+                <p style="margin:2px 0 6px 0; font-size:12px; color:#666; font-style:italic;">plot123, street 4, London
                 </p>
                 <p style="margin:2px 0; font-size:13px; color:#555;">Delivery Location:</p>
-                <p style="margin:2px 0; font-size:12px; color:#666; font-style:italic;">plot123, street 4, london</p>
+                <p style="margin:2px 0; font-size:12px; color:#666; font-style:italic;">plot123, street 4, London</p>
               </td>
             </tr>
           </table>
 
           <!-- Items Table -->
-          <div style="overflow-x:auto; margin-bottom:12px;">
-            <table style="width:100%; border-collapse:collapse; font-size:10px;">
-              <thead>
-                <tr style="border-bottom:2px solid #ddd;">
-                  <th style="padding:4px; text-align:left; font-weight:600; color:#333;">Name</th>
-                  <th style="padding:4px; text-align:right; font-weight:600; color:#333;">Rate</th>
-                  <th style="padding:4px; text-align:right; font-weight:600; color:#333;">Qty</th>
-                  <th style="padding:4px; text-align:right; font-weight:600; color:#333;">Total</th>
+          <div style="overflow-x:auto; margin-bottom:16px;">
+            <table style="width:100%; border:1px solid #ddd; border-radius:6px; font-size:12px;">
+              <thead style="background-color:#007b8f; color:#fff;">
+                <tr>
+                  <th style="padding:6px; text-align:left;">Name</th>
+                  <th style="padding:6px; text-align:right;">Rate</th>
+                  <th style="padding:6px; text-align:right;">Qty</th>
+                  <th style="padding:6px; text-align:right;">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {{#each quotationData.items}}
                 <tr style="border-bottom:1px solid #eee;">
-                  <td style="padding:4px; color:#555;">{{this.productName}}</td>
-                  <td style="padding:4px; text-align:right; color:#555;">${{this.unitPrice}}</td>
-                  <td style="padding:4px; text-align:right; color:#555;">{{this.quantity}}</td>
-                  <td style="padding:4px; text-align:right; color:#555;">${{this.subTotal}}</td>
+                  <td style="padding:6px; color:#333;">{{this.productName}}</td>
+                  <td style="padding:6px; text-align:right; color:#333;">${{this.unitPrice}}</td>
+                  <td style="padding:6px; text-align:right; color:#333;">{{this.quantity}}</td>
+                  <td style="padding:6px; text-align:right; color:#333;">${{this.subTotal}}</td>
                 </tr>
                 {{/each}}
               </tbody>
@@ -147,113 +170,73 @@
           </div>
 
           <!-- Totals -->
-          <div style="text-align:right; margin-bottom:12px;">
-            <table style="margin-left:auto; min-width:150px;">
-              <tr>
-                <td style="padding:2px 6px; font-size:10px; color:#555;">Sub Total</td>
-                <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{quotationData.subTotal}}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:2px 6px; font-size:10px; color:#555;">VAT ({{quotationData.taxPercentage}}%)</td>
-                <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{quotationData.totalTax}}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:2px 6px; font-size:10px; color:#555;">Discount ({{quotationData.discountPercentage}}%)</td>
-                <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">
-                  ${{quotationData.totalDiscount}}</td>
-              </tr>
-              <tr style="border-top:1px solid #ddd;">
-                <td style="padding:4px 6px; font-size:11px; font-weight:600; color:#333;">Total</td>
-                <td style="padding:4px 6px; text-align:right; font-size:11px; font-weight:600; color:#333;">
-                  ${{quotationData.grandTotal}}</td>
-              </tr>
-            </table>
-          </div>
+          <table style="margin-left:auto; width:250px; margin-bottom:16px;">
+            <tr>
+              <td style="padding:4px 6px; font-size:12px; color:#555;">Sub Total</td>
+              <td style="padding:4px 6px; text-align:right; font-size:12px; color:#555;">${{quotationData.subTotal}}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; font-size:12px; color:#555;">VAT ({{quotationData.taxPercentage}}%)</td>
+              <td style="padding:4px 6px; text-align:right; font-size:12px; color:#555;">${{quotationData.totalTax}}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; font-size:12px; color:#555;">Discount ({{quotationData.discountPercentage}}%)</td>
+              <td style="padding:4px 6px; text-align:right; font-size:12px; color:#555;">${{quotationData.totalDiscount}}</td>
+            </tr>
+            <tr style="border-top:2px solid #007b8f;">
+              <td style="padding:6px; font-size:13px; font-weight:700; color:#007b8f;">Total</td>
+              <td style="padding:6px; text-align:right; font-size:13px; font-weight:700; color:#007b8f;">
+                ${{quotationData.grandTotal}}</td>
+            </tr>
+          </table>
 
           <!-- Bank Details -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#333;">Bank Details:</h3>
-          {{#if quotationData.bank}}
-          <div style="border:1px solid #ddd; border-radius:4px; padding:8px; margin-bottom:12px;">
-            <table style="width:100%; border-collapse:collapse;">
+          <h3 style="margin:0 0 6px 0; font-size:13px; font-weight:600; color:#007b8f;">Bank Details</h3>
+          <div style="border:1px solid #ddd; border-radius:6px; padding:8px; margin-bottom:12px;">
+            {{#if quotationData.bank}}
+            <table style="width:100%;">
               <tr>
-                <td style="width:50%; font-size:10px; color:#555; padding:1px 0;">Account Holder:
-                  {{quotationData.bank.accountHolderName}}</td>
-                <td style="width:50%; font-size:10px; color:#555; padding:1px 0;">IFSC: {{#if
-                  quotationData.bank.ifscCode}}{{quotationData.bank.ifscCode}}{{else}}EXMP123456{{/if}}</td>
+                <td style="width:50%; font-size:11px; color:#555;">Account Holder: {{quotationData.bank.accountHolderName}}</td>
+                <td style="width:50%; font-size:11px; color:#555;">IFSC: {{quotationData.bank.ifscCode}}</td>
               </tr>
               <tr>
-                <td style="font-size:10px; color:#555; padding:1px 0;">Account Number:
-                  {{quotationData.bank.accountNumber}}</td>
-                <td style="font-size:10px; color:#555; padding:1px 0;">IBAN: {{#if
-                  quotationData.bank.iban}}{{quotationData.bank.iban}}{{else}}EXMP123456780{{/if}}</td>
+                <td style="font-size:11px; color:#555;">Account Number: {{quotationData.bank.accountNumber}}</td>
+                <td style="font-size:11px; color:#555;">IBAN: {{quotationData.bank.iban}}</td>
               </tr>
               <tr>
-                <td style="font-size:10px; color:#555; padding:1px 0;">Bank Name: {{quotationData.bank.bankName}}</td>
-                <td style="font-size:10px; color:#555; padding:1px 0;">SWIFT: {{#if
-                  quotationData.bank.swiftCode}}{{quotationData.bank.swiftCode}}{{else}}EXMP1512345{{/if}}</td>
+                <td style="font-size:11px; color:#555;">Bank Name: {{quotationData.bank.bankName}}</td>
+                <td style="font-size:11px; color:#555;">SWIFT: {{quotationData.bank.swiftCode}}</td>
               </tr>
               <tr>
-                <td style="font-size:10px; color:#555; padding:1px 0;" colspan="2">Branch Name: {{#if
-                  quotationData.bank.branchName}}{{quotationData.bank.branchName}}{{else}}Main Branch{{/if}}</td>
+                <td colspan="2" style="font-size:11px; color:#555;">Branch Name: {{quotationData.bank.branchName}}</td>
               </tr>
             </table>
+            {{else}}
+            <p style="margin:0; font-size:11px; color:#999;">No bank details configured</p>
+            {{/if}}
           </div>
-          {{else}}
-          <div style="border:1px solid #ddd; border-radius:4px; padding:8px; margin-bottom:12px;">
-            <p style="margin:0; font-size:10px; color:#999;">No bank details configured</p>
-          </div>
-          {{/if}}
 
           <!-- Seller Note -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#333;">Seller Note:</h3>
-          <p style="margin:0 0 12px 0; font-size:10px; color:#555;">{{quotationData.sellerNote}}</p>
+          <h3 style="margin:0 0 4px 0; font-size:13px; font-weight:600; color:#007b8f;">Seller Note</h3>
+          <p style="margin:0 0 12px 0; font-size:11px; color:#555;">{{quotationData.sellerNote}}</p>
 
           <!-- Quotation Terms -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#333;">Quotation Terms:</h3>
-          <p style="margin:0 0 12px 0; font-size:9px; color:#666;">{{#if
-            quotationData.quotationTerms}}{{quotationData.quotationTerms}}{{else}}Lorem Ipsum is simply dummy text of the
-            printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the
-            1500s, when an unknown printer took a galley of{{/if}}</p>
+          <h3 style="margin:0 0 4px 0; font-size:13px; font-weight:600; color:#007b8f;">Quotation Terms</h3>
+          <p style="margin:0 0 12px 0; font-size:10px; color:#666;">{{quotationData.quotationTerms}}</p>
 
           <!-- Sales Terms -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#333;">Sales Terms:</h3>
-          <p style="margin:0; font-size:9px; color:#666;">{{#if
-            quotationData.salesTerms}}{{quotationData.salesTerms}}{{else}}Lorem Ipsum is simply dummy text of the printing
-            and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when
-            an unknown printer took a galley of{{/if}}</p>
+          <h3 style="margin:0 0 4px 0; font-size:13px; font-weight:600; color:#007b8f;">Sales Terms</h3>
+          <p style="margin:0; font-size:10px; color:#666;">{{quotationData.salesTerms}}</p>
 
         </td>
-
-        <!-- Right Column: Customer Card -->
-        <!-- 
-        <td style="width:30%; vertical-align:top; border:2px solid #000; border-radius:8px; padding:16px;">
-          <h2 style="margin:0 0 4px 0; font-size:18px; font-weight:600; color:#333;">{{#if quotationData.lead.name}}{{quotationData.lead.name}}{{else}}John doe{{/if}}</h2>
-          <p style="margin:2px 0; font-size:12px; color:#666;">{{#if quotationData.lead.email}}{{quotationData.lead.email}}{{else}}john@gmail.com{{/if}}</p>
-          <p style="margin:2px 0 8px 0; font-size:12px; color:#666;">{{#if quotationData.lead.number}}{{quotationData.lead.number}}{{else}}0401234012{{/if}}</p>
-          
-          <p style="margin:2px 0; font-size:12px; color:#555;">Received: {{quotationData.orderDate}}</p>
-          <p style="margin:2px 0 8px 0; font-size:12px; color:#555;">Inquiry: #{{quotationData.lead.id}}</p>
-          
-          <p style="margin:2px 0; font-size:12px; font-weight:600; color:#333;">VRM: {{#if quotationData.lead.vehicle_vrm}}{{quotationData.lead.vehicle_vrm}}{{else}}ERFH349{{/if}}</p>
-          <p style="margin:2px 0; font-size:12px; color:#555;">VM: {{#if quotationData.lead.vehicle_model}}{{quotationData.lead.vehicle_model}}{{else}}Ford Focus{{/if}}</p>
-          <p style="margin:2px 0; font-size:12px; color:#555;">Engine Code: {{#if quotationData.lead.engine_code}}{{quotationData.lead.engine_code}}{{else}}X20XEV{{/if}}</p>
-          <p style="margin:2px 0 8px 0; font-size:12px; color:#555;">Engine Size: {{#if quotationData.lead.engin_capacity}}{{quotationData.lead.engin_capacity}}{{else}}2.0{{/if}}</p>
-          
-          <p style="margin:2px 0; font-size:12px; font-weight:600; color:#333;">Note:</p>
-          <p style="margin:2px 0; font-size:12px; color:#666;">{{#if quotationData.lead.description}}{{quotationData.lead.description}}{{else if quotationData.lead.notes}}{{quotationData.lead.notes}}{{else}}Looking for a replacement engine for Ford Focus{{/if}}</p>
-        </td> -->
       </tr>
     </table>
 
     <!-- Footer -->
-    {{!-- <div style="margin-top:24px; text-align:center; border-top:2px solid #007b8f; padding-top:16px;">
-      <p style="margin:0; color:#007b8f; font-weight:bold; font-size:14px;">Thank You For Your Purchase From Us!</p>
-    </div> --}}
-
+    <div style="margin-top:20px; text-align:center; border-top:2px solid #007b8f; padding-top:10px;">
+      <p style="margin:0; color:#007b8f; font-weight:bold; font-size:13px;">Thank You For Your Business!</p>
+    </div>
   </div>
-
 </body>
 
 </html>
