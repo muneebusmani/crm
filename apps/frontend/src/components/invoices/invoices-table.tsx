@@ -151,9 +151,9 @@ const InvoicesTable: React.FC = () => {
               <TableCell align="right">
                 <strong>Grand Total</strong>
               </TableCell>
-              <TableCell>
-                <strong>Status</strong>
-              </TableCell>
+              {/* <TableCell> */}
+              {/*   <strong>Status</strong> */}
+              {/* </TableCell> */}
               <TableCell align="center">
                 <strong>Actions</strong>
               </TableCell>
@@ -184,20 +184,23 @@ const InvoicesTable: React.FC = () => {
                     ${Number(parseFloat(invoice.subTotal)).toFixed(2) || '0.00'}
                   </TableCell>
                   <TableCell align="right">
-                    ${Number(parseFloat(invoice.taxAmount)).toFixed(2) || '0.00'}
+                    $
+                    {Number(parseFloat(invoice.taxAmount)).toFixed(2) || '0.00'}
                   </TableCell>
                   <TableCell align="right">
                     <strong>
-                      ${Number(parseFloat(invoice.grandTotal)).toFixed(2) || '0.00'}
+                      $
+                      {Number(parseFloat(invoice.grandTotal)).toFixed(2) ||
+                        '0.00'}
                     </strong>
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={invoice.status}
-                      color={getStatusColor(invoice.status)}
-                      size="small"
-                    />
-                  </TableCell>
+                  {/* <TableCell> */}
+                  {/*   <Chip */}
+                  {/*     label={invoice.status} */}
+                  {/*     color={getStatusColor(invoice.status)} */}
+                  {/*     size="small" */}
+                  {/*   /> */}
+                  {/* </TableCell> */}
                   <TableCell align="center">
                     <IconButton
                       size="small"

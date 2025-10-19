@@ -1,32 +1,51 @@
-import { get, post } from '@/lib/api';
+import { handleResponse } from '@/services/response.service';
+import { get, post } from '@lib/api';
+import type { ApiResponse } from '@crm/types';
 
-export interface CreateQuotationParams {
-  leadId: number;
-  subject: string;
-  message: string;
-  quotationPrice: number;
-  items?: Array<{
-    itemDescription: string;
-    rate: number;
-    quantity: number;
-    discountPercent?: number;
-    taxPercent?: number;
-  }>;
+export interface QuotationItemDto {
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  discount?: number;
+  taxAmount?: number;
 }
 
-export const quotationsApi = {
-  async createQuotation(params: CreateQuotationParams) {
-    const response = await post('/dealers/quotations', params);
-    return response.data;
-  },
-  async getQuotations(leadId?: number) {
-    const url = `/dealers/quotations/leads/${leadId}`;
-    const response = await get(url);
-    return response;
-  },
+export interface CreateQuotationDto {
+  leadId: number;
+  sellerNote: string;
+  date: string; // ISO
+  taxAmount: number;
+  items: QuotationItemDto[];
+}
 
-  async getQuotation(id: number) {
-    const response = await get(`/dealers/quotations/${id}`);
-    return response;
+export interface QuotationResponseDTO {
+  id: number | string;
+  lead?: { id: number; name?: string };
+  date: string;
+  items: Array<{
+    id: number | string;
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+    total: number;
+  }>;
+  taxAmount: number;
+  subTotal: number;
+  grandTotal: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const BASE = '/quotations';
+
+export const quotationsApi = {
+  async create(dto: CreateQuotationDto): Promise<QuotationResponseDTO> {
+    return handleResponse(
+      post<QuotationResponseDTO, CreateQuotationDto>(BASE, dto),
+    );
+  },
+  async getAll(): Promise<QuotationResponseDTO[]> {
+    return handleResponse(get<ApiResponse<QuotationResponseDTO[]>>(BASE));
   },
 };

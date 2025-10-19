@@ -49,7 +49,13 @@ export default function InvoiceDetailDialog({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <Typography variant="h6">Invoice Details</Typography>
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
@@ -62,14 +68,14 @@ export default function InvoiceDetailDialog({
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                {invoice.invoiceNumber}
+                {invoice.invoiceNumber || 'N/A'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Date: {new Date(invoice.date).toLocaleDateString()}
+                Date: {invoice.date ? new Date(invoice.date).toLocaleDateString() : 'N/A'}
               </Typography>
             </Box>
             <Chip
-              label={invoice.status}
+              label={invoice.status || 'PENDING'}
               color={getStatusColor(invoice.status)}
               sx={{ height: 32 }}
             />
@@ -175,7 +181,10 @@ export default function InvoiceDetailDialog({
           <Divider sx={{ width: '100%', my: 1 }} />
           <Box sx={{ display: 'flex', gap: 3, minWidth: 200 }}>
             <Typography variant="h6">Grand Total:</Typography>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, color: 'primary.main' }}
+            >
               ${Number(invoice.grandTotal)?.toFixed(2) || '0.00'}
             </Typography>
           </Box>

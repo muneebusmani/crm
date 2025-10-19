@@ -1,23 +1,26 @@
 export interface InvoiceItemResponse {
-  id: string; // assuming DB-generated
+  id: string;
   productName: string;
-  // productDetails?: string;
+  productDetails?: string;
   unitPrice: number;
   quantity: number;
-  total: number; // computed (unitPrice * quantity)
+  discount: number;
+  taxAmount: number;
+  totalPrice: number;
+  subTotal: number;
 }
 
 // Invoice Response
 export interface InvoiceResponse {
   id: string;
   invoiceNumber: string;
-  leadId: string;
-  date: Date; // ISO string
+  lead?: any; // Lead relation
+  date: Date;
   items: InvoiceItemResponse[];
   taxAmount: number;
   subTotal: number;
   grandTotal: number;
+  sellerNote?: string;
   status: 'PENDING' | 'SENT' | 'PAID' | 'CANCELLED';
   createdAt: Date;
-  updatedAt: Date;
 }

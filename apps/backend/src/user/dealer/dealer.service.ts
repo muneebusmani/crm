@@ -17,7 +17,7 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { DealerTier } from '../entities/dealer-tier.entity';
 import { User } from '../entities/user.entity';
-import { Quotation } from '../../user/entities/quotation.entity';
+// import { Quotation } from '../../user/entities/quotation.entity';
 import { Dealer } from '../../user/entities/dealer.entity'; // 👈 direct import is fine, but relation must be wrapped
 
 import { CustomError } from 'src/common/custom-error';
@@ -32,7 +32,7 @@ import * as fs from 'fs';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
-import { QuotationItem } from '../entities/quotation-item.entity';
+// import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 @Injectable()
@@ -48,9 +48,9 @@ export class DealerService {
 
     @InjectRepository(DealerTier)
     private dealerTierRepository: Repository<DealerTier>,
-
-    @InjectRepository(Quotation)
-    private readonly quotationRepository: Repository<Quotation>,
+    //
+    // @InjectRepository(Quotation)
+    // private readonly quotationRepository: Repository<Quotation>,
 
     @InjectRepository(DealerLead)
     private readonly dealerLeadRepository: Repository<DealerLead>,
@@ -61,8 +61,8 @@ export class DealerService {
     @InjectRepository(DealerTierCredit)
     private dealerTierCreditRepository: Repository<DealerTierCredit>,
 
-    @InjectRepository(QuotationItem)
-    private readonly quotationItemRepository: Repository<QuotationItem>,
+    // @InjectRepository(QuotationItem)
+    // private readonly quotationItemRepository: Repository<QuotationItem>,
 
     @InjectRepository(BusinessSetting)
     private readonly businessSettingRepository: Repository<BusinessSetting>,
@@ -324,155 +324,155 @@ export class DealerService {
     return await this.userRepository.delete(id);
   }
 
-  async createQuotation(dto: CreateQuotationDto, dealerId: number) {
-    // 1 Find dealer
-    const dealer = await this.userRepository.findOne({
-      where: { id: dealerId },
-    });
-    if (!dealer) throw new Error('Dealer not found');
+  // async createQuotation(dto: CreateQuotationDto, dealerId: number) {
+  //   // 1 Find dealer
+  //   const dealer = await this.userRepository.findOne({
+  //     where: { id: dealerId },
+  //   });
+  //   if (!dealer) throw new Error('Dealer not found');
+  //
+  //   // 2 Find lead
+  //   const lead = await this.leadRepository.findOne({
+  //     where: { id: dto.leadId },
+  //   });
+  //   if (!lead) throw new Error('Lead not found');
+  //
+  //   // 3 Create quotation
+  //   const quotation = this.quotationRepository.create({
+  //     engineCodeName: lead.engine_code,
+  //     dealershipName: dealer.name,
+  //     quotationPrice: dto.quotationPrice,
+  //     subject: dto.subject,
+  //     message: dto.message,
+  //     dealer,
+  //     lead,
+  //   });
+  //
+  //   const savedQuotation = await this.quotationRepository.save(quotation);
+  //
+  //   // 4 Save items manually (Laravel-style hasMany)
+  //   let savedItems: any = [];
+  //   if (dto.items && dto.items.length > 0) {
+  //     const itemsToSave = dto.items.map((item) => ({
+  //       ...item,
+  //       totalAmount:
+  //         item.rate *
+  //         item.quantity *
+  //         (1 - (item.discountPercent || 0) / 100) *
+  //         (1 + (item.taxPercent || 0) / 100),
+  //       quotationId: savedQuotation.id,
+  //     }));
+  //
+  //     savedItems = await this.quotationItemRepository.save(itemsToSave);
+  //   }
+  //
+  //   //terms & constions
+  //   const setting = await this.businessSettingRepository.findOne({
+  //     where: { dealerId },
+  //   });
+  //   if (!setting) throw new NotFoundException('Business setting not found');
+  //
+  //   // 5 Send email
+  //   this.mailService.sendMail({
+  //     to: lead.email,
+  //     subject: 'New Quotation Created',
+  //     template: 'quotation',
+  //     context: {
+  //       inquiryId: savedQuotation.id,
+  //       companyName: lead.name || 'Example Garage',
+  //       email: lead.email,
+  //       contact: 'N/A',
+  //       vrm: lead.vehicle_vrm || 'N/A',
+  //       engineSize: lead.engine_code || 'N/A',
+  //       vehicleModel: lead.vehicle_model || 'N/A',
+  //       engineCode: savedQuotation.engineCodeName,
+  //       items: savedItems,
+  //       grandTotal: savedQuotation.quotationPrice,
+  //       sellerNote: dto.message,
+  //       quotationTerms: setting.quotation,
+  //       salesTerms: setting.salesTerms,
+  //     },
+  //   });
+  //
+  //   return savedQuotation;
+  // }
 
-    // 2 Find lead
-    const lead = await this.leadRepository.findOne({
-      where: { id: dto.leadId },
-    });
-    if (!lead) throw new Error('Lead not found');
-
-    // 3 Create quotation
-    const quotation = this.quotationRepository.create({
-      engineCodeName: lead.engine_code,
-      dealershipName: dealer.name,
-      quotationPrice: dto.quotationPrice,
-      subject: dto.subject,
-      message: dto.message,
-      dealer,
-      lead,
-    });
-
-    const savedQuotation = await this.quotationRepository.save(quotation);
-
-    // 4 Save items manually (Laravel-style hasMany)
-    let savedItems: any = [];
-    if (dto.items && dto.items.length > 0) {
-      const itemsToSave = dto.items.map((item) => ({
-        ...item,
-        totalAmount:
-          item.rate *
-          item.quantity *
-          (1 - (item.discountPercent || 0) / 100) *
-          (1 + (item.taxPercent || 0) / 100),
-        quotationId: savedQuotation.id,
-      }));
-
-      savedItems = await this.quotationItemRepository.save(itemsToSave);
-    }
-
-    //terms & constions
-    const setting = await this.businessSettingRepository.findOne({
-      where: { dealerId },
-    });
-    if (!setting) throw new NotFoundException('Business setting not found');
-
-    // 5 Send email
-    this.mailService.sendMail({
-      to: lead.email,
-      subject: 'New Quotation Created',
-      template: 'quotation',
-      context: {
-        inquiryId: savedQuotation.id,
-        companyName: lead.name || 'Example Garage',
-        email: lead.email,
-        contact: 'N/A',
-        vrm: lead.vehicle_vrm || 'N/A',
-        engineSize: lead.engine_code || 'N/A',
-        vehicleModel: lead.vehicle_model || 'N/A',
-        engineCode: savedQuotation.engineCodeName,
-        items: savedItems,
-        grandTotal: savedQuotation.quotationPrice,
-        sellerNote: dto.message,
-        quotationTerms: setting.quotation,
-        salesTerms: setting.salesTerms,
-      },
-    });
-
-    return savedQuotation;
-  }
-
-  async fetchQuotations(leadId: number, delaerId: number) {
-    try {
-      const dealer = await this.userRepository.findOne({
-        where: { id: delaerId },
-      });
-
-      if (!dealer) {
-        throw new Error('Dealer not found');
-      }
-      const lead = await this.leadRepository.findOne({
-        where: { id: leadId },
-      });
-
-      if (!lead) {
-        throw new Error('Lead not found');
-      }
-
-      const quotations = await this.quotationRepository.find({
-        where: {
-          dealer: { id: delaerId },
-          lead: { id: leadId },
-        },
-        relations: ['items'],
-      });
-
-      if (!quotations) {
-        throw new Error('Quotations not found');
-      }
-      return quotations;
-    } catch (error: unknown) {
-      throw new CustomError('Unable to create lead' + error);
-    }
-  }
+  // async fetchQuotations(leadId: number, delaerId: number) {
+  //   try {
+  //     const dealer = await this.userRepository.findOne({
+  //       where: { id: delaerId },
+  //     });
+  //
+  //     if (!dealer) {
+  //       throw new Error('Dealer not found');
+  //     }
+  //     const lead = await this.leadRepository.findOne({
+  //       where: { id: leadId },
+  //     });
+  //
+  //     if (!lead) {
+  //       throw new Error('Lead not found');
+  //     }
+  //
+  //     const quotations = await this.quotationRepository.find({
+  //       where: {
+  //         dealer: { id: delaerId },
+  //         lead: { id: leadId },
+  //       },
+  //       relations: ['items'],
+  //     });
+  //
+  //     if (!quotations) {
+  //       throw new Error('Quotations not found');
+  //     }
+  //     return quotations;
+  //   } catch (error: unknown) {
+  //     throw new CustomError('Unable to create lead' + error);
+  //   }
+  // }
 
   // Get all quotations for a dealer
-  async getAllQuotations(dealerId: number): Promise<Quotation[]> {
-    try {
-      const quotations = await this.quotationRepository.find({
-        where: {
-          dealer: { id: dealerId },
-        },
-        relations: ['items', 'lead', 'dealer'],
-        order: {
-          createdAt: 'DESC',
-        },
-      });
-
-      return quotations;
-    } catch (error: unknown) {
-      throw new CustomError('Unable to fetch quotations: ' + error);
-    }
-  }
+  // async getAllQuotations(dealerId: number): Promise<Quotation[]> {
+  //   try {
+  //     const quotations = await this.quotationRepository.find({
+  //       where: {
+  //         dealer: { id: dealerId },
+  //       },
+  //       relations: ['items', 'lead', 'dealer'],
+  //       order: {
+  //         createdAt: 'DESC',
+  //       },
+  //     });
+  //
+  //     return quotations;
+  //   } catch (error: unknown) {
+  //     throw new CustomError('Unable to fetch quotations: ' + error);
+  //   }
+  // }
 
   // Get a single quotation by ID
-  async getQuotationById(
-    quotationId: number,
-    dealerId: number,
-  ): Promise<Quotation> {
-    try {
-      const quotation = await this.quotationRepository.findOne({
-        where: {
-          id: quotationId,
-          dealer: { id: dealerId },
-        },
-        relations: ['items', 'lead', 'dealer'],
-      });
-
-      if (!quotation) {
-        throw new NotFoundException('Quotation not found');
-      }
-
-      return quotation;
-    } catch (error: unknown) {
-      throw new CustomError('Unable to fetch quotation: ' + error);
-    }
-  }
+  // async getQuotationById(
+  //   quotationId: number,
+  //   dealerId: number,
+  // ): Promise<Quotation> {
+  //   try {
+  //     const quotation = await this.quotationRepository.findOne({
+  //       where: {
+  //         id: quotationId,
+  //         dealer: { id: dealerId },
+  //       },
+  //       relations: ['items', 'lead', 'dealer'],
+  //     });
+  //
+  //     if (!quotation) {
+  //       throw new NotFoundException('Quotation not found');
+  //     }
+  //
+  //     return quotation;
+  //   } catch (error: unknown) {
+  //     throw new CustomError('Unable to fetch quotation: ' + error);
+  //   }
+  // }
 
   async forgotPassword(email: string) {
     const dealer = await this.userRepository.findOne({

@@ -40,4 +40,41 @@ export class PdfService {
 
     return pdfBuffer;
   }
+
+  /**
+   * Generate PDF buffer from quotation data
+   * @param quotationData - quotation, items, dealer, lead, bank info
+   * @returns PDF buffer
+   */
+  async generateQuotationPdf(quotationData: any): Promise<Buffer> {
+    // Path to your Handlebars template
+    console.log('🔍 PdfService.generateQuotationPdf - Received quotationData:', JSON.stringify(quotationData, null, 2));
+    console.log('🔍 PdfService.generateQuotationPdf - Items count:', quotationData?.items?.length);
+    console.log('🔍 PdfService.generateQuotationPdf - First item:', JSON.stringify(quotationData?.items?.[0], null, 2));
+    console.log('🔍 PdfService.generateQuotationPdf - Bank details:', JSON.stringify(quotationData?.bank, null, 2));
+    console.log('🔍 PdfService.generateQuotationPdf - Dealer profile:', JSON.stringify(quotationData?.dealer?.profile, null, 2));
+    
+    const templatePath = path.join(
+      process.cwd(),
+      process.env.NODE_ENV !== 'production'
+        ? 'src/templates/quotation-pdf.hbs'
+        : 'dist/templates/templates/quotation-pdf.hbs',
+    );
+
+    const templateDataToPass = { quotationData };
+    console.log('🔍 PdfService.generateQuotationPdf - Template data structure:', JSON.stringify(templateDataToPass, null, 2));
+
+    // Generate PDF - Pass data as THIRD parameter, not inside options!
+    const pdfBuffer: Buffer = await createPdf(
+      templatePath,
+      {
+        format: 'A4', // Page format
+        printBackground: true, // Print background graphics
+        // No need for executablePath; Puppeteer bundled Chromium is used automatically
+      },
+      templateDataToPass, // ✅ Pass data as third parameter to match template {{quotationData.xxx}}
+    );
+
+    return pdfBuffer;
+  }
 }

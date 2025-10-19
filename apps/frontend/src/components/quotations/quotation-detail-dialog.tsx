@@ -52,18 +52,23 @@ export default function QuotationDetailDialog({
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Quotation #{quotation.id}
+                {quotation.quotationNumber || 'N/A'}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {quotation.dealershipName || 'N/A'}
+              {/* <Typography variant="body2" color="text.secondary"> */}
+              {/*   Status: {quotation.status || 'PENDING'} */}
+              {/* </Typography> */}
+            </Box>
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="caption" color="text.secondary">
+                Grand Total
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: 'primary.main' }}
+              >
+                ${Number(quotation.grandTotal)?.toFixed(2) || '0.00'}
               </Typography>
             </Box>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: 'primary.main' }}
-            >
-              ${Number(quotation.quotationPrice)?.toFixed(2) || '0.00'}
-            </Typography>
           </Box>
         </Box>
 
@@ -93,39 +98,54 @@ export default function QuotationDetailDialog({
           </Box>
         </Box>
 
-        {/* Engine Code */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-            Engine Information
-          </Typography>
-          <Box sx={{ backgroundColor: 'grey.50', p: 2, borderRadius: 1 }}>
-            <Typography variant="body2">
-              <strong>Engine Code:</strong> {quotation.engineCodeName || 'N/A'}
+        {/* Seller Note */}
+        {quotation.sellerNote && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+              Seller Note
             </Typography>
+            <Box sx={{ backgroundColor: 'grey.50', p: 2, borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                {quotation.sellerNote}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        )}
 
-        {/* Subject */}
+        {/* Totals Summary */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-            Subject
+            Summary
           </Typography>
           <Box sx={{ backgroundColor: 'grey.50', p: 2, borderRadius: 1 }}>
-            <Typography variant="body2">
-              {quotation.subject || 'N/A'}
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Message */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-            Message
-          </Typography>
-          <Box sx={{ backgroundColor: 'grey.50', p: 2, borderRadius: 1 }}>
-            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-              {quotation.message || 'N/A'}
-            </Typography>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}
+            >
+              <Typography variant="body2">Subtotal:</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                ${Number(quotation.subTotal)?.toFixed(2) || '0.00'}
+              </Typography>
+            </Box>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}
+            >
+              <Typography variant="body2">Tax:</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                ${Number(quotation.taxAmount)?.toFixed(2) || '0.00'}
+              </Typography>
+            </Box>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                Grand Total:
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: 600, color: 'primary.main' }}
+              >
+                ${Number(quotation.grandTotal)?.toFixed(2) || '0.00'}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 
@@ -140,7 +160,10 @@ export default function QuotationDetailDialog({
                 <TableHead>
                   <TableRow sx={{ backgroundColor: 'grey.100' }}>
                     <TableCell>
-                      <strong>Item Name</strong>
+                      <strong>Product Name</strong>
+                    </TableCell>
+                    <TableCell>
+                      <strong>Details</strong>
                     </TableCell>
                     <TableCell align="right">
                       <strong>Unit Price</strong>
@@ -149,10 +172,10 @@ export default function QuotationDetailDialog({
                       <strong>Quantity</strong>
                     </TableCell>
                     <TableCell align="right">
-                      <strong>Discount %</strong>
+                      <strong>Discount</strong>
                     </TableCell>
                     <TableCell align="right">
-                      <strong>Tax %</strong>
+                      <strong>Tax</strong>
                     </TableCell>
                     <TableCell align="right">
                       <strong>Total</strong>
@@ -162,19 +185,22 @@ export default function QuotationDetailDialog({
                 <TableBody>
                   {quotation.items.map((item: any, index: number) => (
                     <TableRow key={item.id || index}>
-                      <TableCell>{item.itemName || 'N/A'}</TableCell>
+                      <TableCell>{item.productName || 'N/A'}</TableCell>
+                      <TableCell>{item.productDetails || '-'}</TableCell>
                       <TableCell align="right">
-                        ${item.unitPrice?.toFixed(2) || '0.00'}
+                        ${Number(item.unitPrice)?.toFixed(2) || '0.00'}
                       </TableCell>
                       <TableCell align="right">{item.quantity || 0}</TableCell>
                       <TableCell align="right">
-                        {item.discountPercent || 0}%
+                        ${Number(item.discount)?.toFixed(2) || '0.00'}
                       </TableCell>
                       <TableCell align="right">
-                        {item.taxPercent || 0}%
+                        ${Number(item.taxAmount)?.toFixed(2) || '0.00'}
                       </TableCell>
                       <TableCell align="right">
-                        ${item.total?.toFixed(2) || '0.00'}
+                        <strong>
+                          ${Number(item.totalPrice)?.toFixed(2) || '0.00'}
+                        </strong>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -186,7 +212,13 @@ export default function QuotationDetailDialog({
 
         {/* Metadata */}
         <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" display="block">
+            Quotation Date:{' '}
+            {quotation.date
+              ? new Date(quotation.date).toLocaleDateString()
+              : 'N/A'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
             Created:{' '}
             {quotation.createdAt
               ? new Date(quotation.createdAt).toLocaleString()

@@ -11,21 +11,21 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { InvoiceService } from './invoice.service';
+import { QuotationService } from './quotation.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import type {
   ApiResponse,
-  CreateInvoiceDto,
-  InvoiceResponse,
-  InvoiceStatus,
+  CreateQuotationDto,
+  QuotationResponse,
+  QuotationStatus,
 } from '@crm/types';
 import { CustomError } from 'src/common/custom-error';
 import type { AuthenticatedRequest } from 'src/common/user.interface';
 
-@Controller('invoices')
+@Controller('quotations')
 @UseGuards(JwtAuthGuard)
-export class InvoiceController {
-  constructor(private readonly invoiceService: InvoiceService) {}
+export class QuotationController {
+  constructor(private readonly quotationService: QuotationService) {}
 
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
     try {
@@ -39,30 +39,30 @@ export class InvoiceController {
 
   @Post()
   async create(
-    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Body() createQuotationDto: CreateQuotationDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<ApiResponse<InvoiceResponse>> {
+  ): Promise<ApiResponse<QuotationResponse>> {
     const dealerId = req.user.id; // Extracted from JWT token
-    const invoice = (await this.invoiceService.create(
-      createInvoiceDto,
+    const quotation = (await this.quotationService.create(
+      createQuotationDto,
       dealerId,
-    )) as unknown as InvoiceResponse;
-    return this.buildResponse(invoice);
+    )) as unknown as QuotationResponse;
+    return this.buildResponse(quotation);
   }
 
   @Get()
   async findAll(
     @Req() req: AuthenticatedRequest,
-  ): Promise<ApiResponse<InvoiceResponse[]>> {
+  ): Promise<ApiResponse<QuotationResponse[]>> {
     const dealerId = req.user.id;
-    const invoices = await this.invoiceService.findAll(dealerId);
+    const quotations = await this.quotationService.findAll(dealerId);
 
-    const data: InvoiceResponse[] = (await invoices).map((invoice) => ({
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      lead: invoice.lead, // ✅ careful with relation naming
-      date: invoice.date,
-      items: invoice.items.map((item) => ({
+    const data: QuotationResponse[] = (await quotations).map((quotation) => ({
+      id: quotation.id,
+      quotationNumber: quotation.quotationNumber,
+      lead: quotation.lead, // ✅ careful with relation naming
+      date: quotation.date,
+      items: quotation.items.map((item) => ({
         id: item.id,
         productName: item.productName,
         productDetails: item.productDetails,
@@ -73,12 +73,12 @@ export class InvoiceController {
         totalPrice: item.totalPrice,
         subTotal: item.subTotal,
       })),
-      taxAmount: invoice.taxAmount,
-      subTotal: invoice.subTotal,
-      grandTotal: invoice.grandTotal,
-      sellerNote: invoice.sellerNote,
-      status: invoice.status,
-      createdAt: invoice.createdAt,
+      taxAmount: quotation.taxAmount,
+      subTotal: quotation.subTotal,
+      grandTotal: quotation.grandTotal,
+      sellerNote: quotation.sellerNote,
+      status: quotation.status,
+      createdAt: quotation.createdAt,
     }));
     return this.buildResponse(data);
   }
@@ -87,35 +87,35 @@ export class InvoiceController {
   async findOne(
     @Param('id') id: string,
     @Req() req: any,
-  ): Promise<ApiResponse<InvoiceResponse>> {
+  ): Promise<ApiResponse<QuotationResponse>> {
     const dealerId = req.user.dealerId;
-    const invoice = await this.invoiceService.findOne(id, dealerId);
-    return this.buildResponse(invoice);
+    const quotation = await this.quotationService.findOne(id, dealerId);
+    return this.buildResponse(quotation);
   }
 
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: InvoiceStatus },
+    @Body() body: { status: QuotationStatus },
     @Req() req: any,
-  ): Promise<ApiResponse<InvoiceResponse>> {
+  ): Promise<ApiResponse<QuotationResponse>> {
     const dealerId = req.user.dealerId;
-    const invoice = await this.invoiceService.updateStatus(
+    const quotation = await this.quotationService.updateStatus(
       id,
       body.status,
       dealerId,
     );
-    return this.buildResponse(invoice);
+    return this.buildResponse(quotation);
   }
 
   @Post('preview')
   async generatePreview(
-    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Body() createQuotationDto: CreateQuotationDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<string> {
     const dealerId = req.user.id;
-    const html = await this.invoiceService.generatePreview(
-      createInvoiceDto,
+    const html = await this.quotationService.generatePreview(
+      createQuotationDto,
       dealerId,
     );
     return html;
@@ -123,22 +123,22 @@ export class InvoiceController {
 
   @Post('download-pdf')
   async downloadPdf(
-    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Body() createQuotationDto: CreateQuotationDto,
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const dealerId = req.user.id;
-    console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createInvoiceDto, null, 2));
+    console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createQuotationDto, null, 2));
     console.log('🔍 Controller.downloadPdf - DealerId:', dealerId);
-    const pdfBuffer = await this.invoiceService.generatePdf(
-      createInvoiceDto,
+    const pdfBuffer = await this.quotationService.generatePdf(
+      createQuotationDto,
       dealerId,
     );
 
     // Set headers for PDF download
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="invoice-${Date.now()}.pdf"`,
+      'Content-Disposition': `attachment; filename="quotation-${Date.now()}.pdf"`,
       'Content-Length': pdfBuffer.length,
     });
 

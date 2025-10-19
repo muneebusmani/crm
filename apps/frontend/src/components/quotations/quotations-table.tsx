@@ -22,6 +22,7 @@ import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
+import type { QuotationResponse } from '@crm/types';
 import { get } from '@/lib/api';
 import QuotationDetailDialog from './quotation-detail-dialog';
 
@@ -47,8 +48,7 @@ const QuotationsTable: React.FC = () => {
     const fetchQuotations = async () => {
       setLoading(true);
       try {
-        console.log('step 1');
-        const response = await get('/dealers/all/quotations');
+        const response = await get('/quotations');
         console.log('Quotations Response:', response);
         setQuotations(response.data || []);
       } catch (error) {
@@ -119,22 +119,22 @@ const QuotationsTable: React.FC = () => {
           <TableHead>
             <TableRow sx={{ backgroundColor: theme.palette.grey[100] }}>
               <TableCell>
-                <strong>ID</strong>
+                <strong>Quotation #</strong>
               </TableCell>
               <TableCell>
                 <strong>Lead</strong>
               </TableCell>
               <TableCell>
-                <strong>Engine Code</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Subject</strong>
+                <strong>Date</strong>
               </TableCell>
               <TableCell align="right">
-                <strong>Price</strong>
+                <strong>Sub Total</strong>
               </TableCell>
-              <TableCell>
-                <strong>Date</strong>
+              <TableCell align="right">
+                <strong>Tax</strong>
+              </TableCell>
+              <TableCell align="right">
+                <strong>Grand Total</strong>
               </TableCell>
               <TableCell align="center">
                 <strong>Actions</strong>
@@ -157,22 +157,23 @@ const QuotationsTable: React.FC = () => {
             ) : (
               paginatedQuotations.map((quotation) => (
                 <TableRow key={quotation.id} hover>
-                  <TableCell>#{quotation.id}</TableCell>
+                  <TableCell>{quotation.quotationNumber || 'N/A'}</TableCell>
                   <TableCell>{quotation.lead?.name || 'N/A'}</TableCell>
-                  <TableCell>{quotation.engineCodeName || 'N/A'}</TableCell>
                   <TableCell>
-                    {quotation.subject?.substring(0, 50) || 'N/A'}
-                    {quotation.subject?.length > 50 && '...'}
+                    {quotation.date
+                      ? new Date(quotation.date).toLocaleDateString()
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell align="right">
+                    ${Number(quotation.subTotal)?.toFixed(2) || '0.00'}
+                  </TableCell>
+                  <TableCell align="right">
+                    ${Number(quotation.taxAmount)?.toFixed(2) || '0.00'}
                   </TableCell>
                   <TableCell align="right">
                     <strong>
-                      ${Number(quotation.quotationPrice)?.toFixed(2) || '0.00'}
+                      ${Number(quotation.grandTotal)?.toFixed(2) || '0.00'}
                     </strong>
-                  </TableCell>
-                  <TableCell>
-                    {quotation.createdAt
-                      ? new Date(quotation.createdAt).toLocaleDateString()
-                      : 'N/A'}
                   </TableCell>
                   <TableCell align="center">
                     <IconButton
