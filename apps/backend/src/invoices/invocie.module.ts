@@ -20,8 +20,8 @@ import { BusinessSetting } from 'src/business-setting/entities/business-setting.
 
 @Module({
   imports: [TypeOrmModule.forFeature([Lead, Invoice, InvoiceItem, Dealer, User, DealerLead, BankDetails, LeadMessage, BusinessSetting]), CustomMailerModule, DealerTierModule], // 👈 registers LeadRepository
-   controllers: [InvoiceController],
-    providers: [InvoiceService, LeadsGateway],
-    exports: [InvoiceService],
+  controllers: [InvoiceController],
+  providers: [InvoiceService, LeadsGateway, PdfService],
+  exports: [InvoiceService],
 })
 export class InvoiceModule {}

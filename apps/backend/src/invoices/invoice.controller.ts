@@ -7,7 +7,10 @@ import {
   Patch,
   UseGuards,
   Req,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { InvoiceService } from './invoice.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import type {
@@ -99,5 +102,42 @@ export class InvoiceController {
       dealerId,
     );
     return this.buildResponse(invoice);
+  }
+
+  @Post('preview')
+  async generatePreview(
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<string> {
+    const dealerId = req.user.id;
+    const html = await this.invoiceService.generatePreview(
+      createInvoiceDto,
+      dealerId,
+    );
+    return html;
+  }
+
+  @Post('download-pdf')
+  async downloadPdf(
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const dealerId = req.user.id;
+    console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createInvoiceDto, null, 2));
+    console.log('🔍 Controller.downloadPdf - DealerId:', dealerId);
+    const pdfBuffer = await this.invoiceService.generatePdf(
+      createInvoiceDto,
+      dealerId,
+    );
+
+    // Set headers for PDF download
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="invoice-${Date.now()}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    return new StreamableFile(pdfBuffer);
   }
 }
