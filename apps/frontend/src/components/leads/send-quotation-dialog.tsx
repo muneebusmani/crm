@@ -75,11 +75,12 @@ export default function SendQuotationDialog({
   onSuccess,
 }: SendQuotationDialogProps) {
   const [quotationDate, setQuotationDate] = useState<string>(
-    new Date().toLocaleDateString(),
-  );
-  const [orderDate, setOrderDate] = useState<string>(
-    new Date().toLocaleDateString(),
-  );
+  new Date().toISOString().slice(0, 10),
+);
+const [orderDate, setOrderDate] = useState<string>(
+  new Date().toISOString().slice(0, 10),
+);
+
   const [items, setItems] = useState<ItemRow[]>([]);
   const [sellerNote, setSellerNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -440,7 +441,7 @@ export default function SendQuotationDialog({
         }
       }}
     >
-      <DialogContent sx={{ p: 3, height: '100vh', overflow: 'auto' }}>
+      <DialogContent sx={{ p: 3, px: 15, height: '100vh', overflow: 'auto' }}>
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', gap: 3 }}>
             {/* Left: Quotation Preview */}

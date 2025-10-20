@@ -9,14 +9,13 @@ import {
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
   Search as SearchIcon,
+  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import ChatIcon from '@mui/icons-material/Chat';
 
 import {
   Alert,
   Box,
-  // Button,
-  // Checkbox,
   Chip,
   IconButton,
   InputBase,
@@ -31,6 +30,10 @@ import {
   TableRow,
   Typography,
   useTheme,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import { useRouter } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState } from 'react';
@@ -48,7 +51,7 @@ const LeadsTable: React.FC = () => {
   };
 
   const theme = useTheme();
-  const ACTION_COL_WIDTH = 320;
+  const ACTION_COL_WIDTH = 140; // Reduced from 180 to decrease space between status and actions
   const STATUS_COL_WIDTH = 140;
   const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -65,6 +68,11 @@ const LeadsTable: React.FC = () => {
   const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
   const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
+
+  // Menu state for three dots
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentMenuLead, setCurrentMenuLead] = useState<Lead | null>(null);
+  const menuOpen = Boolean(menuAnchorEl);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -137,7 +145,7 @@ const LeadsTable: React.FC = () => {
       });
     });
 
-    socketService.onLeadUpdated((updatedLead: Lead) => {
+    socketService.onLeadUpdated((updatedLead: Link) => {
       setLeads((prev) =>
         prev.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)),
       );
@@ -307,9 +315,38 @@ const LeadsTable: React.FC = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  // const formatDate = (date: Date) => {
-  //   return new Date(date).toLocaleDateString();
-  // };
+  // Menu handlers
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, lead: Lead) => {
+    setMenuAnchorEl(event.currentTarget);
+    setCurrentMenuLead(lead);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setCurrentMenuLead(null);
+  };
+
+  const handleMenuAction = (action: string) => {
+    if (!currentMenuLead) return;
+
+    switch (action) {
+      case 'edit':
+        handleActionClick('edit', currentMenuLead);
+        break;
+      case 'info':
+        handleActionClick('info', currentMenuLead);
+        break;
+      case 'chat':
+        handleOpenChat(currentMenuLead.id!);
+        break;
+      case 'delete':
+        handleLeadDelete(currentMenuLead.id!);
+        break;
+      default:
+        break;
+    }
+    handleMenuClose();
+  };
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {
@@ -385,47 +422,6 @@ const LeadsTable: React.FC = () => {
               }}
             />
           </Box>
-
-          {/* <Box sx={{ display: 'flex', gap: 1 }}> */}
-          {/* <Button */}
-          {/*   variant="outlined" */}
-          {/*   startIcon={<FilterListIcon />} */}
-          {/*   sx={{ */}
-          {/*     borderColor: theme.palette.primary.main, */}
-          {/*     color: theme.palette.primary.main, */}
-          {/*     '&:hover': { */}
-          {/*       backgroundColor: theme.palette.primary.light, */}
-          {/*       borderColor: theme.palette.primary.dark, */}
-          {/*       color: theme.palette.primary.contrastText, */}
-          {/*     }, */}
-          {/*   }} */}
-          {/* > */}
-          {/*   Filters */}
-          {/* </Button> */}
-          {/* <Button */}
-          {/*   variant="contained" */}
-          {/*   startIcon={<AddIcon />} */}
-          {/*   sx={{ */}
-          {/*     backgroundColor: theme.palette.success.main, */}
-          {/*     color: theme.palette.success.contrastText, */}
-          {/*     "&:hover": { backgroundColor: theme.palette.success.dark }, */}
-          {/*   }} */}
-          {/* > */}
-          {/*   Add Leads */}
-          {/* </Button> */}
-          {/*   <IconButton */}
-          {/*     sx={{ */}
-          {/*       backgroundColor: theme.palette.primary.light, */}
-          {/*       color: theme.palette.primary.contrastText, */}
-          {/*       '&:hover': { */}
-          {/*         backgroundColor: theme.palette.primary.main, */}
-          {/*         color: theme.palette.primary.contrastText, */}
-          {/*       }, */}
-          {/*     }} */}
-          {/*   > */}
-          {/*     <InfoIcon /> */}
-          {/*   </IconButton> */}
-          {/* </Box> */}
         </Box>
 
         {/* Table */}
@@ -459,25 +455,6 @@ const LeadsTable: React.FC = () => {
           >
             <TableHead>
               <TableRow>
-                {/* <TableCell padding="checkbox"> */}
-                {/*   <Checkbox */}
-                {/*     indeterminate={ */}
-                {/*       selectedRows.length > 0 && */}
-                {/*       selectedRows.length < currentLeads.length */}
-                {/*     } */}
-                {/*     checked={ */}
-                {/*       currentLeads.length > 0 && */}
-                {/*       selectedRows.length === currentLeads.length */}
-                {/*     } */}
-                {/*     onChange={() => { */}
-                {/*       if (selectedRows.length === currentLeads.length) { */}
-                {/*         setSelectedRows([]); */}
-                {/*       } else { */}
-                {/*         setSelectedRows(currentLeads.map((lead) => lead.id!)); */}
-                {/*       } */}
-                {/*     }} */}
-                {/*   /> */}
-                {/* </TableCell> */}
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
                     Name
@@ -570,12 +547,6 @@ const LeadsTable: React.FC = () => {
             <TableBody>
               {currentLeads.map((lead) => (
                 <TableRow key={lead.id}>
-                  {/* <TableCell padding="checkbox"> */}
-                  {/*   <Checkbox */}
-                  {/*     checked={selectedRows.includes(lead.id!)} */}
-                  {/*     onChange={() => handleRowSelect(lead.id!)} */}
-                  {/*   /> */}
-                  {/* </TableCell> */}
                   <TableCell>
                     <Typography>{lead.name || '-'}</Typography>
                   </TableCell>
@@ -626,7 +597,8 @@ const LeadsTable: React.FC = () => {
                       minWidth: ACTION_COL_WIDTH,
                     }}
                   >
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      {/* Quotation Icon - Outside Menu */}
                       <IconButton
                         size="small"
                         color="primary"
@@ -638,6 +610,8 @@ const LeadsTable: React.FC = () => {
                       >
                         <RequestQuoteIcon fontSize="small" />
                       </IconButton>
+                      
+                      {/* Invoice Icon - Outside Menu */}
                       <IconButton
                         size="small"
                         color="warning"
@@ -649,35 +623,14 @@ const LeadsTable: React.FC = () => {
                       >
                         <ReceiptLongIcon fontSize="small" />
                       </IconButton>
+                      
+                      {/* Three Dots Menu for remaining actions */}
                       <IconButton
                         size="small"
-                        onClick={() => handleActionClick('edit', lead)}
-                        title="Edit"
+                        onClick={(e) => handleMenuOpen(e, lead)}
+                        title="More Actions"
                       >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleActionClick('info', lead)}
-                        title="View Info"
-                      >
-                        <InfoIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleOpenChat(lead.id!)}
-                        title="Open Chat"
-                      >
-                        <ChatIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleLeadDelete(lead.id!)}
-                        title="Delete"
-                      >
-                        <DeleteIcon fontSize="small" />
+                        <MoreVertIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </TableCell>
@@ -709,6 +662,46 @@ const LeadsTable: React.FC = () => {
           />
         </Box>
       </Paper>
+
+      {/* Actions Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={menuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={() => handleMenuAction('edit')}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('info')}>
+          <ListItemIcon>
+            <InfoIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>View Info</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('chat')}>
+          <ListItemIcon>
+            <ChatIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Open Chat</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('delete')}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Dialog Components */}
       {selectedLead && (
