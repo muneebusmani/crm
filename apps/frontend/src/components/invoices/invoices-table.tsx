@@ -91,11 +91,27 @@ const InvoicesTable: React.FC = () => {
   const handleDownloadPdf = async (invoice: any) => {
     try {
       setDownloadingId(invoice.id);
+      
+      // Transform invoice data to match backend expected format
+      // Include all existing invoice data for accurate PDF generation
+      const payload = {
+        invoiceNumber: invoice.invoiceNumber,
+        leadId: invoice.lead?.id || invoice.leadId,
+        date: invoice.date,
+        sellerNote: invoice.sellerNote || '',
+        items: invoice.items || [],
+        subTotal: Number(invoice.subTotal) || 0,
+        taxAmount: Number(invoice.taxAmount) || 0,
+        grandTotal: Number(invoice.grandTotal) || 0,
+        recoveryLocation: invoice.recoveryLocation || '',
+        deliveryLocation: invoice.deliveryLocation || '',
+      };
+      
       const res = await fetch('/api/invoices/download-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(invoice),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error('Failed to download PDF');
