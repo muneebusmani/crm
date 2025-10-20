@@ -28,7 +28,7 @@ export default function InvoicePreviewDialog({
       fullWidth
       PaperProps={{
         sx: {
-          width: '55vw',
+          width: '768px',
           maxWidth: '1400px',
           height: '90vh',
           maxHeight: '90vh',

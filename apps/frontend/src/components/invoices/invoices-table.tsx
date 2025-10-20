@@ -22,6 +22,7 @@ import {
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import type { InvoiceResponse } from '@crm/types';
 import { get } from '@/lib/api';
@@ -40,6 +41,7 @@ const InvoicesTable: React.FC = () => {
     message: '',
     severity: 'success' as 'success' | 'error' | 'warning' | 'info',
   });
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const ROWS_PER_PAGE = 10;
 
@@ -84,6 +86,45 @@ const InvoicesTable: React.FC = () => {
   const handleViewDetails = (invoice: any) => {
     setSelectedInvoice(invoice);
     setOpenDetailDialog(true);
+  };
+
+  const handleDownloadPdf = async (invoice: any) => {
+    try {
+      setDownloadingId(invoice.id);
+      const res = await fetch('/api/invoices/download-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(invoice),
+      });
+
+      if (!res.ok) throw new Error('Failed to download PDF');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoice.invoiceNumber || Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setSnackbar({
+        open: true,
+        message: 'PDF downloaded successfully',
+        severity: 'success',
+      });
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to download PDF',
+        severity: 'error',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -206,8 +247,18 @@ const InvoicesTable: React.FC = () => {
                       size="small"
                       color="primary"
                       onClick={() => handleViewDetails(invoice)}
+                      title="View Details"
                     >
                       <VisibilityIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="secondary"
+                      onClick={() => handleDownloadPdf(invoice)}
+                      disabled={downloadingId === invoice.id}
+                      title="Download PDF"
+                    >
+                      <DownloadIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>

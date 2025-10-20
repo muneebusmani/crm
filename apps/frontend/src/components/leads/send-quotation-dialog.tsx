@@ -191,6 +191,8 @@ export default function SendQuotationDialog({
       sellerNote: sellerNote,
       items: itemsWithCalculatedValues,
       taxAmount: Number(totalVAT) || 0,
+      recoveryLocation: recoveryLocation || '',
+      deliveryLocation: deliveryLocation || '',
     };
   };
 
@@ -300,6 +302,8 @@ export default function SendQuotationDialog({
         sellerNote: sellerNote,
         items: itemsWithCalculatedValues,
         taxAmount: Number(totalVAT) || 0,
+        recoveryLocation: recoveryLocation || '',
+        deliveryLocation: deliveryLocation || '',
       };
       const res = await fetch('/api/quotations', {
         method: 'POST',
@@ -422,15 +426,31 @@ export default function SendQuotationDialog({
   }, [open, quotationNumber]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogContent sx={{ p: 3 }}>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth={false}
+      fullScreen
+      PaperProps={{
+        sx: {
+          m: 0,
+          maxHeight: '100vh',
+          maxWidth: '100vw',
+          borderRadius: 0,
+        }
+      }}
+    >
+      <DialogContent sx={{ p: 3, height: '100vh', overflow: 'auto' }}>
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', gap: 3 }}>
             {/* Left: Quotation Preview */}
             <Box
               sx={{
                 flex: 1,
-                border: '2px solid #ddd',
+                borderTop: '8px solid #007b8f',
+                borderLeft: '8px solid #666',
+                borderRight: '2px solid #007b8f',
+                borderBottom: '2px solid #007b8f',
                 borderRadius: 2,
                 p: 3,
                 bgcolor: 'background.paper',
@@ -469,7 +489,7 @@ export default function SendQuotationDialog({
                       'Logo'
                     )}
                   </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#007b8f' }}>
                     {dealerProfile?.dealer?.name || 'Company Name'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -478,8 +498,8 @@ export default function SendQuotationDialog({
                   </Typography>
                 </Box>
 
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
                     Quotation
                   </Typography>
                   <Typography variant="caption" display="block">
@@ -496,7 +516,7 @@ export default function SendQuotationDialog({
               </Box>
 
               {/* Vehicle Info */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
                 Vehicle Info:
               </Typography>
               <Box
@@ -536,7 +556,7 @@ export default function SendQuotationDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1 }}
+                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
                   >
                     Buyer Info:
                   </Typography>
@@ -558,7 +578,7 @@ export default function SendQuotationDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1 }}
+                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
                   >
                     Recovery & Collection:
                   </Typography>
@@ -590,17 +610,17 @@ export default function SendQuotationDialog({
               <TableContainer sx={{ mb: 2 }}>
                 <Table size="small">
                   <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell align="right">Rate</TableCell>
-                      <TableCell align="right">Qty</TableCell>
-                      <TableCell align="right">Total</TableCell>
-                      <TableCell></TableCell>
+                    <TableRow sx={{ bgcolor: '#007b8f' }}>
+                      <TableCell sx={{ color: '#fff', fontWeight: 600 }}>Name</TableCell>
+                      <TableCell align="right" sx={{ color: '#fff', fontWeight: 600 }}>Rate</TableCell>
+                      <TableCell align="right" sx={{ color: '#fff', fontWeight: 600 }}>Qty</TableCell>
+                      <TableCell align="right" sx={{ color: '#fff', fontWeight: 600 }}>Total</TableCell>
+                      <TableCell sx={{ color: '#fff' }}></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {items.map((it) => (
-                      <TableRow key={it.id}>
+                      <TableRow key={it.id} sx={{ borderBottom: '1px solid #007b8f' }}>
                         <TableCell>
                           <TextField
                             fullWidth
@@ -678,7 +698,7 @@ export default function SendQuotationDialog({
                 onClick={addItem}
                 size="small"
                 variant="contained"
-                sx={{ mb: 2 }}
+                sx={{ mb: 2, bgcolor: '#007b8f', '&:hover': { bgcolor: '#006070' } }}
               >
                 Add More
               </Button>
@@ -732,7 +752,7 @@ export default function SendQuotationDialog({
                       <Typography variant="body2">%</Typography>
                     </Box>
                   </Box>
-                  <Divider sx={{ my: 1 }} />
+                  <Divider sx={{ my: 1, borderColor: '#007b8f' }} />
                   <Box
                     sx={{ display: 'flex', justifyContent: 'space-between' }}
                   >
@@ -747,11 +767,11 @@ export default function SendQuotationDialog({
               </Box>
 
               {/* Bank Details */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
                 Bank Details:
               </Typography>
               <Box
-                sx={{ border: '1px solid #ddd', borderRadius: 2, p: 2, mb: 2 }}
+                sx={{ border: '1px solid #007b8f', borderRadius: 1, p: 2, mb: 2 }}
               >
                 {bank ? (
                   <Box
@@ -791,7 +811,7 @@ export default function SendQuotationDialog({
               </Box>
 
               {/* Seller Note */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
                 Seller Note:
               </Typography>
               <TextField
@@ -805,7 +825,7 @@ export default function SendQuotationDialog({
               />
 
               {/* Quotation Terms */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
                 Quotation Terms:
               </Typography>
               <Typography
@@ -818,7 +838,7 @@ export default function SendQuotationDialog({
               </Typography>
 
               {/* Sales Terms */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
                 Sales Terms:
               </Typography>
               <Typography
