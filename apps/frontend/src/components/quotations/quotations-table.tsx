@@ -91,11 +91,27 @@ const QuotationsTable: React.FC = () => {
   const handleDownloadPdf = async (quotation: any) => {
     try {
       setDownloadingId(quotation.id);
+      
+      // Transform quotation data to match backend expected format
+      // Include all existing quotation data for accurate PDF generation
+      const payload = {
+        quotationNumber: quotation.quotationNumber,
+        leadId: quotation.lead?.id || quotation.leadId,
+        date: quotation.date,
+        sellerNote: quotation.sellerNote || '',
+        items: quotation.items || [],
+        subTotal: Number(quotation.subTotal) || 0,
+        taxAmount: Number(quotation.taxAmount) || 0,
+        grandTotal: Number(quotation.grandTotal) || 0,
+        recoveryLocation: quotation.recoveryLocation || '',
+        deliveryLocation: quotation.deliveryLocation || '',
+      };
+      
       const res = await fetch('/api/quotations/download-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(quotation),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error('Failed to download PDF');

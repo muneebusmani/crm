@@ -18,8 +18,27 @@ export default function InvoiceDetailDialog({ open, invoice, onClose }: InvoiceD
   useEffect(() => {
     if (open && invoice) {
       setLoading(true);
-      post('/invoices/preview', invoice)
-        .then(setHtmlContent)
+      
+      // Transform invoice data to match backend expected format
+      // Include all existing invoice data for accurate preview generation
+      const payload = {
+        invoiceNumber: invoice.invoiceNumber,
+        leadId: invoice.lead?.id || invoice.leadId,
+        date: invoice.date,
+        sellerNote: invoice.sellerNote || '',
+        items: invoice.items || [],
+        subTotal: Number(invoice.subTotal) || 0,
+        taxAmount: Number(invoice.taxAmount) || 0,
+        grandTotal: Number(invoice.grandTotal) || 0,
+        recoveryLocation: invoice.recoveryLocation || '',
+        deliveryLocation: invoice.deliveryLocation || '',
+      };
+      
+      post('/invoices/preview', payload)
+        .then((response) => {
+          // The response is the HTML string directly from the backend
+          setHtmlContent(response as unknown as string);
+        })
         .catch(() => setHtmlContent('<p>Failed to load preview</p>'))
         .finally(() => setLoading(false));
     }
