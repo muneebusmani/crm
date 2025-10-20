@@ -3,26 +3,32 @@ import { z } from "zod";
 // ========================
 // Quotation Item Schema
 // ========================
-export const QuotationItemSchema = z.object({
-  itemDescription: z
-    .string()
-    .trim()
-    .min(1, { message: "Item description is required" }),
-  rate: z.number().min(0, { message: "Rate must be >= 0" }),
-  quantity: z.number().int().min(1, { message: "Quantity must be at least 1" }),
-  discountPercent: z.number().min(0).max(100).optional().default(0),
-  taxPercent: z.number().min(0).max(100).optional().default(0),
+export const CreateQuotationItemSchema = z.object({
+  productName: z.string().min(1, 'Product name is required'),
+  productDetails: z.string().optional().default(''),
+  unitPrice: z.number().min(0, 'Unit price must be positive'),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+  discount: z.number().min(0, 'Discount cannot be negative').optional().default(0),
+  taxAmount: z.number().min(0, 'Tax amount cannot be negative').optional().default(0),
 });
+
+export type CreateQuotationItemDto = z.infer<typeof CreateQuotationItemSchema>;
 
 // ========================
 // Create Quotation Schema
 // ========================
 export const CreateQuotationSchema = z.object({
-  subject: z.string().trim().min(1, { message: "Subject is required" }).max(200),
-  message: z.string().trim().min(1, { message: "Message is required" }),
-  leadId: z.number().int().positive({ message: "Lead ID is required" }),
-  quotationPrice: z.number().positive({ message: "Lead Quotation Price is required" }),
-  items: z.array(QuotationItemSchema).optional(), // ✅ optional items
+  leadId: z.number('Invalid lead ID format'),
+  sellerNote : z.string(),
+  date: z
+    .string()
+    .datetime('Invalid date format')
+    .or(z.date())
+    .transform(val => new Date(val)),
+  items: z.array(CreateQuotationItemSchema).min(1, 'At least one item is required'),
+  taxAmount: z.number().min(0, 'Tax amount cannot be negative').optional().default(0),
+  recoveryLocation: z.string().optional().default(''),
+  deliveryLocation: z.string().optional().default(''),
 });
 
 export type CreateQuotationDto = z.infer<typeof CreateQuotationSchema>;
@@ -30,6 +36,13 @@ export type CreateQuotationDto = z.infer<typeof CreateQuotationSchema>;
 // ========================
 // Update Quotation Schema
 // ========================
-export const UpdateQuotationSchema = CreateQuotationSchema.partial();
+export const UpdateQuotationStatusSchema = z.object({
+  status: z.enum(['PENDING', 'SENT', 'ACCEPTED', 'REJECTED', 'CANCELLED']).refine(
+    val => ['PENDING', 'SENT', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(val),
+    {
+      message: 'Status must be one of: PENDING, SENT, ACCEPTED, REJECTED, CANCELLED',
+    },
+  ),
+});
 
-export type UpdateQuotationDto = z.infer<typeof UpdateQuotationSchema>;
+export type UpdateQuotationStatusDto = z.infer<typeof UpdateQuotationStatusSchema>;

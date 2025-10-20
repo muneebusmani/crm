@@ -21,6 +21,8 @@ export const CreateInvoiceSchema = z.object({
     .transform(val => new Date(val)),
   items: z.array(CreateInvoiceItemSchema).min(1, 'At least one item is required'),
   taxAmount: z.number().min(0, 'Tax amount cannot be negative').optional().default(0),
+  recoveryLocation: z.string().optional().default(''),
+  deliveryLocation: z.string().optional().default(''),
 });
 
 export type CreateInvoiceDto = z.infer<typeof CreateInvoiceSchema>;

@@ -222,6 +222,8 @@ export class InvoiceService {
       salesTerms: setting.salesTerms,
       grandTotal,
       bank: bankDetails || null,
+      recoveryLocation: createInvoiceDto.recoveryLocation || '',
+      deliveryLocation: createInvoiceDto.deliveryLocation || '',
     };
 
     // 📧 9. Send invoice mail
@@ -484,6 +486,8 @@ export class InvoiceService {
       salesTerms: setting.salesTerms,
       grandTotal,
       bank: bankDetails || null,
+      recoveryLocation: previewData.recoveryLocation || '',
+      deliveryLocation: previewData.deliveryLocation || '',
     };
 
     // 📄 7. Generate PDF using PdfService
@@ -618,6 +622,8 @@ export class InvoiceService {
       salesTerms: setting.salesTerms,
       grandTotal,
       bank: bankDetails || null,
+      recoveryLocation: previewData.recoveryLocation || '',
+      deliveryLocation: previewData.deliveryLocation || '',
     };
 
     // 📧 7. Render HTML using the template
