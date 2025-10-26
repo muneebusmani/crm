@@ -385,7 +385,7 @@ export class InvoiceService {
     if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary invoice number for preview
-    const invoiceNumber = `INV-PREVIEW-${Date.now()}`;
+    const invoiceNumber = '#VL-PREVIEW';
 
     // 💰 4. Calculate totals
     let subTotal = 0;
@@ -533,7 +533,7 @@ export class InvoiceService {
     if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary invoice number for preview
-    const invoiceNumber = `INV-PREVIEW-${Date.now()}`;
+    const invoiceNumber = '#VL-PREVIEW';
 
     // 💰 4. Calculate totals
     let subTotal = 0;

@@ -385,7 +385,7 @@ export class QuotationService {
     if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary quotation number for preview
-    const quotationNumber = `QUO-PREVIEW-${Date.now()}`;
+    const quotationNumber = '#VL-PREVIEW';
 
     // 💰 4. Calculate totals
     let subTotal = 0;
@@ -533,7 +533,7 @@ export class QuotationService {
     if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary quotation number for preview
-    const quotationNumber = `QUO-PREVIEW-${Date.now()}`;
+    const quotationNumber = '#VL-PREVIEW';
 
     // 💰 4. Calculate totals
     let subTotal = 0;

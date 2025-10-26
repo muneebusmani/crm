@@ -127,9 +127,9 @@
               <td style="width:50%; vertical-align:top;">
                 <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Recovery & Collection:
                 </h3>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Recovery Location: {{invoiceData.recoveryLocation}}
+                <p style="margin:2px 0; font-size:13px; color:#555;">Recovery Location: {{#if invoiceData.recoveryLocation}}{{invoiceData.recoveryLocation}}{{else}}N/A{{/if}}
                 </p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Delivery Location: {{invoiceData.deliveryLocation}}
+                <p style="margin:2px 0; font-size:13px; color:#555;">Delivery Location: {{#if invoiceData.deliveryLocation}}{{invoiceData.deliveryLocation}}{{else}}N/A{{/if}}
                 </p>
               </td>
             </tr>
