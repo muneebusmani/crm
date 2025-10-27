@@ -7,9 +7,9 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const token = cookieStore.get('access_token')?.value;
 
-    const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const response = await fetch(`${backendUrl}/invoices/download-pdf`, {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+
+    const response = await fetch(`${backendUrl}/api/v1/invoices/download-pdf`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
