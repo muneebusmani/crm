@@ -1,24 +1,131 @@
-name: Test Docker Build
+name: Build and Deploy CRM
 
-# on:
-#   push:
-#     branches:
-#       - master
-#       - main
-#   pull_request:
-#     branches:
-#       - master
-#       - main
 on:
   push:
-  pull_request:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags like v0.5.13
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
+  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
+
 jobs:
-  test-build:
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t crm-test .
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+          tags: |
+            type=ref,event=tag
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract metadata for Backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+          tags: |
+            type=ref,event=tag
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: frontend-runtime
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:buildcache,mode=max
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: backend-runtime
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')  # Only deploy on tag push
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CRM_DEPLOY_KEY }}
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_USER: ${{ secrets.SERVER_USER }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Set up SSH key
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          
+          # Deploy to server
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "bash -s" << ENDSSH
+            set -e
+            cd crm
+            
+            # Pull latest code
+            git fetch --all
+            git checkout tags/$TAG -B release-$TAG
+            
+            # Login to GitHub Container Registry
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            
+            # Pull pre-built images
+            docker pull ghcr.io/$GITHUB_REPO/frontend:$TAG
+            docker pull ghcr.io/$GITHUB_REPO/backend:$TAG
+            
+            # Update docker-compose to use the new images
+            export FRONTEND_IMAGE=ghcr.io/$GITHUB_REPO/frontend:$TAG
+            export BACKEND_IMAGE=ghcr.io/$GITHUB_REPO/backend:$TAG
+            
+            # Restart with pre-built images
+            docker compose up -d --no-build
+            
+            # Clean up old images
+            docker image prune -af --filter "until=72h"
+            
+            echo "✅ Deployment of $TAG completed successfully!"
+          ENDSSH

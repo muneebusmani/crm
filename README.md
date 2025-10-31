@@ -314,3 +314,20 @@ crm
 4. Use **Turbo Tips** to run specific packages if needed.
 5. Follow **Biome.js** rules for code style.
 6. Open a pull request when ready.
+
+---
+
+## 🚀 Deployment
+
+For deployment instructions, see:
+- **[QUICK-DEPLOY.md](./QUICK-DEPLOY.md)** - Quick reference for daily deployments
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guide and troubleshooting
+
+**TL;DR:** Just push a git tag and let GitHub Actions handle the rest!
+
+```bash
+git tag v0.5.15
+git push origin v0.5.15
+```
+
+---
