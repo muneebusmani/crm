@@ -101,25 +101,25 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           
-          # Deploy to server
-          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "bash -s" << ENDSSH
+          # Deploy to server with environment variables
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" bash -s << 'ENDSSH'
             set -e
             cd crm
             
             # Pull latest code
             git fetch --all
-            git checkout tags/$TAG -B release-$TAG
+            git checkout tags/${{ github.ref_name }} -B release-${{ github.ref_name }}
             
             # Login to GitHub Container Registry
-            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             
             # Pull pre-built images
-            docker pull ghcr.io/$GITHUB_REPO/frontend:$TAG
-            docker pull ghcr.io/$GITHUB_REPO/backend:$TAG
+            docker pull ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+            docker pull ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
             
             # Update docker-compose to use the new images
-            export FRONTEND_IMAGE=ghcr.io/$GITHUB_REPO/frontend:$TAG
-            export BACKEND_IMAGE=ghcr.io/$GITHUB_REPO/backend:$TAG
+            export FRONTEND_IMAGE=ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+            export BACKEND_IMAGE=ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
             
             # Restart with pre-built images
             docker compose up -d --no-build
@@ -127,5 +127,5 @@ jobs:
             # Clean up old images
             docker image prune -af --filter "until=72h"
             
-            echo "✅ Deployment of $TAG completed successfully!"
+            echo "✅ Deployment of ${{ github.ref_name }} completed successfully!"
           ENDSSH
