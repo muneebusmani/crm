@@ -189,42 +189,47 @@ jobs:
             cd crm || { echo "❌ ERROR: Failed to cd into crm directory"; exit 1; }
             echo "✅ Current directory: $(pwd)"
             
-            echo "🔄 Step 2: Fetching latest git changes..."
+            echo "� Step 2: Starting SSH agent and loading deploy key..."
+            eval $(ssh-agent) || { echo "❌ ERROR: Failed to start ssh-agent"; exit 1; }
+            ssh-add ~/.ssh/crm-deploy-key || { echo "❌ ERROR: Failed to add SSH key"; exit 1; }
+            echo "✅ SSH agent started and key loaded"
+            
+            echo "�🔄 Step 3: Fetching latest git changes..."
             git fetch --all || { echo "❌ ERROR: Git fetch failed"; exit 1; }
             echo "✅ Git fetch completed"
             
-            echo "🌿 Step 3: Checking out tag ${{ github.ref_name }}..."
+            echo "🌿 Step 4: Checking out tag ${{ github.ref_name }}..."
             git checkout tags/${{ github.ref_name }} -B release-${{ github.ref_name }} || { echo "❌ ERROR: Git checkout failed"; exit 1; }
             echo "✅ Checked out tag: ${{ github.ref_name }}"
             echo "Current branch: $(git branch --show-current)"
             
-            echo "🔐 Step 4: Logging into GitHub Container Registry..."
+            echo "🔐 Step 5: Logging into GitHub Container Registry..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin || { echo "❌ ERROR: Docker login failed"; exit 1; }
             echo "✅ Logged into GHCR as ${{ github.actor }}"
             
-            echo "⬇️ Step 5: Pulling frontend image..."
+            echo "⬇️ Step 6: Pulling frontend image..."
             docker pull ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }} || { echo "❌ ERROR: Failed to pull frontend image"; exit 1; }
             echo "✅ Frontend image pulled successfully"
             
-            echo "⬇️ Step 6: Pulling backend image..."
+            echo "⬇️ Step 7: Pulling backend image..."
             docker pull ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }} || { echo "❌ ERROR: Failed to pull backend image"; exit 1; }
             echo "✅ Backend image pulled successfully"
             
-            echo "⚙️ Step 7: Setting environment variables..."
+            echo "⚙️ Step 8: Setting environment variables..."
             export FRONTEND_IMAGE=ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
             export BACKEND_IMAGE=ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
             echo "FRONTEND_IMAGE=$FRONTEND_IMAGE"
             echo "BACKEND_IMAGE=$BACKEND_IMAGE"
             echo "✅ Environment variables set"
             
-            echo "🐳 Step 8: Starting containers with docker compose..."
+            echo "🐳 Step 9: Starting containers with docker compose..."
             docker compose up -d --no-build || { echo "❌ ERROR: Docker compose up failed"; exit 1; }
             echo "✅ Containers started successfully"
             
-            echo "📊 Step 9: Checking container status..."
+            echo "📊 Step 10: Checking container status..."
             docker ps --filter name=crm
             
-            echo "🧹 Step 10: Cleaning up old images..."
+            echo "🧹 Step 11: Cleaning up old images..."
             docker image prune -af --filter "until=72h" || { echo "⚠️ WARNING: Image cleanup failed (non-critical)"; }
             echo "✅ Cleanup completed"
             
