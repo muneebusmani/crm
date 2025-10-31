@@ -322,6 +322,7 @@ crm
 For deployment instructions, see:
 - **[QUICK-DEPLOY.md](./QUICK-DEPLOY.md)** - Quick reference for daily deployments
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guide and troubleshooting
+- **[TURBOREPO-CACHE-OPTIMIZATION.md](./TURBOREPO-CACHE-OPTIMIZATION.md)** - Build cache optimization (96% faster builds!)
 
 **TL;DR:** Just push a git tag and let GitHub Actions handle the rest!
 
@@ -329,5 +330,10 @@ For deployment instructions, see:
 git tag v0.5.15
 git push origin v0.5.15
 ```
+
+**Build Performance:**
+- ✅ First build: ~5.5 minutes
+- ✅ Cached build (no changes): ~13 seconds (96% faster!)
+- ✅ Partial changes: ~1-2 minutes
 
 ---

@@ -1,6 +1,63 @@
-
+# Dependencies
 node_modules
+**/node_modules
+frontend_node_modules
+backend_node_modules
+
+# Build outputs
 dist
 .next
+build
+out
+
+# Turborepo cache (will use Docker cache mounts instead)
+.turbo
+
+# Environment files
+.env
 .env.local
+.env.*.local
+!.env.production
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Git
+.git
+.gitignore
+.github
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+.nyc_output
+
+# Documentation
+README.md
+*.md
+!apps/*/README.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Misc
+.vercel
+.serena
+uploads

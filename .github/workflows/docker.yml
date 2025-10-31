@@ -61,8 +61,14 @@ jobs:
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:buildcache,mode=max
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:buildcache
+            type=gha
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:buildcache,mode=max
+            type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
       - name: Build and push Backend image
         uses: docker/build-push-action@v5
@@ -73,8 +79,14 @@ jobs:
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
+            type=gha
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
+            type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
   deploy:
     needs: build-and-push
@@ -85,47 +97,138 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Verify deployment secrets
+        run: |
+          echo "🔍 Verifying deployment configuration..."
+          echo "TAG: ${{ github.ref_name }}"
+          echo "REPO: ${{ github.repository }}"
+          echo "ACTOR: ${{ github.actor }}"
+          if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+            echo "❌ ERROR: SERVER_HOST secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SERVER_USER }}" ]; then
+            echo "❌ ERROR: SERVER_USER secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRM_DEPLOY_KEY }}" ]; then
+            echo "❌ ERROR: CRM_DEPLOY_KEY secret is not set"
+            exit 1
+          fi
+          echo "✅ All required secrets are configured"
+          echo "Server: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
+
+      - name: Set up SSH
+        env:
+          CRM_DEPLOY_KEY: ${{ secrets.CRM_DEPLOY_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          echo "🔑 Setting up SSH key..."
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # Write SSH key and ensure proper format
+          echo "$CRM_DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Verify key format (supports both RSA and OpenSSH formats)
+          echo "🔍 Validating SSH key format..."
+          if ssh-keygen -l -f ~/.ssh/deploy_key &>/dev/null; then
+            echo "✅ SSH key validated successfully"
+          else
+            echo "❌ ERROR: SSH key format is invalid"
+            echo "Key should be in PEM format (RSA/OPENSSH)"
+            echo "Checking key header..."
+            head -n 1 ~/.ssh/deploy_key
+            exit 1
+          fi
+          
+          echo "🔍 Adding server to known hosts..."
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>&1 || true
+          chmod 644 ~/.ssh/known_hosts
+          echo "✅ Server added to known hosts"
+
+      - name: Test SSH connection
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          echo "🔌 Testing SSH connection to $SERVER_USER@$SERVER_HOST..."
+          
+          # Test with verbose output for debugging
+          if ssh -i ~/.ssh/deploy_key \
+                 -o ConnectTimeout=10 \
+                 -o StrictHostKeyChecking=accept-new \
+                 -o BatchMode=yes \
+                 "$SERVER_USER@$SERVER_HOST" 'echo "✅ SSH connection successful"'; then
+            echo "✅ SSH connection test passed"
+          else
+            echo "❌ ERROR: SSH connection failed"
+            echo "Debugging information:"
+            echo "- Check that SERVER_HOST is correct: $SERVER_HOST"
+            echo "- Check that SERVER_USER is correct: $SERVER_USER"
+            echo "- Verify the SSH key is added to server's authorized_keys"
+            echo "- Ensure the server allows key-based authentication"
+            exit 1
+          fi
+
       - name: Deploy to server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.CRM_DEPLOY_KEY }}
-          SSH_HOST: ${{ secrets.SERVER_HOST }}
-          SSH_USER: ${{ secrets.SERVER_USER }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          # Set up SSH key
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          echo "🚀 Starting deployment to server..."
+          echo "Tag: ${{ github.ref_name }}"
+          echo "Frontend image: ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}"
+          echo "Backend image: ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
           
-          # Deploy to server with environment variables
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" bash -s << 'ENDSSH'
             set -e
-            cd crm
             
-            # Pull latest code
-            git fetch --all
-            git checkout tags/${{ github.ref_name }} -B release-${{ github.ref_name }}
+            echo "📂 Step 1: Navigating to project directory..."
+            cd crm || { echo "❌ ERROR: Failed to cd into crm directory"; exit 1; }
+            echo "✅ Current directory: $(pwd)"
             
-            # Login to GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            echo "🔄 Step 2: Fetching latest git changes..."
+            git fetch --all || { echo "❌ ERROR: Git fetch failed"; exit 1; }
+            echo "✅ Git fetch completed"
             
-            # Pull pre-built images
-            docker pull ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
-            docker pull ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+            echo "🌿 Step 3: Checking out tag ${{ github.ref_name }}..."
+            git checkout tags/${{ github.ref_name }} -B release-${{ github.ref_name }} || { echo "❌ ERROR: Git checkout failed"; exit 1; }
+            echo "✅ Checked out tag: ${{ github.ref_name }}"
+            echo "Current branch: $(git branch --show-current)"
             
-            # Update docker-compose to use the new images
+            echo "🔐 Step 4: Logging into GitHub Container Registry..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin || { echo "❌ ERROR: Docker login failed"; exit 1; }
+            echo "✅ Logged into GHCR as ${{ github.actor }}"
+            
+            echo "⬇️ Step 5: Pulling frontend image..."
+            docker pull ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }} || { echo "❌ ERROR: Failed to pull frontend image"; exit 1; }
+            echo "✅ Frontend image pulled successfully"
+            
+            echo "⬇️ Step 6: Pulling backend image..."
+            docker pull ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }} || { echo "❌ ERROR: Failed to pull backend image"; exit 1; }
+            echo "✅ Backend image pulled successfully"
+            
+            echo "⚙️ Step 7: Setting environment variables..."
             export FRONTEND_IMAGE=ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
             export BACKEND_IMAGE=ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+            echo "FRONTEND_IMAGE=$FRONTEND_IMAGE"
+            echo "BACKEND_IMAGE=$BACKEND_IMAGE"
+            echo "✅ Environment variables set"
             
-            # Restart with pre-built images
-            docker compose up -d --no-build
+            echo "🐳 Step 8: Starting containers with docker compose..."
+            docker compose up -d --no-build || { echo "❌ ERROR: Docker compose up failed"; exit 1; }
+            echo "✅ Containers started successfully"
             
-            # Clean up old images
-            docker image prune -af --filter "until=72h"
+            echo "📊 Step 9: Checking container status..."
+            docker ps --filter name=crm
             
-            echo "✅ Deployment of ${{ github.ref_name }} completed successfully!"
+            echo "🧹 Step 10: Cleaning up old images..."
+            docker image prune -af --filter "until=72h" || { echo "⚠️ WARNING: Image cleanup failed (non-critical)"; }
+            echo "✅ Cleanup completed"
+            
+            echo "🎉 ✅ Deployment of ${{ github.ref_name }} completed successfully!"
           ENDSSH
+          
+          echo "✅ Deployment workflow completed successfully!"
