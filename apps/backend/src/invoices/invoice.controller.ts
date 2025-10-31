@@ -127,21 +127,29 @@ export class InvoiceController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const dealerId = req.user.id;
-    console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createInvoiceDto, null, 2));
-    console.log('🔍 Controller.downloadPdf - DealerId:', dealerId);
-    const pdfBuffer = await this.invoiceService.generatePdf(
-      createInvoiceDto,
-      dealerId,
-    );
+    try {
+      const dealerId = req.user.id;
+      console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createInvoiceDto, null, 2));
+      console.log('🔍 Controller.downloadPdf - DealerId:', dealerId);
 
-    // Set headers for PDF download
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="invoice-${Date.now()}.pdf"`,
-      'Content-Length': pdfBuffer.length,
-    });
+      const pdfBuffer = await this.invoiceService.generatePdf(
+        createInvoiceDto,
+        dealerId,
+      );
 
-    return new StreamableFile(pdfBuffer);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="invoice-${Date.now()}.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+
+      return new StreamableFile(pdfBuffer);
+    } catch (error:any) {
+      // Very explicit logging
+      console.error('❌ Controller.downloadPdf - ERROR message:', (error && error?.message) || error);
+      console.error('❌ Controller.downloadPdf - ERROR stack:', (error && error?.stack) || 'no stack');
+      // Optionally send more info in body for local debugging only
+      throw error; // Nest will return 500; but logs will show stack
+    }
   }
 }
