@@ -144,7 +144,7 @@ FROM node:22-alpine AS backend-runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# # Install Chromium and dependencies required by Puppeteer
+# Install Chromium and dependencies required by Puppeteer
 # RUN apk add --no-cache \
 #     chromium \
 #     nss \
@@ -154,10 +154,12 @@ ENV NODE_ENV=production
 #     ttf-freefont \
 #     font-noto-emoji
 
-# # Tell Puppeteer to use the system Chromium
-# ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-#     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+RUN apk add chromium
 
+# Tell Puppeteer to use the system Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+    
 COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/apps/backend/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
