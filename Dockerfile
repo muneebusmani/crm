@@ -154,11 +154,11 @@ ENV NODE_ENV=production
 #     ttf-freefont \
 #     font-noto-emoji
 
-RUN apk add chromium
+# RUN apk add chromium
 
 # Tell Puppeteer to use the system Chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    # PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
     
 COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/apps/backend/package.json ./
