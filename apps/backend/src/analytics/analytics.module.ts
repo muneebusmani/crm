@@ -6,7 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { Invoice } from 'src/invoices/entities/invoice.entity';
 import { DealerLead } from 'src/user/entities/dealer-lead.entity';
-import { Dealer, Quotation, User } from 'src/user/entities';
+import { Dealer } from 'src/user/entities/dealer.entity';
+import { Quotation } from 'src/quotations/entities/quotation.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Lead, Invoice, DealerLead, Quotation, Dealer, User ]), LeadsModule], // pull in leads services/repositories
