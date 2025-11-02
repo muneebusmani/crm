@@ -9,7 +9,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { LeadsGateway } from 'src/leads/leads.gateway';
 import { User as UserEntity } from 'src/user/entities';
+import { UserDevice } from 'src/user/entities/user_device.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -19,8 +21,15 @@ export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+
+
+    @InjectRepository(UserDevice)
+    private readonly deviceRepository: Repository<UserDevice>,
+
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly leadsGateway: LeadsGateway,
+    
   ) {
     this.saltRounds = parseInt(
       this.configService.get<string>('SALT_ROUNDS')!,
@@ -47,42 +56,65 @@ export class AuthService {
     return await this.jwtService.signAsync(payload);
   }
 
-  async login(
-    dto: LoginDto,
-  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email },
+  async login(dto: LoginDto): Promise<{ user: any; accessToken: string; refreshToken: string }> {
+  const user = await this.userRepository.findOne({
+    where: { email: dto.email },
+    relations: ['devices'],
+  });
+  if (!user) throw new UnauthorizedException('Invalid credentials');
+
+  const valid = await bcrypt.compare(dto.password, user.password);
+  if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+  const { deviceId, deviceName, platform, ip } = dto;
+
+  // Find existing device
+  let userDevice = user.devices.find((d) => d.deviceId === deviceId);
+
+  // If new device, create entry
+  if (!userDevice) {
+    const activeDevices = user.devices.filter((d) => d.isActive);
+
+    // Check device limit (admin-controlled)
+    if (activeDevices.length >= user.allowedDevices) {
+      // Deactivate all other devices
+      for (const d of activeDevices) {
+        d.isActive = false;
+        await this.deviceRepository.save(d);
+
+        // Trigger webhook logout for each deactivated device
+        await this.leadsGateway.emitForceLogout(d.deviceId, user.id);
+      }
+    }
+
+   userDevice =  await this.deviceRepository.create({
+      user,
+      deviceId,
+      deviceName,
+      platform,
+      ipAddress: ip,
+      isActive: true,
+      lastLoginAt: new Date(),
     });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const passwordMatches = await bcrypt.compare(dto.password, user.password);
-
-    if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const accessToken = await this.generateToken(user);
-    const refreshToken = await this.generateRefreshToken(user);
-
-    const hashedRefresh = await bcrypt.hash(refreshToken, 10);
-    await this.userRepository.update(user.id, { refreshToken: hashedRefresh });
-
-    return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        status: user.status,
-        type: user.type,
-      },
-      accessToken,
-      refreshToken,
-    };
+    await this.deviceRepository.save(userDevice);
+  } else {
+    userDevice.isActive = true;
+    userDevice.lastLoginAt = new Date();
+    await this.deviceRepository.save(userDevice);
   }
+
+  const accessToken = await this.generateToken(user);
+  const refreshToken = await this.generateRefreshToken(user);
+
+  await this.userRepository.update(user.id, { refreshToken });
+
+  return {
+    user: { id: user.id, name: user.name, email: user.email },
+    accessToken,
+    refreshToken,
+  };
+}
+
 
   async refresh(refreshToken: string) {
     try {

@@ -6,6 +6,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { UserDevice } from './user_device.entity';
 
 @Entity('user')
 export class User {
@@ -75,5 +76,11 @@ export class User {
   
   @Column({ nullable: true })
   refreshToken!: string
+
+  @Column({ type: 'int', default: 1 })
+  allowedDevices!: number;
+
+  @OneToMany('UserDevice', 'user') // 'UserDevice' is target, 'user' is property in UserDevice
+  devices!: any[];
 
 }

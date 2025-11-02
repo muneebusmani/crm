@@ -10,6 +10,10 @@ export const LoginSchema = z.object({
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters' }),
+    deviceId : z.string(),
+    deviceName : z.string(),
+    platform: z.enum(['web', 'android', 'ios']), // ✅ restrict to valid values
+    ip    : z.string(),
 });
 
 export type LoginDto = z.infer<typeof LoginSchema>;
