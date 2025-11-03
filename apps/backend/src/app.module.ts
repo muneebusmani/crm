@@ -19,6 +19,7 @@ import { SeederModule } from './seeder/seeder.module';
 import { DealerTierModule } from './dealer-tier/dealer-tier.module';
 import { MessagesModule } from './dealer-chat/messages.module';
 import { BusinessSettingModule } from './business-setting/business-setting.module';
+import { CompanyUserModule } from './company-user/company-user.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { BusinessSettingModule } from './business-setting/business-setting.modul
     DealerModule,
     MessagesModule,
     ActivityLogModule,
+    CompanyUserModule,
     LeadMessageModule,
     BusinessSettingModule,
     DealerTierModule,
