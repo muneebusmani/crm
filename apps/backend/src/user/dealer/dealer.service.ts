@@ -34,10 +34,13 @@ import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 // import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
-import { CompanyUserService } from 'src/company-user/company-user.service'; // 👈 Import CompanyUserService
+import { CompanyUserService } from 'src/company-user/company-user.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class DealerService {
+  private readonly logger = new Logger(DealerService.name);
+  
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -202,15 +205,41 @@ export class DealerService {
     });
 
     const savedDealer = await this.dealerRepository.save(dealer);
+    this.logger.log(`✅ Dealer saved successfully with ID: ${savedDealer.id}`);
 
     // 6 Create default company user profile
+    this.logger.log(`🔄 Attempting to create default company user profile for dealer ${savedDealer.id}...`);
     try {
-      await this.companyUserService.createDefaultProfile(savedDealer);
-      console.log(`✅ Default profile created for dealer ${savedDealer.id}`);
+      // IMPORTANT: Need to fetch dealer with user relation for createDefaultProfile
+      const dealerWithUser = await this.dealerRepository.findOne({
+        where: { id: savedDealer.id },
+        relations: ['user'],
+      });
+
+      if (!dealerWithUser) {
+        throw new Error(`Could not find dealer ${savedDealer.id} with user relation`);
+      }
+
+      this.logger.debug(`Dealer with user relation: ${JSON.stringify({
+        dealerId: dealerWithUser.id,
+        dealerName: dealerWithUser.name,
+        contactEmail: dealerWithUser.contactEmail,
+        userId: dealerWithUser.user?.id,
+        userEmail: dealerWithUser.user?.email
+      })}`);
+
+      const defaultProfile = await this.companyUserService.createDefaultProfile(dealerWithUser);
+      this.logger.log(`✅ Default profile created successfully! Profile ID: ${defaultProfile.id}`);
     } catch (error) {
-      console.error('❌ Failed to create default company profile:', error);
+      this.logger.error(`❌ Failed to create default company profile for dealer ${savedDealer.id}`);
+      this.logger.error(error);
+      if (error instanceof Error) {
+        this.logger.error(`Error message: ${error.message}`);
+        this.logger.error(`Error stack: ${error.stack}`);
+      }
       // Don't fail dealer creation if profile creation fails
       // Profile can be created manually later
+      this.logger.warn(`⚠️ Continuing dealer creation despite profile creation failure`);
     }
 
     // 7 Insert dealer_tier_credit record for tracking
