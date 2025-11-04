@@ -24,6 +24,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  Skeleton,
   LinearProgress,
   List,
   ListItem,
@@ -32,10 +33,14 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const HomePage = () => {
   const theme = useTheme();
+  const router = useRouter();
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState<boolean>(true);
   const [notifications] = useState<Notification[]>([
     {
       id: 1,
@@ -145,15 +150,44 @@ const HomePage = () => {
   const leadProgress = 75; // 75% of monthly quota
   const taskCompletion = 40; // 40% of tasks completed
 
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/selected-profile', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (!ignore) setProfileName(data.name ?? null);
+        } else if (res.status === 404) {
+          // No selected profile; send user to selector
+          if (!ignore) router.push('/dealer/select-profile');
+        }
+      } catch {
+        // ignore network errors; keep fallback name
+      } finally {
+        if (!ignore) setLoadingProfile(false);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [router]);
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Greeting Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" fontWeight="fontWeightBold">
           Welcome back,{' '}
-          <span style={{ color: theme.palette.primary.main }}>
-            Ali Auto Garage
-          </span>{' '}
+          {loadingProfile ? (
+            <Skeleton
+              variant="text"
+              width={220}
+              sx={{ display: 'inline-block', verticalAlign: 'middle' }}
+            />
+          ) : (
+            <span style={{ color: theme.palette.primary.main }}>
+              {profileName ?? 'Your Company'}
+            </span>
+          )}{' '}
           👋
         </Typography>
         <Typography variant="subtitle1" color="textSecondary" sx={{ mt: 1 }}>

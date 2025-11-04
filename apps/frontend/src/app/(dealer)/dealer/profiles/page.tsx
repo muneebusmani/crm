@@ -21,10 +21,24 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  Avatar,
+  Divider,
+  Stack,
+  Paper,
+  Grid,
 } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
+import { 
+  Add, 
+  Edit, 
+  Delete, 
+  PersonOutline, 
+  Email, 
+  Phone, 
+  Work,
+  StarBorder,
+  Star,
+} from '@mui/icons-material';
 import type { CompanyUser, CreateCompanyUserDto } from '@crm/types';
-
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +128,7 @@ export default function ProfilesPage() {
 
   const handleDelete = async (id: number, isDefault: boolean) => {
     if (isDefault) {
-      alert('Cannot delete default profile');
+        setError('Cannot delete default profile');
       return;
     }
 
@@ -145,11 +159,19 @@ export default function ProfilesPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4">Company Profiles</Typography>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Company Profiles
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage team members who can access the dealer portal
+            </Typography>
+          </Box>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => handleOpenDialog()}
+            size="large"
         >
           Add Profile
         </Button>
@@ -161,102 +183,203 @@ export default function ProfilesPage() {
         </Alert>
       )}
 
-      <Card>
-        <CardContent>
-          <List>
+        {profiles.length === 0 ? (
+          <Paper
+            sx={{
+              p: 6,
+              textAlign: 'center',
+              bgcolor: 'background.default',
+            }}
+          >
+            <PersonOutline sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              No Profiles Yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Create your first company profile to get started
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => handleOpenDialog()}
+            >
+              Add First Profile
+            </Button>
+          </Paper>
+        ) : (
+          <Grid container spacing={3}>
             {profiles.map((profile) => (
-              <ListItem
-                key={profile.id}
-                divider
-                sx={{
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      {profile.name}
-                      {profile.is_default && (
-                        <Chip label="Default" size="small" color="primary" />
-                      )}
+              <Grid item xs={12} md={6} key={profile.id}>
+                <Card
+                  elevation={profile.is_default ? 4 : 1}
+                  sx={{
+                    height: '100%',
+                    transition: 'all 0.2s',
+                    border: profile.is_default ? 2 : 0,
+                    borderColor: 'primary.main',
+                    '&:hover': {
+                      elevation: 6,
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  <CardContent>
+                    <Box display="flex" alignItems="flex-start" mb={2}>
+                      <Avatar
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          bgcolor: profile.is_default ? 'primary.main' : 'secondary.main',
+                          mr: 2,
+                        }}
+                      >
+                        {profile.is_default ? (
+                          <Star fontSize="large" />
+                        ) : (
+                          <PersonOutline fontSize="large" />
+                        )}
+                      </Avatar>
+                      <Box flex={1}>
+                        <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                          <Typography variant="h6">
+                            {profile.name}
+                          </Typography>
+                          {profile.is_default && (
+                            <Chip 
+                              label="Default" 
+                              size="small" 
+                              color="primary" 
+                              icon={<Star />}
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                      <Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(profile)}
+                          color="primary"
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(profile.id, profile.is_default)}
+                          disabled={profile.is_default}
+                          color="error"
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
                     </Box>
-                  }
-                  secondary={
-                    <>
-                      <Typography variant="body2" component="span">
-                        {profile.email}
-                      </Typography>
-                      {profile.position && (
-                        <Typography variant="body2" component="span" sx={{ ml: 2 }}>
-                          • {profile.position}
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Stack spacing={1.5}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Email fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          {profile.email}
                         </Typography>
+                      </Box>
+                    
+                      {profile.phone && (
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Phone fontSize="small" color="action" />
+                          <Typography variant="body2" color="text.secondary">
+                            {profile.phone}
+                          </Typography>
+                        </Box>
                       )}
-                    </>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    onClick={() => handleOpenDialog(profile)}
-                    sx={{ mr: 1 }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    edge="end"
-                    onClick={() => handleDelete(profile.id, profile.is_default)}
-                    disabled={profile.is_default}
-                  >
-                    <Delete />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
+                    
+                      {profile.position && (
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Work fontSize="small" color="action" />
+                          <Typography variant="body2" color="text.secondary">
+                            {profile.position}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
             ))}
-          </List>
-        </CardContent>
-      </Card>
+          </Grid>
+        )}
 
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingProfile ? 'Edit Profile' : 'Add New Profile'}
+            <Box display="flex" alignItems="center" gap={1}>
+              <Avatar sx={{ bgcolor: 'primary.main' }}>
+                {editingProfile ? <Edit /> : <Add />}
+              </Avatar>
+              <Box>
+                <Typography variant="h6">
+                  {editingProfile ? 'Edit Profile' : 'Add New Profile'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {editingProfile 
+                    ? 'Update profile information' 
+                    : 'Create a new team member profile'
+                  }
+                </Typography>
+              </Box>
+            </Box>
         </DialogTitle>
         <DialogContent>
-          <TextField
-            label="Name"
-            fullWidth
-            margin="normal"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-          <TextField
-            label="Email"
-            type="email"
-            fullWidth
-            margin="normal"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
-          <TextField
-            label="Phone"
-            fullWidth
-            margin="normal"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          />
-          <TextField
-            label="Position"
-            fullWidth
-            margin="normal"
-            value={formData.position}
-            onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-          />
+            <Box sx={{ pt: 2 }}>
+              <TextField
+                label="Full Name"
+                fullWidth
+                margin="normal"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                placeholder="e.g., John Doe"
+                helperText="Required"
+              />
+              <TextField
+                label="Email Address"
+                type="email"
+                fullWidth
+                margin="normal"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                placeholder="e.g., john@example.com"
+                helperText="Required - This will be used for login"
+              />
+              <TextField
+                label="Phone Number"
+                fullWidth
+                margin="normal"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="e.g., +1 234 567 8900"
+                helperText="Optional"
+              />
+              <TextField
+                label="Position / Role"
+                fullWidth
+                margin="normal"
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                placeholder="e.g., Sales Manager"
+                helperText="Optional"
+              />
+            </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">
+            <Button onClick={handleCloseDialog} color="inherit">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              variant="contained"
+              disabled={!formData.name || !formData.email}
+            >
             {editingProfile ? 'Update' : 'Create'}
           </Button>
         </DialogActions>

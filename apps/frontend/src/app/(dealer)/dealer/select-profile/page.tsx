@@ -8,10 +8,10 @@ import {
   Card,
   CardContent,
   CardActionArea,
-  Grid,
   Avatar,
   CircularProgress,
   Alert,
+  Button,
 } from '@mui/material';
 import { Business, PersonOutline } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
@@ -43,9 +43,9 @@ export default function SelectProfilePage() {
       setProfiles(data);
       
       // Auto-select if only one profile (default)
-      if (data.length === 1) {
-        handleSelectProfile(data[0].id);
-      }
+      // if (data.length === 1) {
+      //   handleSelectProfile(data[0].id);
+      // }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load profiles');
     } finally {
@@ -95,15 +95,31 @@ export default function SelectProfilePage() {
         </Typography>
       </Box>
 
+      {/* Manage profiles entry point */}
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Button
+          variant="outlined"
+          onClick={() => router.push('/dealer/profiles')}
+        >
+          Manage Profiles
+        </Button>
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 4 }}>
           {error}
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gap: 3,
+        }}
+      >
         {profiles.map((profile) => (
-          <Grid item xs={12} sm={6} key={profile.id}>
+          <Box key={profile.id}>
             <Card
               elevation={selecting === profile.id ? 8 : 2}
               sx={{
@@ -177,14 +193,22 @@ export default function SelectProfilePage() {
                 </CardContent>
               </CardActionArea>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {profiles.length === 0 && !error && (
-        <Alert severity="warning" sx={{ mt: 4 }}>
-          No profiles found. Please contact support.
-        </Alert>
+        <Box display="flex" flexDirection="column" alignItems="center" mt={4} gap={2}>
+          <Alert severity="warning" sx={{ width: '100%' }}>
+            No profiles found.
+          </Alert>
+          <Button
+            variant="contained"
+            onClick={() => router.push('/dealer/profiles')}
+          >
+            Create or Manage Profiles
+          </Button>
+        </Box>
       )}
     </Container>
   );
