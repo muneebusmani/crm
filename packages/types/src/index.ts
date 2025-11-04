@@ -25,4 +25,4 @@ export * from './schemas/invoice.schemas';
 export * from './schemas/quotation.schema';
 export * from './schemas/lead-message.schme';
 export * from './schemas/company-user.schema';
-
+export * from './types/company-user.type';

@@ -10,5 +10,6 @@ import { Dealer } from 'src/user/entities';
   imports: [TypeOrmModule.forFeature([CompanyUser, Dealer])],
   providers: [CompanyUserService],
   controllers: [CompanyUserController],
+  exports: [CompanyUserService], // 👈 Export so DealerModule can use it
 })
 export class CompanyUserModule {}

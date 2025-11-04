@@ -21,12 +21,40 @@ export class CompanyUserService {
         });
     if (!dealer) throw new BadRequestException('Dealer not found');
 
-    // Ensure dealer doesn’t already have a linked company user
+    // Ensure dealer doesn't already have a linked company user
     const existing = await this.companyUserRepo.findOne({ where: { dealer_id: dealerId } });
     if (existing) throw new BadRequestException('Dealer already has a company user');
 
     const user = this.companyUserRepo.create({ ...dto, dealer });
     return this.companyUserRepo.save(user);
+  }
+
+  /**
+   * Create default company user profile for a dealer
+   * Called automatically during dealer registration
+   */
+  async createDefaultProfile(dealer: Dealer): Promise<CompanyUser> {
+    // Check if default profile already exists
+    const existing = await this.companyUserRepo.findOne({
+      where: { dealer_id: dealer.id, is_default: true }
+    });
+
+    if (existing) {
+      console.log(`Default profile already exists for dealer ${dealer.id}`);
+      return existing;
+    }
+
+    const defaultProfile = this.companyUserRepo.create({
+      name: dealer.name,
+      email: dealer.contactEmail || dealer.user?.email || `default-${dealer.id}@company.local`,
+      phone: null,
+      position: 'Owner',
+      dealer_id: dealer.id,
+      is_default: true,
+    });
+
+    console.log(`Creating default profile for dealer ${dealer.id}: ${defaultProfile.name}`);
+    return this.companyUserRepo.save(defaultProfile);
   }
 
   async findAll(): Promise<CompanyUser[]> {

@@ -34,6 +34,7 @@ import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 // import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
+import { CompanyUserService } from 'src/company-user/company-user.service'; // 👈 Import CompanyUserService
 
 @Injectable()
 export class DealerService {
@@ -71,6 +72,8 @@ export class DealerService {
     private readonly configService: ConfigService, // 👈 inject here
 
     private readonly leadsGateway: LeadsGateway,
+    
+    private readonly companyUserService: CompanyUserService, // 👈 Inject CompanyUserService
   ) {}
 
   // dealer.service.ts
@@ -200,7 +203,17 @@ export class DealerService {
 
     const savedDealer = await this.dealerRepository.save(dealer);
 
-    // 6 Insert dealer_tier_credit record for tracking
+    // 6 Create default company user profile
+    try {
+      await this.companyUserService.createDefaultProfile(savedDealer);
+      console.log(`✅ Default profile created for dealer ${savedDealer.id}`);
+    } catch (error) {
+      console.error('❌ Failed to create default company profile:', error);
+      // Don't fail dealer creation if profile creation fails
+      // Profile can be created manually later
+    }
+
+    // 7 Insert dealer_tier_credit record for tracking
     const dealerTierCredit = this.dealerTierCreditRepository.create({
       dealerId: savedDealer.id,
       tierId: dealerTier.id,
@@ -208,7 +221,7 @@ export class DealerService {
     });
     await this.dealerTierCreditRepository.save(dealerTierCredit);
 
-    // 7 Return dealer with relations
+    // 8 Return dealer with relations
     return this.userRepository.findOne({
       where: { id: savedUser.id },
       relations: [

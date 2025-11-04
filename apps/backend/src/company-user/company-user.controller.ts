@@ -29,25 +29,31 @@ export class CompanyUserController {
     return await this.companyUserService.create(dto, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll() {
-    return this.companyUserService.findAll();
+  async findAll(@Req() req) {
+    // Return only profiles for the authenticated dealer
+    return this.companyUserService.findByDealerId(req.user.id);
   }
 
-//   @Get(':id')
-//   async findOne(@Param('id', ParseIntPipe) id: number) {
-//     return this.companyUserService.findOne(id);
-//   }
-    @UseGuards(JwtAuthGuard)
-    @Get('dealers')
-    async findByDealer(
-        @Req() req,
-    ) {
-        const dealerId = req.user.id; // ✅ Convert string → number
-        return await this.companyUserService.findByDealerId(dealerId);
+  @UseGuards(JwtAuthGuard)
+  @Get('select/:id')
+  async selectProfile(
+    @Param('id', ParseIntPipe) profileId: number,
+    @Req() req
+  ) {
+    // Verify profile belongs to dealer and return profile data
+    const dealer = await this.companyUserService.findByDealerId(req.user.id);
+    const profile = dealer.find(p => p.id === profileId);
+    
+    if (!profile) {
+      throw new Error('Profile not found or does not belong to this dealer');
     }
     
-  @Put(':id')
+    return profile;
+  }
+    
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id', ParseIntPipe) id: number, @Body() body: unknown) {
     const dto = UpdateCompanyUserSchema.parse(body);
     return await this.companyUserService.update(id, dto);

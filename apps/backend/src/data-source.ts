@@ -23,5 +23,5 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   logging: true,
   entities: [join(__dirname, '**/*.entity{.ts,.js}')],
-  migrations: [join(__dirname, 'migrations/1762196549072-CompnayUser.ts')],
+  migrations: [join(__dirname, 'migrations/1762274319901-SchemaFixesInCompanyUser.ts.ts')],
 });

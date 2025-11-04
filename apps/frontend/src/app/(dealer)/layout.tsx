@@ -15,8 +15,11 @@ export default async function DealerLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
   const LayoutProps = {
-    userType: (await cookies()).get('user_type')?.value as UserType,
+    userType: cookieStore.get('user_type')?.value as UserType,
+    selectedProfileName: cookieStore.get('selected_profile_name')?.value,
+    selectedProfileEmail: cookieStore.get('selected_profile_email')?.value,
   };
   return (
     <html lang="en">
