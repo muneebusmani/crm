@@ -42,6 +42,14 @@ export class BankDetailService {
       return details;
   }
 
+  async findByUserId(userId: number): Promise<BankDetails[]> {
+      const details = await this.bankDetailRepository.find({
+        where: { user: { id: userId } },
+        relations: ['user'],
+      })
+      return details;
+  }
+
   async findOne(id: number): Promise<BankDetails> {
       const detail = await this.bankDetailRepository.findOne({
         where: { id },

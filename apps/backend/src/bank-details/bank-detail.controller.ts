@@ -41,34 +41,63 @@ export class BankDetailsController {
     return this.buildResponse(bankDeatils);
   }
 
-  // 🔹 Get all bank details
+  // 🔹 Get all bank details for the authenticated dealer
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll() : Promise<ApiResponse<BankDetailsResponse[]>> {
-   const banks =  await this.bankDetailsService.findAll();
+  async findAll(@Req() req) : Promise<ApiResponse<BankDetailsResponse[]>> {
+   const dealerId = req.user.id;
+   const banks = await this.bankDetailsService.findByUserId(dealerId);
     return this.buildResponse(banks);
   }
 
-  // 🔹 Get bank detail by id
+  // 🔹 Get bank detail by id (with ownership check)
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) : Promise<ApiResponse<BankDetailsResponse>> {
-    const banks = await this.bankDetailsService.findOne(id);
-    return this.buildResponse(banks);
+  async findOne(@Param('id', ParseIntPipe) id: number, @Req() req) : Promise<ApiResponse<BankDetailsResponse>> {
+    const dealerId = req.user.id;
+    const bankDetail = await this.bankDetailsService.findOne(id);
+    
+    // Ensure the bank detail belongs to the authenticated user
+    if (bankDetail.user.id !== dealerId) {
+      throw new CustomError('Unauthorized access to bank details');
+    }
+    
+    return this.buildResponse(bankDetail);
   }
 
-  // 🔹 Update bank detail
+  // 🔹 Update bank detail (with ownership check)
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBankDetailsDto: UpdateBankDetailsDto,
+    @Req() req,
   ) {
-    const updated = this.bankDetailsService.update(id, updateBankDetailsDto);
+    const dealerId = req.user.id;
+    const existing = await this.bankDetailsService.findOne(id);
+    
+    // Ensure the bank detail belongs to the authenticated user
+    if (existing.user.id !== dealerId) {
+      throw new CustomError('Unauthorized access to bank details');
+    }
+    
+    const updated = await this.bankDetailsService.update(id, updateBankDetailsDto);
     return this.buildResponse(updated);
   }
 
-  // 🔹 Delete bank detail
+  // 🔹 Delete bank detail (with ownership check)
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) : Promise<ApiResponse<BankDetailsResponse>> {
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req) : Promise<ApiResponse<BankDetailsResponse>> {
+    const dealerId = req.user.id;
+    const existing = await this.bankDetailsService.findOne(id);
+    
+    // Ensure the bank detail belongs to the authenticated user
+    if (existing.user.id !== dealerId) {
+      throw new CustomError('Unauthorized access to bank details');
+    }
+    
     const result = await this.bankDetailsService.remove(id);
-    return  this.buildResponse(result);
+    return this.buildResponse(result);
   }
 }
