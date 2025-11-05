@@ -40,7 +40,7 @@ export function middleware(req: NextRequest) {
   // 👇 NEW: Check if dealer needs to select profile
   if (userTypeCookie === UserType.DEALER) {
     // Allow access to select-profile page
-    if (pathname === '/dealer/select-profile') {
+    if (pathname === '/dealer/select-profile'|| pathname === '/dealer/profiles') {
       return NextResponse.next();
     }
 
