@@ -182,6 +182,9 @@ const QuotationsTable: React.FC = () => {
                 <strong>Lead</strong>
               </TableCell>
               <TableCell>
+                <strong>Sent By</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Date</strong>
               </TableCell>
               <TableCell align="right">
@@ -201,13 +204,13 @@ const QuotationsTable: React.FC = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : paginatedQuotations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   No quotations found
                 </TableCell>
               </TableRow>
@@ -216,6 +219,22 @@ const QuotationsTable: React.FC = () => {
                 <TableRow key={quotation.id} hover>
                   <TableCell>{quotation.quotationNumber || 'N/A'}</TableCell>
                   <TableCell>{quotation.lead?.name || 'N/A'}</TableCell>
+                  <TableCell>
+                    {quotation.companyUser ? (
+                      <Box>
+                        <Typography variant="body2">
+                          {quotation.companyUser.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {quotation.companyUser.email}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        N/A
+                      </Typography>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {quotation.date
                       ? new Date(quotation.date).toLocaleDateString()

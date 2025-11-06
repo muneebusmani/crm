@@ -29,6 +29,7 @@ export const CreateQuotationSchema = z.object({
   taxAmount: z.number().min(0, 'Tax amount cannot be negative').optional().default(0),
   recoveryLocation: z.string().optional().default(''),
   deliveryLocation: z.string().optional().default(''),
+  companyUserId: z.number().optional(), // Profile ID who sent the quotation
 });
 
 export type CreateQuotationDto = z.infer<typeof CreateQuotationSchema>;

@@ -70,6 +70,7 @@ export class QuotationService {
   async create(
     createQuotationDto: CreateQuotationDto,
     dealerId: number,
+    companyUserId?: number,
   ): Promise<Quotation> {
     // 🔍 1. Verify lead ownership
     const lead = await this.leadRepository.findOne({
@@ -132,6 +133,7 @@ export class QuotationService {
       date: createQuotationDto.date,
       lead,
       dealer,
+      company_user_id: companyUserId || null,
       sellerNote: createQuotationDto.sellerNote,
       subTotal,
       taxAmount: totalTax,
@@ -243,7 +245,7 @@ export class QuotationService {
   async findAll(dealerId: number): Promise<Quotation[]> {
     return this.quotationRepository.find({
       where: { dealer: { id: dealerId } },
-      relations: ['dealer', 'lead', 'items'], // ✅ fixed
+      relations: ['dealer', 'lead', 'items', 'companyUser'], // ✅ added companyUser
       order: { createdAt: 'DESC' },
     });
   }
@@ -323,10 +325,10 @@ export class QuotationService {
     }
 
     if (
-      quotation.status === QuotationStatus.PAID &&
+      quotation.status === QuotationStatus.ACCEPTED &&
       status === QuotationStatus.CANCELLED
     ) {
-      throw new BadRequestException('Cannot cancel paid quotation');
+      throw new BadRequestException('Cannot cancel accepted quotation');
     }
 
     quotation.status = status;
