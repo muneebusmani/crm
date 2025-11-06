@@ -6,6 +6,7 @@ networks:
 
 services:
   frontend:
+    image: ${FRONTEND_IMAGE:-crm-frontend-local}
     build:
       context: .
       dockerfile: Dockerfile
@@ -32,6 +33,7 @@ services:
       - backend
 
   backend:
+    image: ${BACKEND_IMAGE:-crm-backend-local}
     build:
       context: .
       dockerfile: Dockerfile

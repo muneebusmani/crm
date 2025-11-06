@@ -102,13 +102,14 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # --- Copy manifests first for caching ---
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* turbo.json ./
 COPY apps/frontend/package.json apps/frontend/
 COPY apps/backend/package.json apps/backend/
 COPY packages/types/package.json packages/types/
 
-# --- Install dependencies before copying rest of source ---
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# --- Install dependencies with cache mount ---
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # --- Copy the rest of the source ---
 COPY . .
@@ -116,8 +117,9 @@ COPY . .
 # Frontend build needs its .env
 RUN cp apps/frontend/.env.production apps/frontend/.env.production || true
 
-# Run Turbo build (frontend + backend + shared types)
-RUN pnpm run build-server
+# Run Turbo build with cache mount for Turborepo
+RUN --mount=type=cache,target=/app/.turbo \
+    pnpm run build-server
 
 # --- frontend runtime ---
 FROM node:22-alpine AS frontend-runtime
@@ -142,6 +144,22 @@ FROM node:22-alpine AS backend-runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Install Chromium and dependencies required by Puppeteer
+# RUN apk add --no-cache \
+#     chromium \
+#     nss \
+#     freetype \
+#     harfbuzz \
+#     ca-certificates \
+#     ttf-freefont \
+#     font-noto-emoji
+
+RUN apk add chromium
+
+# Tell Puppeteer to use the system Chromium
+# ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+#     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+    
 COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/apps/backend/package.json ./
 COPY --from=builder /app/node_modules ./node_modules

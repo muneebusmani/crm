@@ -197,6 +197,9 @@ const InvoicesTable: React.FC = () => {
                 <strong>Lead</strong>
               </TableCell>
               <TableCell>
+                <strong>Sent By</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Date</strong>
               </TableCell>
               <TableCell align="right">
@@ -219,13 +222,13 @@ const InvoicesTable: React.FC = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={9} align="center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : paginatedInvoices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={9} align="center">
                   No invoices found
                 </TableCell>
               </TableRow>
@@ -234,6 +237,22 @@ const InvoicesTable: React.FC = () => {
                 <TableRow key={invoice.id} hover>
                   <TableCell>{invoice.invoiceNumber}</TableCell>
                   <TableCell>{invoice.lead?.name || 'N/A'}</TableCell>
+                  <TableCell>
+                    {invoice.companyUser ? (
+                      <Box>
+                        <Typography variant="body2">
+                          {invoice.companyUser.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {invoice.companyUser.email}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        N/A
+                      </Typography>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {new Date(invoice.date).toLocaleDateString()}
                   </TableCell>

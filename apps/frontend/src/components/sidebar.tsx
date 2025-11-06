@@ -16,6 +16,7 @@ import {
   MenuOpen,
   Message as MessageIcon,
   Person as PersonIcon,
+  SwitchAccount as SwitchAccountIcon,
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
 } from '@mui/icons-material';
@@ -218,9 +219,21 @@ const prefixRoutes = (
     path: item.path === '/' ? prefix : `${prefix}${item.path}`,
   }));
 
-const bottomNavigationItems: NavigationItem[] = [
-  { text: 'Logout', icon: <LogoutIcon />, path: '/logout' },
-];
+// Bottom navigation is rendered at the footer of the sidebar.
+// We include a dealer-only entry to switch profiles above Logout.
+const getBottomNavigationItems = (userType: UserType): NavigationItem[] => {
+  if (userType === 'dealer') {
+    return [
+      {
+        text: 'Switch Profile',
+        icon: <SwitchAccountIcon />,
+        path: '/dealer/select-profile',
+      },
+      { text: 'Logout', icon: <LogoutIcon />, path: '/logout' },
+    ];
+  }
+  return [{ text: 'Logout', icon: <LogoutIcon />, path: '/logout' }];
+};
 
 const Sidebar: React.FC<SidebarProps> = ({
   userType,
@@ -508,7 +521,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Box>
           <Divider />
           <List sx={{ py: 1 }}>
-            {bottomNavigationItems.map((item) => (
+            {getBottomNavigationItems(userType).map((item) => (
               <ListItem key={item.text} disablePadding>
                 <NavigationLink
                   href={item.path}

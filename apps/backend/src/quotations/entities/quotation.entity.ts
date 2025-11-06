@@ -77,6 +77,13 @@ export class Quotation {
   @JoinColumn({ name: 'leadId' })
   lead!: any;
 
+  @ManyToOne('CompanyUser', { nullable: true })
+  @JoinColumn({ name: 'company_user_id' })
+  companyUser!: any;
+
+  @Column({ type: 'int', nullable: true })
+  company_user_id!: number | null;
+
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   subTotal!: number;
 

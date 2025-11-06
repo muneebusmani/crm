@@ -70,6 +70,7 @@ export class InvoiceService {
   async create(
     createInvoiceDto: CreateInvoiceDto,
     dealerId: number,
+    companyUserId?: number,
   ): Promise<Invoice> {
     // 🔍 1. Verify lead ownership
     const lead = await this.leadRepository.findOne({
@@ -132,6 +133,7 @@ export class InvoiceService {
       date: createInvoiceDto.date,
       lead,
       dealer,
+      company_user_id: companyUserId || null,
       sellerNote: createInvoiceDto.sellerNote,
       subTotal,
       taxAmount: totalTax,
@@ -243,7 +245,7 @@ export class InvoiceService {
   async findAll(dealerId: number): Promise<Invoice[]> {
     return this.invoiceRepository.find({
       where: { dealer: { id: dealerId } },
-      relations: ['dealer', 'lead', 'items'], // ✅ fixed
+      relations: ['dealer', 'lead', 'items', 'companyUser'], // ✅ added companyUser
       order: { createdAt: 'DESC' },
     });
   }

@@ -1,0 +1,62 @@
+{
+    "mcpServers": {
+        "memory": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory@latest"
+            ],
+            "env": {
+                "MEMORY_FILE_PATH": "${input:memory_file_path}"
+            },
+            "gallery": true
+        },
+        "sequentialthinking": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking@latest"
+            ],
+            "gallery": true
+        },
+        "context7": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp@latest"
+            ],
+            "gallery": true
+        },
+        "deepwiki": {
+            "type": "http",
+            "url": "https://mcp.deepwiki.com/sse",
+            "gallery": true
+        },
+        "oraios/serena": {
+            "type": "stdio",
+            "command": "uvx",
+            "args": [
+                "--from",
+                "git+https://github.com/oraios/serena",
+                "serena",
+                "start-mcp-server",
+                "serena==latest",
+                "--context",
+                "ide-assistant"
+            ],
+            "gallery": "https://api.mcp.github.com/2025-09-15/v0/servers/0658e342-7ae7-493a-b378-a324363ee322",
+            "version": "1.0.0"
+        }
+    },
+    "inputs": [
+        {
+            "id": "memory_file_path",
+            "type": "promptString",
+            "description": "Path to the memory storage file",
+            "password": false
+        }
+    ]
+}

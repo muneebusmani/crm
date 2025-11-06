@@ -41,6 +41,9 @@ export class Dealer {
   @Column({ nullable: true })
   tierId!: number;
 
+  @OneToMany('CompanyUser', 'dealer', { onDelete: 'CASCADE' })
+  companyUsers!: any[];
+
   @OneToOne(
     () => User,
     (user) => user.dealer,

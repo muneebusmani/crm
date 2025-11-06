@@ -43,9 +43,11 @@ export class InvoiceController {
     @Req() req: AuthenticatedRequest,
   ): Promise<ApiResponse<InvoiceResponse>> {
     const dealerId = req.user.id; // Extracted from JWT token
+    const companyUserId = createInvoiceDto.companyUserId; // Get from request body
     const invoice = (await this.invoiceService.create(
       createInvoiceDto,
       dealerId,
+      companyUserId,
     )) as unknown as InvoiceResponse;
     return this.buildResponse(invoice);
   }
@@ -79,6 +81,7 @@ export class InvoiceController {
       sellerNote: invoice.sellerNote,
       status: invoice.status,
       createdAt: invoice.createdAt,
+      companyUser: invoice.companyUser, // ✅ added company user info
     }));
     return this.buildResponse(data);
   }
