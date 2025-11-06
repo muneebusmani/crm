@@ -34,6 +34,9 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import { useRouter } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState } from 'react';
@@ -43,6 +46,7 @@ import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
 import SendInvoiceDialog from './send-invoice-dialog';
 import SendQuotationDialog from './send-quotation-dialog';
+import LeadNotesPanel from '../LeadNotesPanel';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -68,6 +72,9 @@ const LeadsTable: React.FC = () => {
   const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
   const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
+  const [openNotesDialog, setOpenNotesDialog] = useState(false);
+  const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<Lead | null>(null);
+  const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(undefined);
 
   // Menu state for three dots
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -145,7 +152,7 @@ const LeadsTable: React.FC = () => {
       });
     });
 
-    socketService.onLeadUpdated((updatedLead: Link) => {
+    socketService.onLeadUpdated((updatedLead: Lead) => {
       setLeads((prev) =>
         prev.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)),
       );
@@ -186,6 +193,22 @@ const LeadsTable: React.FC = () => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: <idk>
   useEffect(() => {
     fetchLeads();
+  }, []);
+
+  // Fetch current profile ID
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/selected-profile', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentProfileId(data.id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchProfile();
   }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -516,6 +539,11 @@ const LeadsTable: React.FC = () => {
                     Recieved at
                   </Typography>
                 </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Notes
+                  </Typography>
+                </TableCell>
                 <TableCell
                   sx={{
                     position: 'sticky',
@@ -572,6 +600,22 @@ const LeadsTable: React.FC = () => {
                     {new Date(
                       lead.createdAt as unknown as string,
                     ).toLocaleString()}
+                  </TableCell>
+                  <TableCell
+                    onClick={() => {
+                      setSelectedLeadForNotes(lead);
+                      setOpenNotesDialog(true);
+                    }}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <Typography variant="body2" color="primary">
+                      View Notes
+                    </Typography>
                   </TableCell>
                   <TableCell
                     sx={{
@@ -759,6 +803,27 @@ const LeadsTable: React.FC = () => {
           />
         </>
       )}
+
+      {/* Notes Dialog */}
+      <Dialog 
+        open={openNotesDialog} 
+        onClose={() => setOpenNotesDialog(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>
+          Lead Notes
+          {selectedLeadForNotes && ` - ${selectedLeadForNotes.name || 'Unknown Lead'}`}
+        </DialogTitle>
+        <DialogContent>
+          {selectedLeadForNotes && (
+            <LeadNotesPanel 
+              leadId={selectedLeadForNotes.id!} 
+              currentProfileId={currentProfileId} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar
