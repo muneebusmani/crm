@@ -23,5 +23,5 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   logging: true,
   entities: [join(__dirname, '../**/*.entity{.ts,.js}')],
-  migrations: [join(__dirname, '../migrations/*{.ts,.js}')],
+  migrations: [join(__dirname, '../migrations/1762212000000-AddPhoneAndIsDefaultToCompanyUser.ts')],
 });

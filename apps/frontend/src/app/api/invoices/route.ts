@@ -20,7 +20,19 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const created = await invoicesApi.create(body);
+    
+    // Get the selected profile ID from cookies
+    const { cookies: getCookies } = await import('next/headers');
+    const cookieStore = await getCookies();
+    const profileId = cookieStore.get('selected_profile_id')?.value;
+    
+    // Add profile ID to the request body
+    const bodyWithProfile = {
+      ...body,
+      companyUserId: profileId ? Number(profileId) : undefined,
+    };
+    
+    const created = await invoicesApi.create(bodyWithProfile);
     return NextResponse.json(created, { status: 201 });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to create invoice';

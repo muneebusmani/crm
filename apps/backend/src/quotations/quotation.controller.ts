@@ -43,9 +43,11 @@ export class QuotationController {
     @Req() req: AuthenticatedRequest,
   ): Promise<ApiResponse<QuotationResponse>> {
     const dealerId = req.user.id; // Extracted from JWT token
+    const companyUserId = createQuotationDto.companyUserId; // Get from request body
     const quotation = (await this.quotationService.create(
       createQuotationDto,
       dealerId,
+      companyUserId,
     )) as unknown as QuotationResponse;
     return this.buildResponse(quotation);
   }
@@ -79,6 +81,7 @@ export class QuotationController {
       sellerNote: quotation.sellerNote,
       status: quotation.status,
       createdAt: quotation.createdAt,
+      companyUser: quotation.companyUser, // ✅ added company user info
     }));
     return this.buildResponse(data);
   }

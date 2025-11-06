@@ -14,6 +14,7 @@ import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 // import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
+import { CompanyUserModule } from 'src/company-user/company-user.module'; // 👈 Import CompanyUserModule
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { BusinessSetting } from 'src/business-setting/entities/business-setting.
       BusinessSetting,
     ]),
     CustomMailerModule,
+    CompanyUserModule, // 👈 Add CompanyUserModule to imports
   ],
   controllers: [DealerController],
   providers: [DealerService, LeadsGateway],

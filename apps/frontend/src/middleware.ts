@@ -6,6 +6,7 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get('access_token')?.value;
   const id = req.cookies.get('id')?.value;
   const userTypeCookie = req.cookies.get('user_type')?.value;
+  const selectedProfileId = req.cookies.get('selected_profile_id')?.value;
   const userType = userTypeCookie ? `/${userTypeCookie}` : null;
   const { pathname } = req.nextUrl;
 
@@ -35,6 +36,21 @@ export function middleware(req: NextRequest) {
     );
   if (!id)
     throw new Error('User Id not Found. Please check your browser settings.');
+
+  // 👇 NEW: Check if dealer needs to select profile
+  if (userTypeCookie === UserType.DEALER) {
+    // Allow access to select-profile page
+    if (pathname === '/dealer/select-profile'|| pathname === '/dealer/profiles') {
+      return NextResponse.next();
+    }
+
+    // Redirect to profile selection if no profile selected
+    if (!selectedProfileId) {
+      return NextResponse.redirect(
+        new URL('/dealer/select-profile', req.nextUrl.origin)
+      );
+    }
+  }
 
   return NextResponse.next();
 }

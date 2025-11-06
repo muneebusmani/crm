@@ -34,15 +34,20 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Select,
 } from '@mui/material';
 import { useRouter } from 'next/navigation'; // ✅ App Router hook
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
 import SendInvoiceDialog from './send-invoice-dialog';
 import SendQuotationDialog from './send-quotation-dialog';
+import LeadNotesPanel from '../LeadNotesPanel';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -57,6 +62,7 @@ const LeadsTable: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +74,10 @@ const LeadsTable: React.FC = () => {
   const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
   const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
+  const [openNotesDialog, setOpenNotesDialog] = useState(false);
+  const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<Lead | null>(null);
+  const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(undefined);
+  const [notePreviews, setNotePreviews] = useState<Map<number, string>>(new Map());
 
   // Menu state for three dots
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -145,7 +155,7 @@ const LeadsTable: React.FC = () => {
       });
     });
 
-    socketService.onLeadUpdated((updatedLead: Link) => {
+    socketService.onLeadUpdated((updatedLead: Lead) => {
       setLeads((prev) =>
         prev.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)),
       );
@@ -187,6 +197,117 @@ const LeadsTable: React.FC = () => {
   useEffect(() => {
     fetchLeads();
   }, []);
+
+  // Fetch current profile ID
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/selected-profile', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentProfileId(data.id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  // Reset page to 1 when rows per page changes
+  useEffect(() => {
+    setPage(1);
+  }, [rowsPerPage]);
+
+  // Calculate filtered leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter(
+      (lead) =>
+        (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.vehicle_model || '')
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (lead.vehicle_reg || '').toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [leads, searchTerm]);
+
+  // Calculate current page leads
+  const currentLeads = useMemo(() => {
+    const startIndex = (page - 1) * rowsPerPage;
+    return filteredLeads.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredLeads, page, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
+
+  // Fetch note previews only for current page leads
+  useEffect(() => {
+    const fetchNotePreviews = async () => {
+      if (!currentProfileId || currentLeads.length === 0) return;
+
+      const previews = new Map(notePreviews); // Keep existing previews
+      
+      // Only fetch for leads that don't have previews yet
+      const leadsToFetch = currentLeads.filter(lead => !previews.has(lead.id!));
+      
+      if (leadsToFetch.length === 0) return; // All current page leads already have previews
+      
+      await Promise.all(
+        leadsToFetch.map(async (lead) => {
+          try {
+            const res = await fetch(`/api/leads/${lead.id}/notes`, {
+              credentials: 'include',
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const notes = data.data || [];
+              if (notes.length > 0) {
+                // Get the first 5 characters of the latest note
+                const latestNote = notes[0];
+                previews.set(lead.id!, latestNote.content.substring(0, 5));
+              } else {
+                previews.set(lead.id!, '...');
+              }
+            } else {
+              previews.set(lead.id!, '...');
+            }
+          } catch (error) {
+            console.error(`Failed to fetch notes for lead ${lead.id}:`, error);
+            previews.set(lead.id!, '...');
+          }
+        })
+      );
+
+      setNotePreviews(previews);
+    };
+
+    fetchNotePreviews();
+  }, [currentLeads, currentProfileId]);
+
+  // Refresh note preview for a specific lead
+  const refreshNotePreview = async (leadId: number) => {
+    if (!currentProfileId) return;
+
+    try {
+      const res = await fetch(`/api/leads/${leadId}/notes`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const notes = data.data || [];
+        const newPreviews = new Map(notePreviews);
+        if (notes.length > 0) {
+          const latestNote = notes[0];
+          newPreviews.set(leadId, latestNote.content.substring(0, 5));
+        } else {
+          newPreviews.set(leadId, '...');
+        }
+        setNotePreviews(newPreviews);
+      }
+    } catch (error) {
+      console.error(`Failed to refresh note preview for lead ${leadId}:`, error);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -365,24 +486,6 @@ const LeadsTable: React.FC = () => {
     }
   };
 
-  const filteredLeads = leads.filter(
-    (lead) =>
-      (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (lead.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (lead.vehicle_model || '')
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (lead.vehicle_reg || '').toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const rowsPerPage = 10;
-  const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
-  const startIndex = (page - 1) * rowsPerPage;
-  const currentLeads = filteredLeads.slice(
-    startIndex,
-    startIndex + rowsPerPage,
-  );
-
   if (loading) {
     return <Typography>Loading leads...</Typography>;
   }
@@ -516,6 +619,11 @@ const LeadsTable: React.FC = () => {
                     Recieved at
                   </Typography>
                 </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Notes
+                  </Typography>
+                </TableCell>
                 <TableCell
                   sx={{
                     position: 'sticky',
@@ -572,6 +680,22 @@ const LeadsTable: React.FC = () => {
                     {new Date(
                       lead.createdAt as unknown as string,
                     ).toLocaleString()}
+                  </TableCell>
+                  <TableCell
+                    onClick={() => {
+                      setSelectedLeadForNotes(lead);
+                      setOpenNotesDialog(true);
+                    }}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <Typography variant="body2" color="primary">
+                      {notePreviews.get(lead.id!) || '...'}
+                    </Typography>
                   </TableCell>
                   <TableCell
                     sx={{
@@ -644,11 +768,28 @@ const LeadsTable: React.FC = () => {
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             p: 2,
             borderTop: `1px solid ${theme.palette.divider}`,
           }}
         >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Rows per page:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={(e) => setRowsPerPage(Number(e.target.value))}
+              size="small"
+              sx={{ minWidth: 70 }}
+            >
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={25}>25</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+              <MenuItem value={100}>100</MenuItem>
+            </Select>
+          </Box>
           <Pagination
             count={totalPages}
             page={page}
@@ -759,6 +900,32 @@ const LeadsTable: React.FC = () => {
           />
         </>
       )}
+
+      {/* Notes Dialog */}
+      <Dialog 
+        open={openNotesDialog} 
+        onClose={() => {
+          if (selectedLeadForNotes?.id) {
+            refreshNotePreview(selectedLeadForNotes.id);
+          }
+          setOpenNotesDialog(false);
+        }} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>
+          Lead Notes
+          {selectedLeadForNotes && ` - ${selectedLeadForNotes.name || 'Unknown Lead'}`}
+        </DialogTitle>
+        <DialogContent>
+          {selectedLeadForNotes && (
+            <LeadNotesPanel 
+              leadId={selectedLeadForNotes.id!} 
+              currentProfileId={currentProfileId} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar
