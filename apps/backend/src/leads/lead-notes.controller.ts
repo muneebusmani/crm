@@ -50,9 +50,16 @@ export class LeadNotesController {
     return this.buildResponse(note);
   }
 
-  @Get(':leadId/notes')
-  async findByLeadId(@Param('leadId', ParseIntPipe) leadId: number) {
-    const notes = await this.leadNotesService.findByLeadId(leadId);
+  @Get(':leadId/:profileId/notes')
+  async findByLeadId(
+    @Param('leadId', ParseIntPipe) leadId: number,
+    @Param('profileId', ParseIntPipe) profileId: number,
+  ) {
+    if (!profileId) {
+      console.log("No ProfileSelected")
+      throw new CustomError('No profile selected');
+    }
+    const notes = await this.leadNotesService.findByLeadId(leadId, profileId);
     return this.buildResponse(notes);
   }
 

@@ -45,11 +45,26 @@ export class LeadNotesService {
     return await this.leadNoteRepository.save(note);
   }
 
-  async findByLeadId(leadId: number): Promise<LeadNote[]> {
-    return await this.leadNoteRepository.find({
-      where: { lead_id: leadId },
-      order: { created_at: 'DESC' },
+  async findByLeadId(leadId: number, companyUserId: number): Promise<LeadNote[]> {
+    // First get the company user to find their dealer_id
+    const companyUser = await this.companyUserRepository.findOne({
+      where: { id: companyUserId },
     });
+
+    if (!companyUser) {
+      throw new NotFoundException('Company user not found');
+    }
+
+    // Get all notes for this lead that belong to company users from the same dealer
+    const notes = await this.leadNoteRepository
+      .createQueryBuilder('note')
+      .innerJoin('note.companyUser', 'companyUser')
+      .where('note.lead_id = :leadId', { leadId })
+      .andWhere('companyUser.dealer_id = :dealerId', { dealerId: companyUser.dealer_id })
+      .orderBy('note.created_at', 'DESC')
+      .getMany();
+
+    return notes;
   }
 
   async update(

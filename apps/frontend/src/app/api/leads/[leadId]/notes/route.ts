@@ -7,8 +7,18 @@ export async function GET(
   { params }: { params: { leadId: string } }
 ) {
   try {
+    const cookieStore = await cookies();
+    const profileId = cookieStore.get('selected_profile_id')?.value;
+    
+    if (!profileId) {
+      return NextResponse.json(
+        { error: 'No profile selected' },
+        { status: 400 }
+      );
+    }
+
     const leadId = params.leadId;
-    const notes = await get(`/leads/${leadId}/notes`);
+    const notes = await get(`/leads/${leadId}/${profileId}/notes`);
     return NextResponse.json(notes);
   } catch (error) {
     return NextResponse.json(

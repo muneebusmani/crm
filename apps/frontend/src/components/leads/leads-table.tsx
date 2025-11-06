@@ -75,6 +75,7 @@ const LeadsTable: React.FC = () => {
   const [openNotesDialog, setOpenNotesDialog] = useState(false);
   const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<Lead | null>(null);
   const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(undefined);
+  const [notePreviews, setNotePreviews] = useState<Map<number, string>>(new Map());
 
   // Menu state for three dots
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -210,6 +211,70 @@ const LeadsTable: React.FC = () => {
     };
     fetchProfile();
   }, []);
+
+  // Fetch note previews for all leads
+  useEffect(() => {
+    const fetchNotePreviews = async () => {
+      if (!currentProfileId || leads.length === 0) return;
+
+      const previews = new Map<number, string>();
+      
+      await Promise.all(
+        leads.map(async (lead) => {
+          try {
+            const res = await fetch(`/api/leads/${lead.id}/notes`, {
+              credentials: 'include',
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const notes = data.data || [];
+              if (notes.length > 0) {
+                // Get the first 5 characters of the latest note
+                const latestNote = notes[0];
+                previews.set(lead.id!, latestNote.content.substring(0, 5));
+              } else {
+                previews.set(lead.id!, '...');
+              }
+            } else {
+              previews.set(lead.id!, '...');
+            }
+          } catch (error) {
+            console.error(`Failed to fetch notes for lead ${lead.id}:`, error);
+            previews.set(lead.id!, '...');
+          }
+        })
+      );
+
+      setNotePreviews(previews);
+    };
+
+    fetchNotePreviews();
+  }, [leads, currentProfileId]);
+
+  // Refresh note preview for a specific lead
+  const refreshNotePreview = async (leadId: number) => {
+    if (!currentProfileId) return;
+
+    try {
+      const res = await fetch(`/api/leads/${leadId}/notes`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const notes = data.data || [];
+        const newPreviews = new Map(notePreviews);
+        if (notes.length > 0) {
+          const latestNote = notes[0];
+          newPreviews.set(leadId, latestNote.content.substring(0, 5));
+        } else {
+          newPreviews.set(leadId, '...');
+        }
+        setNotePreviews(newPreviews);
+      }
+    } catch (error) {
+      console.error(`Failed to refresh note preview for lead ${leadId}:`, error);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -614,7 +679,7 @@ const LeadsTable: React.FC = () => {
                     }}
                   >
                     <Typography variant="body2" color="primary">
-                      View Notes
+                      {notePreviews.get(lead.id!) || '...'}
                     </Typography>
                   </TableCell>
                   <TableCell
@@ -807,7 +872,12 @@ const LeadsTable: React.FC = () => {
       {/* Notes Dialog */}
       <Dialog 
         open={openNotesDialog} 
-        onClose={() => setOpenNotesDialog(false)} 
+        onClose={() => {
+          if (selectedLeadForNotes?.id) {
+            refreshNotePreview(selectedLeadForNotes.id);
+          }
+          setOpenNotesDialog(false);
+        }} 
         maxWidth="md" 
         fullWidth
       >
