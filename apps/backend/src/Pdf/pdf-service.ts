@@ -18,24 +18,25 @@ export class PdfService {
     
     try {
       // Configure Puppeteer launch options
-      const launchOptions: any = {
-        headless: true,
-      };
+      // const launchOptions: any = {
+      //   headless: true,
+      // };
       
       // In production (Docker), use system Chromium with required flags
-      if (process.env.NODE_ENV === 'production') {
-        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser';
-        launchOptions.args = [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ];
-        console.log('🚀 Using system Chromium:', launchOptions.executablePath);
-      }
+      // if (process.env.NODE_ENV === 'production') {
+      //   launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser';
+      //   launchOptions.args = [
+      //     '--no-sandbox',
+      //     '--disable-setuid-sandbox',
+      //     '--disable-dev-shm-usage',
+      //     '--disable-gpu',
+      //   ];
+      //   console.log('🚀 Using system Chromium:', launchOptions.executablePath);
+      // }
       
       console.log('🚀 Launching Puppeteer...');
-      browser = await puppeteer.launch(launchOptions);
+      // browser = await puppeteer.launch(launchOptions);
+      browser = await puppeteer.launch();
       
       const page = await browser.newPage();
 
