@@ -122,8 +122,8 @@ const Profile = () => {
       try {
         setBsLoading(true);
         // Use the business setting service to load settings
-        const data = await businessSettingApi.getAll();
-        const settingsData = Array.isArray(data) ? data[0] : data?.[0] || data;
+        const settingsData = await businessSettingApi.getAll();
+        console.log('📋 Loaded business settings:', settingsData);
         setSalesTerms(settingsData?.salesTerms ?? '');
         setQuotationTerms(settingsData?.quotation ?? '');
       } catch (err) {
@@ -533,7 +533,9 @@ const Profile = () => {
                   disabled={bsLoading}
                   helperText={`${Math.max(0, salesTerms.trim().length)} chars`}
                 />
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Box
+                  sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}
+                >
                   <Button
                     variant="contained"
                     onClick={saveBusinessSettings}

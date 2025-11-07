@@ -1,4 +1,3 @@
-import { handleResponse } from '@/services/response.service';
 import { get, post } from '@lib/api';
 import type { ApiResponse } from '@crm/types';
 
@@ -41,13 +40,20 @@ const BASE = '/quotations';
 
 export const quotationsApi = {
   async create(dto: CreateQuotationDto): Promise<QuotationResponseDTO> {
-    return handleResponse(
-      post<QuotationResponseDTO, CreateQuotationDto>(BASE, dto),
-      false,
-      true
+    const response = await post<QuotationResponseDTO, CreateQuotationDto>(
+      BASE,
+      dto,
     );
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Failed to create quotation');
+    }
+    return response.data;
   },
   async getAll(): Promise<QuotationResponseDTO[]> {
-    return handleResponse(get<QuotationResponseDTO[]>(BASE), false, false);
+    const response = await get<ApiResponse<QuotationResponseDTO[]>>(BASE);
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Failed to fetch quotations');
+    }
+    return response.data;
   },
 };

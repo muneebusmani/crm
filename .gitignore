@@ -3,7 +3,7 @@ node_modules/
 .vercel
 *.sql
 .serena
-
+.idea
 # Turborepo
 .turbo
 

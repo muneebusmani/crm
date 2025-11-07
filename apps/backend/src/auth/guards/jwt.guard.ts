@@ -15,9 +15,32 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     );
 
     if (isPublic) {
+      console.log('🔓 [JWT Guard] Route is public, allowing access');
       return true;
     }
 
-    return super.canActivate(context);
+    console.log(
+      '🔒 [JWT Guard] Route is protected, checking authentication...',
+    );
+    const result = super.canActivate(context);
+
+    if (result instanceof Promise) {
+      return result
+        .then((canActivate) => {
+          if (canActivate) {
+            console.log('✅ [JWT Guard] Authentication successful');
+          } else {
+            console.log('❌ [JWT Guard] Authentication failed');
+          }
+          return canActivate;
+        })
+        .catch((error) => {
+          console.log('❌ [JWT Guard] Authentication error:', error.message);
+          throw error;
+        });
+    }
+
+    console.log('✅ [JWT Guard] Authentication result:', result);
+    return result;
   }
 }

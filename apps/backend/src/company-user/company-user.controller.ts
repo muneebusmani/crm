@@ -11,12 +11,8 @@ import {
   Req,
 } from '@nestjs/common';
 import { CompanyUserService } from './company-user.service';
-import {
-  CreateCompanyUserSchema,
-  UpdateCompanyUserSchema,
-} from  '@crm/types';
+import { CreateCompanyUserSchema, UpdateCompanyUserSchema } from '@crm/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-
 
 @Controller('company-users')
 export class CompanyUserController {
@@ -40,20 +36,21 @@ export class CompanyUserController {
   @Get('select/:id')
   async selectProfile(
     @Param('id', ParseIntPipe) profileId: number,
-    @Req() req
+    @Req() req,
   ) {
     // Verify profile belongs to dealer and return profile data
     const dealer = await this.companyUserService.findByDealerId(req.user.id);
-    const profile = dealer.find(p => p.id === profileId);
-    
+    const profile = dealer.find((p) => p.id === profileId);
+
     if (!profile) {
       throw new Error('Profile not found or does not belong to this dealer');
     }
-    
+
     return profile;
   }
-    
+
   @UseGuards(JwtAuthGuard)
+  @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() body: unknown) {
     const dto = UpdateCompanyUserSchema.parse(body);
     return await this.companyUserService.update(id, dto);

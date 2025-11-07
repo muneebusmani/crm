@@ -93,7 +93,7 @@ const QuotationsTable: React.FC = () => {
   const handleDownloadPdf = async (quotation: any) => {
     try {
       setDownloadingId(quotation.id);
-      
+
       // Transform quotation data to match backend expected format
       // Include all existing quotation data for accurate PDF generation
       const payload = {
@@ -108,16 +108,19 @@ const QuotationsTable: React.FC = () => {
         recoveryLocation: quotation.recoveryLocation || '',
         deliveryLocation: quotation.deliveryLocation || '',
       };
-      
-      const res = await fetch('/api/quotations/download-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/quotations/download-pdf`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        },
+      );
 
       if (!res.ok) throw new Error('Failed to download PDF');
-      
+
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -127,7 +130,7 @@ const QuotationsTable: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       setSnackbar({
         open: true,
         message: 'PDF downloaded successfully',

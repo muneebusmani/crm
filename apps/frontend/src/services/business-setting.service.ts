@@ -17,43 +17,52 @@ export interface BusinessSetting {
 }
 
 export const businessSettingApi = {
-  getAll: async (): Promise<BusinessSetting[]> => {
-    return handleResponse(
-      api.get<BusinessSetting[]>(BASE, true),
-      false,
-      false
-    );
+  getAll: async (): Promise<BusinessSetting> => {
+    const response = await api.get<any>(BASE);
+    console.log('🔍 [Business Settings] GET response:', response);
+
+    // Backend now returns ApiResponse<BusinessSetting>, not array
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error || 'Failed to fetch business settings');
   },
 
   getOne: async (id: number): Promise<BusinessSetting> => {
     return handleResponse(
       api.get<BusinessSetting>(`${BASE}/${id}`, true),
       false,
-      false
+      false,
     );
   },
 
   create: async (data: Partial<BusinessSetting>): Promise<BusinessSetting> => {
-    return handleResponse(
-      api.post<BusinessSetting, Partial<BusinessSetting>>(BASE, data),
-      false,
-      true
+    console.log('🔍 [Business Settings] Creating with data:', data);
+    const response = await api.post<BusinessSetting, Partial<BusinessSetting>>(
+      BASE,
+      data,
     );
+    console.log('🔍 [Business Settings] POST response:', response);
+
+    // Backend returns ApiResponse<BusinessSetting>
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error || 'Failed to save business settings');
   },
 
-  update: async (id: number, data: Partial<BusinessSetting>): Promise<BusinessSetting> => {
+  update: async (
+    id: number,
+    data: Partial<BusinessSetting>,
+  ): Promise<BusinessSetting> => {
     return handleResponse(
       api.put<BusinessSetting, Partial<BusinessSetting>>(`${BASE}/${id}`, data),
       false,
-      true
+      true,
     );
   },
 
   delete: async (id: number): Promise<void> => {
-    await handleResponse(
-      api.del(`${BASE}/${id}`),
-      true,
-      true
-    );
+    await handleResponse(api.del(`${BASE}/${id}`), true, true);
   },
 };

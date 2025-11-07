@@ -202,20 +202,46 @@ const LeadsTable: React.FC = () => {
     fetchLeads();
   }, []);
 
-  // Fetch current profile ID
+  // Fetch current profile ID from cookies
   useEffect(() => {
-    const fetchProfile = async () => {
+    const getProfileIdFromCookie = () => {
       try {
-        // For client-side, we need to get the profile ID from a global source
-        // or implement a different way to access profile data in the UI
-        // This would typically be retrieved from a global context or state management
-        // For now, we'll need to handle this differently since we can't access cookies client-side
-        // The actual implementation would depend on how the profile is stored in the app
+        // Read the selected_profile_id cookie (now it's not httpOnly, so we can access it)
+        const cookieValue = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('selected_profile_id='))
+          ?.split('=')[1];
+
+        if (cookieValue) {
+          const profileId = Number.parseInt(cookieValue, 10);
+          if (!Number.isNaN(profileId)) {
+            console.log('📍 [Leads] Profile ID from cookie:', profileId);
+            setCurrentProfileId(profileId);
+          } else {
+            console.error(
+              '❌ [Leads] Invalid profile ID in cookie:',
+              cookieValue,
+            );
+            setSnackbar({
+              open: true,
+              message: 'No profile selected. Please select a profile.',
+              severity: 'warning',
+            });
+          }
+        } else {
+          console.error('❌ [Leads] No selected_profile_id cookie found');
+          setSnackbar({
+            open: true,
+            message: 'No profile selected. Please select a profile.',
+            severity: 'warning',
+          });
+        }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
       }
     };
-    fetchProfile();
+
+    getProfileIdFromCookie();
   }, []);
 
   // Reset page to 1 when rows per page changes
@@ -263,7 +289,10 @@ const LeadsTable: React.FC = () => {
       await Promise.all(
         leadsToFetch.map(async (lead) => {
           try {
-            const notes = await leadNotesApi.getByLeadId(lead.id!, currentProfileId);
+            const notes = await leadNotesApi.getByLeadId(
+              lead.id!,
+              currentProfileId,
+            );
             if (notes && notes.length > 0) {
               // Get the first 5 characters of the latest note
               const latestNote = notes[0];

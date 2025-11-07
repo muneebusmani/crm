@@ -1,7 +1,6 @@
 // import { ValidationPipe } from '@nestjs/common';
 /** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
-import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { JwtAuthGuard } from './auth/guards/jwt.guard';
@@ -42,9 +41,27 @@ async function bootstrap() {
   // );
   // app.useGlobalPipes(new ZodValidationPipe());
 
-  app.useGlobalGuards(new JwtAuthGuard(app.get(ConfigService)));
-
   app.use(cookieParser());
+
+  // Debug middleware to log cookies on every request
+  app.use((req, _res, next) => {
+    console.log('\n🌐 [Request] ===========================');
+    console.log('📍 [Request] URL:', req.method, req.url);
+    console.log('🍪 [Request] Cookies received:', req.cookies);
+    console.log(
+      '🔑 [Request] Auth header:',
+      req.headers.authorization || 'Not present',
+    );
+    console.log('🌍 [Request] Origin:', req.headers.origin || 'Not present');
+    console.log(
+      '🍪 [Request] Cookie header:',
+      req.headers.cookie || 'Not present',
+    );
+    console.log('==========================================\n');
+    next();
+  });
+
+  app.useGlobalGuards(new JwtAuthGuard(app.get(Reflector)));
   app.enableCors({
     origin: frontend_url,
     methods: 'GET,POST,DELETE,PUT',

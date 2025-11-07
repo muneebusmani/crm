@@ -1,4 +1,3 @@
-import { handleResponse } from '@/services/response.service';
 import { get, post } from '@lib/api';
 import type { ApiResponse } from '@crm/types';
 
@@ -43,13 +42,20 @@ const BASE = '/invoices';
 
 export const invoicesApi = {
   async create(dto: CreateInvoiceDto): Promise<InvoiceResponseDTO> {
-    return handleResponse(
-      post<InvoiceResponseDTO, CreateInvoiceDto>(BASE, dto),
-      false,
-      true
+    const response = await post<InvoiceResponseDTO, CreateInvoiceDto>(
+      BASE,
+      dto,
     );
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Failed to create invoice');
+    }
+    return response.data;
   },
   async getAll(): Promise<InvoiceResponseDTO[]> {
-    return handleResponse(get<InvoiceResponseDTO[]>(BASE), false, false);
+    const response = await get<ApiResponse<InvoiceResponseDTO[]>>(BASE);
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Failed to fetch invoices');
+    }
+    return response.data;
   },
 };

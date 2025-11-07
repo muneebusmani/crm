@@ -1,4 +1,9 @@
-import type { CreateLeadDto, Lead, UpdateLeadDto } from '@crm/types';
+import type {
+  CreateLeadDto,
+  Lead,
+  UpdateLeadDto,
+  ApiResponse,
+} from '@crm/types';
 import * as api from '@lib/api';
 import { leadMessagesApi } from './lead-messages.service';
 import { handleResponse } from './response.service';
@@ -6,31 +11,46 @@ import { handleResponse } from './response.service';
 const LEADS_BASE = '/leads';
 
 export const leadsApi = {
-  getAll: async (): Promise<Lead[]> => handleResponse(api.get(LEADS_BASE), false, false),
+  getAll: async (): Promise<Lead[]> => {
+    const response = await api.get<ApiResponse<Lead[]>>(LEADS_BASE);
+    return handleResponse(Promise.resolve(response), false, true);
+  },
 
-  getOne: async (id: number): Promise<Lead> =>
-    handleResponse(api.get(`${LEADS_BASE}/${id}`), false, false),
+  getOne: async (id: number): Promise<Lead> => {
+    const response = await api.get<ApiResponse<Lead>>(`${LEADS_BASE}/${id}`);
+    return handleResponse(Promise.resolve(response), false, true);
+  },
 
-  create: async (leadData: CreateLeadDto): Promise<Lead> =>
-    handleResponse(api.post2(LEADS_BASE, leadData), false, false),
+  create: async (leadData: CreateLeadDto): Promise<Lead> => {
+    const response = await api.post2<ApiResponse<Lead>, CreateLeadDto>(
+      LEADS_BASE,
+      leadData,
+    );
+    return handleResponse(Promise.resolve(response), false, true);
+  },
 
-  update: async (leadData: UpdateLeadDto): Promise<Lead> =>
-    handleResponse(api.put(LEADS_BASE, leadData), false, true),
+  update: async (leadData: UpdateLeadDto): Promise<Lead> => {
+    const response = await api.put<Lead, UpdateLeadDto>(LEADS_BASE, leadData);
+    return handleResponse(Promise.resolve(response), false, true);
+  },
 
-  delete: async (id: number): Promise<void> =>
-    handleResponse(api.del(`${LEADS_BASE}/${id}`), true, true),
+  delete: async (id: number): Promise<void> => {
+    const response = await api.del<void>(`${LEADS_BASE}/${id}`);
+    return handleResponse(Promise.resolve(response), true, true);
+  },
 
   // Get uncontacted leads (leads that don't have any messages yet)
   getUncontacted: async (): Promise<Lead[]> => {
     try {
-      // Fetch all leads
+      // Fetch all leads - now correctly handling ApiResponse format
       const allLeads = await handleResponse(
-        api.get(LEADS_BASE) as Promise<Lead[]>,
+        api.get<ApiResponse<Lead[]>>(LEADS_BASE),
         false,
-        false
+        true,
       );
 
       if (!Array.isArray(allLeads)) {
+        console.error('Invalid leads data format:', allLeads);
         throw new Error('Invalid leads data format');
       }
 
