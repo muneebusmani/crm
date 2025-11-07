@@ -174,8 +174,10 @@ export class InvoiceService {
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // Calculate percentages for display
-    const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
-    const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
+    const taxPercentage =
+      subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
+    const discountPercentage =
+      subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 8. Build data for PDF/email
     const invoiceData = {
@@ -231,7 +233,7 @@ export class InvoiceService {
     // 📧 9. Send invoice mail
     await this.mailService.sendMail({
       to: lead.email,
-      subject: `Invoice #${invoice.invoiceNumber}`,
+      subject: `Invoice ${invoice.invoiceNumber}`,
       template: 'invoice-pdf',
       context: { invoiceData },
     });
@@ -347,9 +349,12 @@ export class InvoiceService {
     previewData: CreateInvoiceDto,
     dealerId: number,
   ): Promise<Buffer> {
-    console.log('🔍 generatePdf - Starting with previewData:', JSON.stringify(previewData, null, 2));
+    console.log(
+      '🔍 generatePdf - Starting with previewData:',
+      JSON.stringify(previewData, null, 2),
+    );
     console.log('🔍 generatePdf - DealerId:', dealerId);
-    
+
     // 🔍 1. Verify lead ownership
     const lead = await this.leadRepository.findOne({
       where: {
@@ -360,7 +365,10 @@ export class InvoiceService {
       relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
-    console.log('🔍 generatePdf - Lead found:', lead ? `ID: ${lead.id}, Name: ${lead.name}` : 'NULL');
+    console.log(
+      '🔍 generatePdf - Lead found:',
+      lead ? `ID: ${lead.id}, Name: ${lead.name}` : 'NULL',
+    );
 
     if (!lead) {
       throw new NotFoundException(
@@ -374,7 +382,12 @@ export class InvoiceService {
       relations: ['dealer'],
     });
 
-    console.log('🔍 generatePdf - Dealer found:', dealer ? `ID: ${dealer.id}, Name: ${dealer.name}, Has Profile: ${!!dealer.dealer}` : 'NULL');
+    console.log(
+      '🔍 generatePdf - Dealer found:',
+      dealer
+        ? `ID: ${dealer.id}, Name: ${dealer.name}, Has Profile: ${!!dealer.dealer}`
+        : 'NULL',
+    );
 
     if (!dealer) {
       throw new NotFoundException('Dealer not found');
@@ -383,7 +396,10 @@ export class InvoiceService {
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
-    console.log('🔍 generatePdf - Business setting found:', setting ? 'YES' : 'NO');
+    console.log(
+      '🔍 generatePdf - Business setting found:',
+      setting ? 'YES' : 'NO',
+    );
     if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary invoice number for preview
@@ -416,17 +432,36 @@ export class InvoiceService {
       relations: ['user'],
     });
 
-    console.log('🔍 generatePdf - Bank details found:', bankDetails ? `Account: ${bankDetails.accountNumber}` : 'NULL');
-    console.log('🔍 generatePdf - Calculated totals - subTotal:', subTotal, 'totalTax:', totalTax, 'totalDiscount:', totalDiscount, 'grandTotal:', grandTotal);
+    console.log(
+      '🔍 generatePdf - Bank details found:',
+      bankDetails ? `Account: ${bankDetails.accountNumber}` : 'NULL',
+    );
+    console.log(
+      '🔍 generatePdf - Calculated totals - subTotal:',
+      subTotal,
+      'totalTax:',
+      totalTax,
+      'totalDiscount:',
+      totalDiscount,
+      'grandTotal:',
+      grandTotal,
+    );
 
     const invoiceDate = new Date(previewData.date).toLocaleDateString();
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
-    console.log('🔍 generatePdf - Dates - invoiceDate:', invoiceDate, 'orderDate:', orderDate);
+    console.log(
+      '🔍 generatePdf - Dates - invoiceDate:',
+      invoiceDate,
+      'orderDate:',
+      orderDate,
+    );
 
     // Calculate percentages for display
-    const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
-    const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
+    const taxPercentage =
+      subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
+    const discountPercentage =
+      subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 6. Build data for PDF
     const invoiceData = {
@@ -493,7 +528,10 @@ export class InvoiceService {
     };
 
     // 📄 7. Generate PDF using PdfService
-    console.log('🔍 generatePdf - Sending data to PdfService:', JSON.stringify(invoiceData, null, 2));
+    console.log(
+      '🔍 generatePdf - Sending data to PdfService:',
+      JSON.stringify(invoiceData, null, 2),
+    );
     const pdfBuffer = await this.pdfService.generateInvoicePdf(invoiceData);
 
     return pdfBuffer;
@@ -568,8 +606,10 @@ export class InvoiceService {
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // Calculate percentages for display
-    const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
-    const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
+    const taxPercentage =
+      subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
+    const discountPercentage =
+      subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 6. Build data for preview
     const invoiceData = {

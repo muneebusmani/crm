@@ -58,6 +58,7 @@ const LeadsTable: React.FC = () => {
   const theme = useTheme();
   const ACTION_COL_WIDTH = 140; // Reduced from 180 to decrease space between status and actions
   const STATUS_COL_WIDTH = 140;
+  const NOTES_COL_WIDTH = 150;
   const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,9 +76,15 @@ const LeadsTable: React.FC = () => {
   const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
   const [openNotesDialog, setOpenNotesDialog] = useState(false);
-  const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<Lead | null>(null);
-  const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(undefined);
-  const [notePreviews, setNotePreviews] = useState<Map<number, string>>(new Map());
+  const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<Lead | null>(
+    null,
+  );
+  const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(
+    undefined,
+  );
+  const [notePreviews, setNotePreviews] = useState<Map<number, string>>(
+    new Map(),
+  );
 
   // Menu state for three dots
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -202,7 +209,9 @@ const LeadsTable: React.FC = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch('/api/selected-profile', { credentials: 'include' });
+        const res = await fetch('/api/selected-profile', {
+          credentials: 'include',
+        });
         if (res.ok) {
           const data = await res.json();
           setCurrentProfileId(data.id);
@@ -228,7 +237,9 @@ const LeadsTable: React.FC = () => {
         (lead.vehicle_model || '')
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        (lead.vehicle_reg || '').toLowerCase().includes(searchTerm.toLowerCase()),
+        (lead.vehicle_reg || '')
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()),
     );
   }, [leads, searchTerm]);
 
@@ -246,12 +257,14 @@ const LeadsTable: React.FC = () => {
       if (!currentProfileId || currentLeads.length === 0) return;
 
       const previews = new Map(notePreviews); // Keep existing previews
-      
+
       // Only fetch for leads that don't have previews yet
-      const leadsToFetch = currentLeads.filter(lead => !previews.has(lead.id!));
-      
+      const leadsToFetch = currentLeads.filter(
+        (lead) => !previews.has(lead.id!),
+      );
+
       if (leadsToFetch.length === 0) return; // All current page leads already have previews
-      
+
       await Promise.all(
         leadsToFetch.map(async (lead) => {
           try {
@@ -275,7 +288,7 @@ const LeadsTable: React.FC = () => {
             console.error(`Failed to fetch notes for lead ${lead.id}:`, error);
             previews.set(lead.id!, '...');
           }
-        })
+        }),
       );
 
       setNotePreviews(previews);
@@ -305,7 +318,10 @@ const LeadsTable: React.FC = () => {
         setNotePreviews(newPreviews);
       }
     } catch (error) {
-      console.error(`Failed to refresh note preview for lead ${leadId}:`, error);
+      console.error(
+        `Failed to refresh note preview for lead ${leadId}:`,
+        error,
+      );
     }
   };
 
@@ -619,7 +635,15 @@ const LeadsTable: React.FC = () => {
                     Recieved at
                   </Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell
+                  sx={{
+                    position: 'sticky',
+                    right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
+                    backgroundColor: theme.palette.background.paper,
+                    zIndex: 4,
+                    minWidth: NOTES_COL_WIDTH,
+                  }}
+                >
                   <Typography variant="subtitle2" fontWeight="bold">
                     Notes
                   </Typography>
@@ -691,6 +715,11 @@ const LeadsTable: React.FC = () => {
                       '&:hover': {
                         backgroundColor: theme.palette.action.hover,
                       },
+                      position: 'sticky',
+                      right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
+                      backgroundColor: theme.palette.background.paper,
+                      zIndex: 3,
+                      minWidth: NOTES_COL_WIDTH,
                     }}
                   >
                     <Typography variant="body2" color="primary">
@@ -734,7 +763,7 @@ const LeadsTable: React.FC = () => {
                       >
                         <RequestQuoteIcon fontSize="small" />
                       </IconButton>
-                      
+
                       {/* Invoice Icon - Outside Menu */}
                       <IconButton
                         size="small"
@@ -747,7 +776,7 @@ const LeadsTable: React.FC = () => {
                       >
                         <ReceiptLongIcon fontSize="small" />
                       </IconButton>
-                      
+
                       {/* Three Dots Menu for remaining actions */}
                       <IconButton
                         size="small"
@@ -902,26 +931,27 @@ const LeadsTable: React.FC = () => {
       )}
 
       {/* Notes Dialog */}
-      <Dialog 
-        open={openNotesDialog} 
+      <Dialog
+        open={openNotesDialog}
         onClose={() => {
           if (selectedLeadForNotes?.id) {
             refreshNotePreview(selectedLeadForNotes.id);
           }
           setOpenNotesDialog(false);
-        }} 
-        maxWidth="md" 
+        }}
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
           Lead Notes
-          {selectedLeadForNotes && ` - ${selectedLeadForNotes.name || 'Unknown Lead'}`}
+          {selectedLeadForNotes &&
+            ` - ${selectedLeadForNotes.name || 'Unknown Lead'}`}
         </DialogTitle>
         <DialogContent>
           {selectedLeadForNotes && (
-            <LeadNotesPanel 
-              leadId={selectedLeadForNotes.id!} 
-              currentProfileId={currentProfileId} 
+            <LeadNotesPanel
+              leadId={selectedLeadForNotes.id!}
+              currentProfileId={currentProfileId}
             />
           )}
         </DialogContent>

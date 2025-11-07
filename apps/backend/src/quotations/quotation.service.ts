@@ -174,8 +174,10 @@ export class QuotationService {
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // Calculate percentages for display
-    const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
-    const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
+    const taxPercentage =
+      subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
+    const discountPercentage =
+      subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 8. Build data for PDF/email
     const quotationData = {
@@ -231,7 +233,7 @@ export class QuotationService {
     // 📧 9. Send quotation mail
     await this.mailService.sendMail({
       to: lead.email,
-      subject: `Quotation #${quotation.quotationNumber}`,
+      subject: `Quotation ${quotation.quotationNumber}`,
       template: 'quotation-pdf',
       context: { quotationData },
     });
@@ -347,9 +349,12 @@ export class QuotationService {
     previewData: CreateQuotationDto,
     dealerId: number,
   ): Promise<Buffer> {
-    console.log('🔍 generatePdf - Starting with previewData:', JSON.stringify(previewData, null, 2));
+    console.log(
+      '🔍 generatePdf - Starting with previewData:',
+      JSON.stringify(previewData, null, 2),
+    );
     console.log('🔍 generatePdf - DealerId:', dealerId);
-    
+
     // 🔍 1. Verify lead ownership
     const lead = await this.leadRepository.findOne({
       where: {
@@ -360,7 +365,10 @@ export class QuotationService {
       relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
-    console.log('🔍 generatePdf - Lead found:', lead ? `ID: ${lead.id}, Name: ${lead.name}` : 'NULL');
+    console.log(
+      '🔍 generatePdf - Lead found:',
+      lead ? `ID: ${lead.id}, Name: ${lead.name}` : 'NULL',
+    );
 
     if (!lead) {
       throw new NotFoundException(
@@ -374,7 +382,12 @@ export class QuotationService {
       relations: ['dealer'],
     });
 
-    console.log('🔍 generatePdf - Dealer found:', dealer ? `ID: ${dealer.id}, Name: ${dealer.name}, Has Profile: ${!!dealer.dealer}` : 'NULL');
+    console.log(
+      '🔍 generatePdf - Dealer found:',
+      dealer
+        ? `ID: ${dealer.id}, Name: ${dealer.name}, Has Profile: ${!!dealer.dealer}`
+        : 'NULL',
+    );
 
     if (!dealer) {
       throw new NotFoundException('Dealer not found');
@@ -383,7 +396,10 @@ export class QuotationService {
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
-    console.log('🔍 generatePdf - Business setting found:', setting ? 'YES' : 'NO');
+    console.log(
+      '🔍 generatePdf - Business setting found:',
+      setting ? 'YES' : 'NO',
+    );
     if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary quotation number for preview
@@ -416,17 +432,36 @@ export class QuotationService {
       relations: ['user'],
     });
 
-    console.log('🔍 generatePdf - Bank details found:', bankDetails ? `Account: ${bankDetails.accountNumber}` : 'NULL');
-    console.log('🔍 generatePdf - Calculated totals - subTotal:', subTotal, 'totalTax:', totalTax, 'totalDiscount:', totalDiscount, 'grandTotal:', grandTotal);
+    console.log(
+      '🔍 generatePdf - Bank details found:',
+      bankDetails ? `Account: ${bankDetails.accountNumber}` : 'NULL',
+    );
+    console.log(
+      '🔍 generatePdf - Calculated totals - subTotal:',
+      subTotal,
+      'totalTax:',
+      totalTax,
+      'totalDiscount:',
+      totalDiscount,
+      'grandTotal:',
+      grandTotal,
+    );
 
     const quotationDate = new Date(previewData.date).toLocaleDateString();
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
-    console.log('🔍 generatePdf - Dates - quotationDate:', quotationDate, 'orderDate:', orderDate);
+    console.log(
+      '🔍 generatePdf - Dates - quotationDate:',
+      quotationDate,
+      'orderDate:',
+      orderDate,
+    );
 
     // Calculate percentages for display
-    const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
-    const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
+    const taxPercentage =
+      subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
+    const discountPercentage =
+      subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 6. Build data for PDF
     const quotationData = {
@@ -493,7 +528,10 @@ export class QuotationService {
     };
 
     // 📄 7. Generate PDF using PdfService
-    console.log('🔍 generatePdf - Sending data to PdfService:', JSON.stringify(quotationData, null, 2));
+    console.log(
+      '🔍 generatePdf - Sending data to PdfService:',
+      JSON.stringify(quotationData, null, 2),
+    );
     const pdfBuffer = await this.pdfService.generateQuotationPdf(quotationData);
 
     return pdfBuffer;
@@ -568,8 +606,10 @@ export class QuotationService {
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     // Calculate percentages for display
-    const taxPercentage = subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
-    const discountPercentage = subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
+    const taxPercentage =
+      subTotal > 0 ? ((totalTax / subTotal) * 100).toFixed(2) : 0;
+    const discountPercentage =
+      subTotal > 0 ? ((totalDiscount / subTotal) * 100).toFixed(2) : 0;
 
     // 📄 6. Build data for preview
     const quotationData = {
