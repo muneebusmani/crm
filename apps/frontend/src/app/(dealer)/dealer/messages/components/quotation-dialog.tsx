@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import { useAppDispatch } from '@/lib/redux/hooks';
 import { appendMessage, loadMessagesForChat } from '@/features/chat/slice';
+import { quotationsApi } from '@/services/quotation.service';
 
 interface QuotationDialogProps {
   open: boolean;
@@ -35,18 +36,15 @@ export default function QuotationDialog({
 
     try {
       setIsSubmitting(true);
-      const res = await fetch('/api/dealers/quotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          leadId,
-          subject,
-          message,
-          quotationPrice: parseFloat(price),
-        }),
-      });
-      if (!res.ok) throw new Error('Failed to create quotation');
+      // Use the quotations service to create the quotation
+      const quotationData = {
+        leadId,
+        subject,
+        message,
+        quotationPrice: parseFloat(price),
+      };
+      
+      await quotationsApi.create(quotationData);
 
       // Optimistic append
       const chatId = String(leadId);

@@ -17,6 +17,7 @@ import { Business, PersonOutline } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import type { CompanyUser } from '@crm/types';
 import { selectProfileAction } from '@/actions/selectProfileAction';
+import { companyUsersApi } from '@/services/company-users.service';
 
 export default function SelectProfilePage() {
   const router = useRouter();
@@ -31,15 +32,8 @@ export default function SelectProfilePage() {
 
   const fetchProfiles = async () => {
     try {
-      const response = await fetch('/api/company-users', {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch profiles');
-      }
-
-      const data = await response.json();
+      // Use the company users service to fetch profiles
+      const data = await companyUsersApi.getAll();
       setProfiles(data);
       
       // Auto-select if only one profile (default)

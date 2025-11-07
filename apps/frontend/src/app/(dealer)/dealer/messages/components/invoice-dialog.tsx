@@ -4,6 +4,7 @@ import { Box, Button, Dialog, DialogContent, DialogTitle, TextField } from '@mui
 import { useState } from 'react';
 import { useAppDispatch } from '@/lib/redux/hooks';
 import { appendMessage, loadMessagesForChat } from '@/features/chat/slice';
+import { invoicesApi } from '@/services/invoices.service';
 
 interface InvoiceDialogProps {
   open: boolean;
@@ -50,13 +51,8 @@ export default function InvoiceDialog({ open, onClose, leadId }: InvoiceDialogPr
         })),
       };
 
-      const res = await fetch('/api/invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to create invoice');
+      // Use the invoices service to create the invoice
+      await invoicesApi.create(payload);
 
       // Optimistic append
       const sub = computeSubTotal();

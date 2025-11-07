@@ -1,9 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <abstraction> */
-'use server';
-
 import type { ApiResponse } from '@crm/types';
-import { cookies } from 'next/headers';
-import http, { type RequestConfig } from 'next-axis';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 if (!apiUrl) {
@@ -11,102 +7,146 @@ if (!apiUrl) {
     'NEXT_PUBLIC_API_URL not set in the Environment. Either the env is missing or env not present for current Environment.',
   );
 }
-http.setBaseURL(apiUrl);
 
-async function attachToken<T>(
-  options: RequestConfig<T> = {},
+// Function to get token from cookies - works for both server and client
+function getAccessToken(): string | null {
+  if (typeof window !== 'undefined') {
+    // Client side
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('access_token='))
+      ?.split('=')[1];
+    return cookieValue || null;
+  } else {
+    // Server side - use next/headers
+    try {
+      const { cookies } = require('next/headers');
+      return cookies().get('access_token')?.value || null;
+    } catch (e) {
+      // In case we're not in a server component context
+      return null;
+    }
+  }
+}
+
+async function attachToken(
   skipAuth = false,
 ) {
-  const token = !skipAuth ? (await cookies()).get('access_token')?.value : null;
+  const token = !skipAuth ? getAccessToken() : null;
   return {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 
-// READ METHODS
-export async function get<T = any>(
-  path: string,
-  options?: RequestConfig<T>,
-  skipAuth = false,
-) {
-  return http.get<T>(path, await attachToken(options, skipAuth));
+// Read METHODS
+export async function get<T = any>(path: string, skipAuth = false) {
+  const headers = await attachToken(skipAuth);
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  return response.json() as Promise<T>;
 }
 
-export async function del<T = any>(
-  path: string,
-  options?: RequestConfig<T>,
-  skipAuth = false,
-) {
-  return http.delete<T>(path, await attachToken(options, skipAuth)) as Promise<
-    ApiResponse<T>
-  >;
+export async function del<T = any>(path: string, skipAuth = false) {
+  const headers = await attachToken(skipAuth);
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  return response.json() as Promise<ApiResponse<T>>;
 }
 
-export async function head<T = any>(
-  path: string,
-  options?: RequestConfig<T>,
-  skipAuth = false,
-) {
-  return http.head<T>(path, await attachToken(options, skipAuth)) as Promise<
-    ApiResponse<T>
-  >;
-}
-
-export async function options<T = any>(
-  path: string,
-  options?: RequestConfig<T>,
-  skipAuth = false,
-) {
-  return http.options<T>(path, await attachToken(options, skipAuth)) as Promise<
-    ApiResponse<T>
-  >;
-}
-
-// WRITE METHODS
+// Write METHODS
 export async function post<R = any, B = any>(
   path: string,
   body?: B,
-  options?: RequestConfig<B>,
   skipAuth = false,
 ) {
-  return http.post<R, B>(
-    path,
-    body,
-    await attachToken(options, skipAuth),
-  ) as Promise<ApiResponse<R>>;
+  const headers = await attachToken(skipAuth);
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'POST',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  return response.json() as Promise<ApiResponse<R>>;
 }
+
 export async function post2<R = any, B = any>(
   path: string,
   body?: B,
-  options?: RequestConfig<B>,
   skipAuth = false,
 ) {
-  return http.post<R, B>(path, body, await attachToken(options, skipAuth));
+  const headers = await attachToken(skipAuth);
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'POST',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  return response.json() as Promise<R>;
 }
 
 export async function put<R = any, B = any>(
   path: string,
   body?: B,
-  options?: RequestConfig<B>,
   skipAuth = false,
 ) {
-  return http.put<R, B>(path, body, await attachToken(options, skipAuth));
+  const headers = await attachToken(skipAuth);
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'PUT',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  return response.json() as Promise<ApiResponse<R>>;
 }
 
 export async function patch<R = any, B = any>(
   path: string,
   body?: B,
-  options?: RequestConfig<B>,
   skipAuth = false,
 ) {
-  return http.patch<R, B>(
-    path,
-    body,
-    await attachToken(options, skipAuth),
-  ) as Promise<ApiResponse<R>>;
+  const headers = await attachToken(skipAuth);
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'PATCH',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  return response.json() as Promise<ApiResponse<R>>;
 }

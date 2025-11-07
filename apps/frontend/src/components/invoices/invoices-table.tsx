@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import type { InvoiceResponse } from '@crm/types';
 import { get } from '@/lib/api';
+import { invoicesApi } from '@/services/invoices.service';
 import InvoiceDetailDialog from './invoice-detail-dialog';
 
 const InvoicesTable: React.FC = () => {
@@ -51,9 +52,10 @@ const InvoicesTable: React.FC = () => {
     const fetchInvoices = async () => {
       setLoading(true);
       try {
-        const response = await get('/invoices');
+        // Use the invoices service to fetch invoices
+        const response = await invoicesApi.getAll();
         console.log('Invoices Response:', response);
-        setInvoices(response.data || []);
+        setInvoices(response || []);
       } catch (error) {
         setSnackbar({
           open: true,

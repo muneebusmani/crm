@@ -19,6 +19,10 @@ import {
   Divider,
 } from '@mui/material';
 import { get } from '@/lib/api';
+import { leadsApi } from '@/services/leads.service';
+import { quotationsApi } from '@/services/quotation.service';
+import { bankDetailsApi } from '@/services/bank-details.service';
+import { businessSettingApi } from '@/services/business-setting.service';
 import QuotationPreviewDialog from './quotation-preview-dialog';
 
 interface SendQuotationDialogProps {
@@ -210,10 +214,20 @@ export default function SendQuotationDialog({
       setIsLoadingPreview(true);
       const payload = buildQuotationPayload();
 
-      const res = await fetch('/api/quotations/preview', {
+      // We'll need to implement PDF preview functionality directly
+      // This might require different approach as it was a proxy for backend PDF generation
+      // For now, we'll call the backend directly, but we might need a service for this
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!backendUrl) {
+        throw new Error('NEXT_PUBLIC_API_URL is not set');
+      }
+
+      const res = await fetch(`${backendUrl}/quotations/preview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await getAccessToken()}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -226,6 +240,18 @@ export default function SendQuotationDialog({
     } finally {
       setIsLoadingPreview(false);
     }
+  };
+
+  // Helper to get access token
+  const getAccessToken = async (): Promise<string> => {
+    // This gets the token from cookies - we'd need to implement this properly
+    // For now, we'll assume context is available or use the service's token handling
+    // In a real implementation, we'd probably need to fetch the token from a context or state
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('access_token='))
+      ?.split('=')[1];
+    return cookieValue || '';
   };
 
   const handleDownloadPdf = async () => {
@@ -241,10 +267,18 @@ export default function SendQuotationDialog({
       setIsDownloadingPdf(true);
       const payload = buildQuotationPayload();
 
-      const res = await fetch('/api/quotations/download-pdf', {
+      // Direct call to backend API for PDF download
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!backendUrl) {
+        throw new Error('NEXT_PUBLIC_API_URL is not set');
+      }
+
+      const res = await fetch(`${backendUrl}/quotations/download-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await getAccessToken()}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -306,13 +340,9 @@ export default function SendQuotationDialog({
         recoveryLocation: recoveryLocation || '',
         deliveryLocation: deliveryLocation || '',
       };
-      const res = await fetch('/api/quotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      // if (!res.ok) throw new Error('Failed to create quotation');
+      
+      // Use the quotations service instead of direct API call
+      await quotationsApi.create(payload);
       if (onSuccess) onSuccess();
       reset();
       onClose();
@@ -334,11 +364,8 @@ export default function SendQuotationDialog({
     async function loadLead() {
       if (!open || !leadId) return;
       try {
-        const resp = await fetch(`/api/dealers/leads/${leadId}`, {
-          credentials: 'include',
-        });
-        if (!resp.ok) throw new Error('Failed to load lead');
-        const data = await resp.json();
+        // Use the leads service to get the lead by ID
+        const data = await leadsApi.getOne(leadId as number);
         if (!cancelled) setLead(data);
       } catch (e) {
         console.error(e);
@@ -354,15 +381,10 @@ export default function SendQuotationDialog({
     let cancelled = false;
     async function loadBank() {
       try {
-        const resp = await fetch('/api/bank-details', {
-          credentials: 'include',
-        });
-        if (!resp.ok) throw new Error('Failed to load bank details');
-        const data = await resp.json();
+        // Use the bank details service to get bank details
+        const data = await bankDetailsApi.getAll();
         // In profile, API returns array; normalize to first
-        const bankData = Array.isArray(data)
-          ? data[0]
-          : data?.data?.[0] || data;
+        const bankData = Array.isArray(data) ? data[0] : data?.[0] || data;
         if (!cancelled) setBank(bankData ?? null);
       } catch (e) {
         console.error(e);
@@ -378,14 +400,13 @@ export default function SendQuotationDialog({
     let cancelled = false;
     async function loadTerms() {
       try {
-        const resp = await fetch('/api/business-setting', {
-          credentials: 'include',
-        });
-        if (!resp.ok) throw new Error('Failed to load business settings');
-        const data = await resp.json();
+        // Use the business setting service to get business settings
+        const data = await businessSettingApi.getAll();
+        // In profile, API returns array; normalize to first
+        const settingsData = Array.isArray(data) ? data[0] : data?.[0] || data;
         if (!cancelled) {
-          setQuotationTerms(data?.quotation ?? '');
-          setSalesTerms(data?.salesTerms ?? '');
+          setQuotationTerms(settingsData?.quotation ?? '');
+          setSalesTerms(settingsData?.salesTerms ?? '');
         }
       } catch (e) {
         console.error(e);

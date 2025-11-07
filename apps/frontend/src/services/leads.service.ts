@@ -6,26 +6,28 @@ import { handleResponse } from './response.service';
 const LEADS_BASE = '/leads';
 
 export const leadsApi = {
-  getAll: async (): Promise<Lead[]> => handleResponse(api.get(LEADS_BASE)),
+  getAll: async (): Promise<Lead[]> => handleResponse(api.get(LEADS_BASE), false, false),
 
   getOne: async (id: number): Promise<Lead> =>
-    handleResponse(api.get(`${LEADS_BASE}/${id}`)),
+    handleResponse(api.get(`${LEADS_BASE}/${id}`), false, false),
 
   create: async (leadData: CreateLeadDto): Promise<Lead> =>
-    handleResponse(api.post(LEADS_BASE, leadData)),
+    handleResponse(api.post2(LEADS_BASE, leadData), false, false),
 
   update: async (leadData: UpdateLeadDto): Promise<Lead> =>
-    handleResponse(api.put(LEADS_BASE, leadData)),
+    handleResponse(api.put(LEADS_BASE, leadData), false, true),
 
   delete: async (id: number): Promise<void> =>
-    handleResponse(api.del(`${LEADS_BASE}/${id}`), true),
+    handleResponse(api.del(`${LEADS_BASE}/${id}`), true, true),
 
   // Get uncontacted leads (leads that don't have any messages yet)
   getUncontacted: async (): Promise<Lead[]> => {
     try {
       // Fetch all leads
       const allLeads = await handleResponse(
-        api.get(LEADS_BASE) as Promise<{ success: boolean; data: Lead[] }>,
+        api.get(LEADS_BASE) as Promise<Lead[]>,
+        false,
+        false
       );
 
       if (!Array.isArray(allLeads)) {

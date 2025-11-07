@@ -43,9 +43,11 @@ export const quotationsApi = {
   async create(dto: CreateQuotationDto): Promise<QuotationResponseDTO> {
     return handleResponse(
       post<QuotationResponseDTO, CreateQuotationDto>(BASE, dto),
+      false,
+      true
     );
   },
   async getAll(): Promise<QuotationResponseDTO[]> {
-    return handleResponse(get<ApiResponse<QuotationResponseDTO[]>>(BASE));
+    return handleResponse(get<QuotationResponseDTO[]>(BASE), false, false);
   },
 };

@@ -14,6 +14,10 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Message } from '@/app/(dealer)/dealer/types/chat';
 import type { Lead } from '@crm/types';
+import { leadsApi } from '@/services/leads.service';
+import { leadMessagesApi } from '@/services/lead-messages.service';
+import { quotationsApi } from '@/services/quotation.service';
+import { invoicesApi } from '@/services/invoices.service';
 
 /**
  * Data Transfer Object for lead messages from the API
@@ -116,9 +120,7 @@ import type {
 export const loadChats = createAsyncThunk<ChatItem[]>(
   'chat/loadChats',
   async () => {
-    const res = await fetch('/api/lead-messages', { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to load chats');
-    const allMessages = (await res.json()) as LeadMessageDTO[];
+    const allMessages = await leadMessagesApi.getAll();
 
     // Group by leadId and build chat list
     const byLead: Record<string, LeadMessageDTO[]> = {};
@@ -177,31 +179,15 @@ export const loadMessagesForChat = createAsyncThunk<
     throw new Error('Invalid lead id');
   }
   // Fetch lead messages, quotations, and invoices in parallel
-  const [msgRes, quoRes, invRes] = await Promise.all([
-    fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
-    fetch(`/api/dealers/quotations?leadId=${leadId}`, {
-      credentials: 'include',
-    }),
-    fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
+  const [baseMessages, quotations, invoices] = await Promise.all([
+    leadMessagesApi.getByLead(leadId),
+    quotationsApi.getAll(),
+    invoicesApi.getAll()
   ]);
 
-  // Handle empty or error responses gracefully - new chats might not have messages yet
-  let baseMessages: LeadMessageDTO[] = [];
-  if (msgRes.ok) {
-    try {
-      const data = await msgRes.json();
-      baseMessages = Array.isArray(data) ? data : [];
-    } catch {
-      baseMessages = [];
-    }
-  }
-
-  const quotations: QuotationDTO[] = quoRes.ok
-    ? ((await quoRes.json()) as QuotationDTO[])
-    : [];
-  const invoices: InvoiceDTO[] = invRes.ok
-    ? ((await invRes.json()) as InvoiceDTO[])
-    : [];
+  // Filter quotations and invoices for the specific lead
+  const filteredQuotations = quotations.filter(q => q.lead?.id === leadId);
+  const filteredInvoices = invoices.filter(i => i.lead?.id === leadId);
 
   const normalizedBase: Message[] = baseMessages.map((m) => ({
     id: String(m.id),
@@ -210,7 +196,7 @@ export const loadMessagesForChat = createAsyncThunk<
     createdAt: m.createdAt,
   }));
 
-  const normalizedQuotations: Message[] = quotations.map((q) => ({
+  const normalizedQuotations: Message[] = filteredQuotations.map((q) => ({
     id: `q-${q.id ?? `${leadId}-${q.createdAt}`}`,
     content: JSON.stringify({
       subject: q.subject,
@@ -221,7 +207,7 @@ export const loadMessagesForChat = createAsyncThunk<
     createdAt: q.createdAt ?? new Date().toISOString(),
   }));
 
-  const normalizedInvoices: Message[] = invoices.map((i) => ({
+  const normalizedInvoices: Message[] = filteredInvoices.map((i) => ({
     id: `inv-${i.id}`,
     content: JSON.stringify({
       invoiceNumber: i.invoiceNumber,
@@ -263,9 +249,7 @@ export const ensureChatFromLead = createAsyncThunk<
   EnsureChatFromLeadArgs
 >('chat/ensureChatFromLead', async ({ leadId }) => {
   try {
-    const res = await fetch(`/api/leads/${leadId}`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Lead not found');
-    const lead: Lead = (await res.json()) as Lead;
+    const lead: Lead = await leadsApi.getOne(leadId);
     const leadName = lead?.name || `Lead #${leadId}`;
     const vehicleInfo = [lead?.vehicle_brand, lead?.vehicle_model]
       .filter(Boolean)
@@ -326,41 +310,25 @@ export const sendMessage = createAsyncThunk<
   const leadId = parseInt(chatId, 10);
   if (Number.isNaN(leadId)) throw new Error('Invalid lead id');
 
+  // Create a message object for the service call
+  const messageData = {
+    content,
+    leadId
+  };
+
   // Persist message
-  const createRes = await fetch('/api/lead-messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ content, leadId }),
-  });
-  if (!createRes.ok) throw new Error('Failed to send message');
+  await leadMessagesApi.create(messageData);
 
   // Re-fetch all messages, quotations, and invoices to ensure consistency
-  const [msgRes, quoRes, invRes] = await Promise.all([
-    fetch(`/api/lead-messages/${leadId}`, { credentials: 'include' }),
-    fetch(`/api/dealers/quotations?leadId=${leadId}`, {
-      credentials: 'include',
-    }),
-    fetch(`/api/invoices?leadId=${leadId}`, { credentials: 'include' }),
+  const [baseMessages, quotations, invoices] = await Promise.all([
+    leadMessagesApi.getByLead(leadId),
+    quotationsApi.getAll(),
+    invoicesApi.getAll()
   ]);
 
-  // Handle empty or error responses gracefully
-  let baseMessages: LeadMessageDTO[] = [];
-  if (msgRes.ok) {
-    try {
-      const data = await msgRes.json();
-      baseMessages = Array.isArray(data) ? data : [];
-    } catch {
-      baseMessages = [];
-    }
-  }
-
-  const quotations: QuotationDTO[] = quoRes.ok
-    ? ((await quoRes.json()) as QuotationDTO[])
-    : [];
-  const invoices: InvoiceDTO[] = invRes.ok
-    ? ((await invRes.json()) as InvoiceDTO[])
-    : [];
+  // Filter quotations and invoices for the specific lead
+  const filteredQuotations = quotations.filter(q => q.lead?.id === leadId);
+  const filteredInvoices = invoices.filter(i => i.lead?.id === leadId);
 
   const normalizedBase: Message[] = baseMessages.map((m) => ({
     id: String(m.id),
@@ -369,8 +337,8 @@ export const sendMessage = createAsyncThunk<
     createdAt: m.createdAt,
   }));
 
-  console.log('Quotations:', quotations);
-  const normalizedQuotations: Message[] = quotations.map((q) => ({
+  console.log('Quotations:', filteredQuotations);
+  const normalizedQuotations: Message[] = filteredQuotations.map((q) => ({
     id: `q-${q.id ?? `${leadId}-${q.createdAt}`}`,
     content: JSON.stringify({
       subject: q.subject,
@@ -381,7 +349,7 @@ export const sendMessage = createAsyncThunk<
     createdAt: q.createdAt ?? new Date().toISOString(),
   }));
 
-  const normalizedInvoices: Message[] = invoices.map((i) => ({
+  const normalizedInvoices: Message[] = filteredInvoices.map((i) => ({
     id: `inv-${i.id}`,
     content: JSON.stringify({
       invoiceNumber: i.invoiceNumber,

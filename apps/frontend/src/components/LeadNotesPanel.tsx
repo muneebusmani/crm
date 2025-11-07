@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { Delete, Edit, Save, Cancel, Add } from '@mui/icons-material';
 import type { LeadNote, CreateLeadNoteDto } from '@crm/types';
+import { leadNotesApi } from '@/services/lead-notes.service';
 
 interface LeadNotesPanelProps {
   leadId: number;
@@ -42,19 +43,18 @@ export default function LeadNotesPanel({
 
   useEffect(() => {
     fetchNotes();
-  }, [leadId]);
+  }, [leadId, currentProfileId]);
 
   const fetchNotes = async () => {
+    if (!currentProfileId) {
+      setError('No profile selected');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/leads/${leadId}/notes`, {
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNotes(data.data || []);
-      } else {
-        setError('Failed to load notes');
-      }
+      const notesData = await leadNotesApi.getByLeadId(leadId, currentProfileId);
+      setNotes(notesData || []);
     } catch {
       setError('Error loading notes');
     } finally {
@@ -63,25 +63,17 @@ export default function LeadNotesPanel({
   };
 
   const handleCreate = async () => {
-    if (!newNoteContent.trim() || submitting) return;
+    if (!newNoteContent.trim() || submitting || !currentProfileId) return;
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/leads/${leadId}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          content: newNoteContent.substring(0, 500),
-        } as CreateLeadNoteDto),
-      });
+      const noteData = {
+        content: newNoteContent.substring(0, 500),
+      } as CreateLeadNoteDto;
 
-      if (res.ok) {
-        setNewNoteContent('');
-        await fetchNotes();
-      } else {
-        setError('Failed to create note');
-      }
+      await leadNotesApi.create(leadId, currentProfileId, noteData);
+      setNewNoteContent('');
+      await fetchNotes();
     } catch {
       setError('Error creating note');
     } finally {
@@ -90,24 +82,16 @@ export default function LeadNotesPanel({
   };
 
   const handleUpdate = async (noteId: number) => {
-    if (!editingContent.trim() || submitting) return;
+    if (!editingContent.trim() || submitting || !currentProfileId) return;
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/leads/notes/${noteId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ content: editingContent.substring(0, 500) }),
-      });
-
-      if (res.ok) {
-        setEditingNoteId(null);
-        setEditingContent('');
-        await fetchNotes();
-      } else {
-        setError('Failed to update note');
-      }
+      const noteData = { content: editingContent.substring(0, 500) };
+      
+      await leadNotesApi.update(currentProfileId, noteId, noteData);
+      setEditingNoteId(null);
+      setEditingContent('');
+      await fetchNotes();
     } catch {
       setError('Error updating note');
     } finally {
@@ -116,19 +100,11 @@ export default function LeadNotesPanel({
   };
 
   const handleDelete = async (noteId: number) => {
-    if (!confirm('Delete this note?')) return;
+    if (!confirm('Delete this note?') || !currentProfileId) return;
 
     try {
-      const res = await fetch(`/api/leads/notes/${noteId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        await fetchNotes();
-      } else {
-        setError('Failed to delete note');
-      }
+      await leadNotesApi.delete(currentProfileId, noteId);
+      await fetchNotes();
     } catch {
       setError('Error deleting note');
     }

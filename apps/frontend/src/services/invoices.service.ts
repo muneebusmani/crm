@@ -45,9 +45,11 @@ export const invoicesApi = {
   async create(dto: CreateInvoiceDto): Promise<InvoiceResponseDTO> {
     return handleResponse(
       post<InvoiceResponseDTO, CreateInvoiceDto>(BASE, dto),
+      false,
+      true
     );
   },
   async getAll(): Promise<InvoiceResponseDTO[]> {
-    return handleResponse(get<ApiResponse<InvoiceResponseDTO[]>>(BASE));
+    return handleResponse(get<InvoiceResponseDTO[]>(BASE), false, false);
   },
 };

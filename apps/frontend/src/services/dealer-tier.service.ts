@@ -1,4 +1,5 @@
 import { get } from '@/lib/api';
+import { handleResponse } from './response.service';
 const DEALER_TIER_BASE = '/dealer-tiers';
 
 export type DealerTier = {
@@ -10,12 +11,12 @@ export type DealerTier = {
 
 export const dealerTierApi = {
   // Fetch all dealer tiers
-  getAll: (): Promise<DealerTier[]> => {
-    return get(`${DEALER_TIER_BASE}`);
+  getAll: async (): Promise<DealerTier[]> => {
+    return handleResponse(get(`${DEALER_TIER_BASE}`), false, false);
   },
 
   // Fetch a single dealer tier by ID
-  getById: (id: number): Promise<DealerTier> => {
-    return get(`${DEALER_TIER_BASE}/${id}`);
+  getById: async (id: number): Promise<DealerTier> => {
+    return handleResponse(get(`${DEALER_TIER_BASE}/${id}`), false, false);
   },
 };

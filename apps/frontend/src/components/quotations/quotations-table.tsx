@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import type { QuotationResponse } from '@crm/types';
 import { get } from '@/lib/api';
+import { quotationsApi } from '@/services/quotation.service';
 import QuotationDetailDialog from './quotation-detail-dialog';
 
 const QuotationsTable: React.FC = () => {
@@ -50,9 +51,10 @@ const QuotationsTable: React.FC = () => {
     const fetchQuotations = async () => {
       setLoading(true);
       try {
-        const response = await get('/quotations');
+        // Use the quotations service to fetch quotations
+        const response = await quotationsApi.getAll();
         console.log('Quotations Response:', response);
-        setQuotations(response.data || []);
+        setQuotations(response || []);
       } catch (error) {
         setSnackbar({
           open: true,

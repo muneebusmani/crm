@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
+import { businessSettingApi } from '@/services/business-setting.service';
 import { get, put } from '@/lib/api';
 import BankDetailsSection from './bank-details-selection';
 
@@ -104,13 +105,8 @@ const Profile = () => {
         salesTerms: salesTerms.trim(),
         quotation: quotationTerms.trim(),
       };
-      const resp = await fetch('/api/business-setting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      if (!resp.ok) throw new Error('Failed to save business settings');
+      // Use the business setting service to save settings
+      await businessSettingApi.create(payload);
       alert('Business settings saved');
     } catch (err) {
       console.error('Saving business settings failed:', err);
@@ -125,11 +121,11 @@ const Profile = () => {
     const loadBusinessSettings = async () => {
       try {
         setBsLoading(true);
-        const resp = await fetch('/api/business-setting', { credentials: 'include' });
-        if (!resp.ok) throw new Error('Failed to load business settings');
-        const data = await resp.json();
-        setSalesTerms(data?.salesTerms ?? '');
-        setQuotationTerms(data?.quotation ?? '');
+        // Use the business setting service to load settings
+        const data = await businessSettingApi.getAll();
+        const settingsData = Array.isArray(data) ? data[0] : data?.[0] || data;
+        setSalesTerms(settingsData?.salesTerms ?? '');
+        setQuotationTerms(settingsData?.quotation ?? '');
       } catch (err) {
         console.error('Failed to load business settings:', err);
       } finally {

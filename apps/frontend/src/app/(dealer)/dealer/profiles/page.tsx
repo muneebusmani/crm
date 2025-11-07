@@ -58,10 +58,8 @@ export default function ProfilesPage() {
 
   const fetchProfiles = async () => {
     try {
-      const response = await fetch('/api/company-users', {
-        credentials: 'include',
-      });
-      const data = await response.json();
+      // Use the company users service to fetch profiles
+      const data = await companyUsersApi.getAll();
       setProfiles(data);
     } catch (err) {
       setError('Failed to load profiles');
