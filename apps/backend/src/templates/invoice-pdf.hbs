@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
   <title>Invoice {{invoiceData.invoiceNumber}}</title>
@@ -9,248 +8,220 @@
       size: A4;
       margin: 10mm;
     }
-
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
       font-size: 11px;
     }
-
     .container {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
     }
-
     td,
     th {
       word-wrap: break-word;
       overflow-wrap: break-word;
     }
+    @media (max-width: 768px) {
+      body {
+        font-size: 10px !important;
+      }
+      .container {
+        width: 100% !important;
+        padding: 8px !important;
+        border-radius: 0 !important;
+      }
+      h1 { font-size: 22px !important; }
+      h3 { font-size: 13px !important; }
+      p, td, th { font-size: 12px !important; }
+      .totals-table td { font-size: 10px !important; }
+      .bank-details-table td { font-size: 9px !important; }
+      .terms-text { font-size: 9px !important; }
+      .footer-text { font-size: 12px !important; }
+    }
+    @media (max-width: 480px) {
+      body {
+        font-size: 9px !important;
+      }
+      h1 { font-size: 20px !important; }
+      h3 { font-size: 12px !important; }
+      p, td, th { font-size: 11px !important; }
+      .totals-table td { font-size: 9px !important; }
+      .bank-details-table td { font-size: 8px !important; }
+      .terms-text { font-size: 8px !important; }
+      .footer-text { font-size: 11px !important; }
+    }
   </style>
 </head>
-
-<body>
-
-  <div class="container" style="background-color:#fff; border-radius:8px;  width:768px;  padding:8px;">
-
-    <!-- Main Container -->
-    <table style="width:100%; border-collapse:collapse;">
-      <tr>
-        <!-- Invoice Content -->
-        <td
-          style="vertical-align:top; border-top:8px solid #007b8f; border-left:8px solid #666;border-right:2px solid #007b8f; border-bottom:2px solid #007b8f; border-radius:8px; padding:16px;">
-
-          <div>
-            <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
-              <tr>
-                <td style="vertical-align:top; width:50%;">
-                  <!-- Logo -->
-                  {{#if invoiceData.dealer.profile.logo}}
-                  <div style="width:80px; height:60px; display:inline-block; overflow:hidden; margin-bottom:8px;">
-                    <img src="{{invoiceData.dealer.profile.logo}}" alt="Company Logo"
-                      style="width:100%; height:100%; object-fit:contain;" />
-                  </div>
-                  {{else}}
-                  <div
-                    style="width:80px; height:60px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999; margin-bottom:8px;">
-                    Logo</div>
-                  {{/if}}
-                  <p style="margin:4px 0; font-size:14px; font-weight:600; color:#007b8f;">
-                    {{#if invoiceData.dealer.profile}}{{invoiceData.dealer.profile.name}}{{else}}Company Name{{/if}}
-                  </p>
-                  <p style="margin:2px 0; font-size:12px; color:#666;">
-                    {{#if invoiceData.dealer.profile}}{{invoiceData.dealer.profile.location}}{{else}}Plot 145, street 1,
-                    london{{/if}}
-                  </p>
-                </td>
-                <td style="vertical-align:top;  float: right;">
-                  <h1 style="font-size:24px; font-weight:600; color:#007b8f;">Invoice</h1>
-                  <p style="margin:2px 0; font-size:12px; color:#666;">Invoice #: {{invoiceData.invoiceNumber}}</p>
-                  <p style="margin:2px 0; font-size:12px; color:#666;">Invoice Date: {{invoiceData.invoiceDate}}</p>
-                  <p style="margin:2px 0; font-size:12px; color:#666;">Order Date: {{invoiceData.orderDate}}</p>
-                </td>
-              </tr>
-            </table>
-
-
-            <!-- Vehicle Info -->
-            <table style="width:100%; border-collapse:collapse; margin-bottom:16px; ">
-              <tr>
-                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Vehicle Info:</h3>
-                <td style="width:33%; font-size:13px; color:#555; padding:2px 0;">Reg No: {{#if
-                  invoiceData.lead.vehicle_vrm}}
-                  {{invoiceData.lead.vehicle_vrm}}
-                  {{else}}
-                  N/A
-                  {{/if}}</td>
-                <td style="width:33%; font-size:13px; color:#555; padding:2px 0;">Make: {{#if
-                  invoiceData.lead.vehicle_brand}}{{invoiceData.lead.vehicle_brand}}{{else}}Audi{{/if}}</td>
-                <td style="width:34%; font-size:13px; color:#555; padding:2px 0;">Model: {{#if
-                  invoiceData.lead.vehicle_model}}{{invoiceData.lead.vehicle_model}}{{else}}m3{{/if}}</td>
-              </tr>
-              <tr>
-                <td style="font-size:13px; color:#555; padding:2px 0;">Reg Year: {{#if
-                  invoiceData.lead.vehicle_reg}}{{invoiceData.lead.vehicle_reg}}{{else}}2016{{/if}}</td>
-                <td style="font-size:13px; color:#555; padding:2px 0;">Fuel Type: {{#if
-                  invoiceData.lead.fuelType}}{{invoiceData.lead.fuelType}}{{else}}Petrol{{/if}}</td>
-                <td style="font-size:13px; color:#555; padding:2px 0;">Car Type: Engine</td>
-              </tr>
-            </table>
-          </div>
-          <!-- Header -->
-
-
-          <!-- Buyer Info & Recovery & Collection Side by Side -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <div class="container" style="background-color:#fff; border-radius:8px; width:768px; padding:8px;">
+          <!-- Main Container -->
+          <table style="width:100%; border-collapse:collapse;">
             <tr>
-              <!-- Buyer Info -->
-              <td style="width:50%; vertical-align:top; padding-right:16px;">
-                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Buyer Info:</h3>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Name: {{#if
-                  invoiceData.lead.name}}{{invoiceData.lead.name}}{{else}}John{{/if}}</p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Phone: {{#if
-                  invoiceData.lead.number}}{{invoiceData.lead.number}}{{else}}+129730283{{/if}}</p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Email: {{#if
-                  invoiceData.lead.email}}{{invoiceData.lead.email}}{{else}}john@gmail.com{{/if}}</p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Post: {{#if
-                  invoiceData.lead.postcode}}{{invoiceData.lead.postcode}}{{else}}3251{{/if}}</p>
-              </td>
-              <!-- Recovery & Collection -->
-              <td style="width:50%; vertical-align:top;">
-                <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Recovery & Collection:
-                </h3>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Recovery Location: {{invoiceData.recoveryLocation}}
-                </p>
-                <p style="margin:2px 0; font-size:13px; color:#555;">Delivery Location: {{invoiceData.deliveryLocation}}
-                </p>
+              <!-- Invoice Content -->
+              <td style="vertical-align:top; border-top:8px solid #007b8f; border-left:8px solid #666;border-right:2px solid #007b8f; border-bottom:2px solid #007b8f; border-radius:8px; padding:16px;">
+                <div>
+                  <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+                    <tr>
+                      <td style="vertical-align:top; width:50%;">
+                        <!-- Logo -->
+                        {{#if invoiceData.dealer.profile.logo}}
+                        <div style="width:80px; height:60px; display:inline-block; overflow:hidden; margin-bottom:8px;">
+                          <img src="{{invoiceData.dealer.profile.logo}}" alt="Company Logo" style="width:100%; height:100%; object-fit:contain;" />
+                        </div>
+                        {{else}}
+                        <div style="width:80px; height:60px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999; margin-bottom:8px;">Logo</div>
+                        {{/if}}
+                        <p style="margin:4px 0; font-size:14px; font-weight:600; color:#007b8f;">
+                          {{#if invoiceData.dealer.profile}}{{invoiceData.dealer.profile.name}}{{else}}Company Name{{/if}}
+                        </p>
+                        <p style="margin:2px 0; font-size:12px; color:#666;">
+                          {{#if invoiceData.dealer.profile}}{{invoiceData.dealer.profile.location}}{{else}}Plot 145, street 1, london{{/if}}
+                        </p>
+                      </td>
+                      <td style="vertical-align:top; text-align: right;">
+                        <h1 style="font-size:24px; font-weight:600; color:#007b8f;">Invoice</h1>
+                        <p style="margin:2px 0; font-size:12px; color:#666;">Invoice #: {{invoiceData.invoiceNumber}}</p>
+                        <p style="margin:2px 0; font-size:12px; color:#666;">Invoice Date: {{invoiceData.invoiceDate}}</p>
+                        <p style="margin:2px 0; font-size:12px; color:#666;">Order Date: {{invoiceData.orderDate}}</p>
+                      </td>
+                    </tr>
+                  </table>
+                  <!-- Vehicle Info -->
+                  <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+                    <tr>
+                      <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Vehicle Info:</h3>
+                      <td style="width:33%; font-size:13px; color:#555; padding:2px 0;">Reg No: {{#if invoiceData.lead.vehicle_vrm}}{{invoiceData.lead.vehicle_vrm}}{{else}}N/A{{/if}}</td>
+                      <td style="width:33%; font-size:13px; color:#555; padding:2px 0;">Make: {{#if invoiceData.lead.vehicle_brand}}{{invoiceData.lead.vehicle_brand}}{{else}}Audi{{/if}}</td>
+                      <td style="width:34%; font-size:13px; color:#555; padding:2px 0;">Model: {{#if invoiceData.lead.vehicle_model}}{{invoiceData.lead.vehicle_model}}{{else}}m3{{/if}}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px; color:#555; padding:2px 0;">Reg Year: {{#if invoiceData.lead.vehicle_reg}}{{invoiceData.lead.vehicle_reg}}{{else}}2016{{/if}}</td>
+                      <td style="font-size:13px; color:#555; padding:2px 0;">Fuel Type: {{#if invoiceData.lead.fuelType}}{{invoiceData.lead.fuelType}}{{else}}Petrol{{/if}}</td>
+                      <td style="font-size:13px; color:#555; padding:2px 0;">Car Type: Engine</td>
+                    </tr>
+                  </table>
+                </div>
+                <!-- Header -->
+                <!-- Buyer Info & Recovery & Collection Side by Side -->
+                <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+                  <tr>
+                    <!-- Buyer Info -->
+                    <td style="width:50%; vertical-align:top; padding-right:16px;">
+                      <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Buyer Info:</h3>
+                      <p style="margin:2px 0; font-size:13px; color:#555;">Name: {{#if invoiceData.lead.name}}{{invoiceData.lead.name}}{{else}}John{{/if}}</p>
+                      <p style="margin:2px 0; font-size:13px; color:#555;">Phone: {{#if invoiceData.lead.number}}{{invoiceData.lead.number}}{{else}}+129730283{{/if}}</p>
+                      <p style="margin:2px 0; font-size:13px; color:#555;">Email: {{#if invoiceData.lead.email}}{{invoiceData.lead.email}}{{else}}john@gmail.com{{/if}}</p>
+                      <p style="margin:2px 0; font-size:13px; color:#555;">Post: {{#if invoiceData.lead.postcode}}{{invoiceData.lead.postcode}}{{else}}3251{{/if}}</p>
+                    </td>
+                    <!-- Recovery & Collection -->
+                    <td style="width:50%; vertical-align:top;">
+                      <h3 style="margin:0 0 8px 0; font-size:14px; font-weight:600; color:#007b8f;">Recovery & Collection:</h3>
+                      <p style="margin:2px 0; font-size:13px; color:#555;">Recovery Location: {{invoiceData.recoveryLocation}}</p>
+                      <p style="margin:2px 0; font-size:13px; color:#555;">Delivery Location: {{invoiceData.deliveryLocation}}</p>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Items Table -->
+                <div style="overflow-x:auto; margin-bottom:12px;">
+                  <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                    <thead>
+                      <tr style="background-color: #007b8f; border-bottom:2px solid #007b8f;">
+                        <th style="padding:4px; text-align:left; font-weight:600; color:#fff;">Name</th>
+                        <th style="padding:4px; text-align:right; font-weight:600; color:#fff;">Rate</th>
+                        <th style="padding:4px; text-align:right; font-weight:600; color:#fff;">Qty</th>
+                        <th style="padding:4px; text-align:right; font-weight:600; color:#fff;">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {{#each invoiceData.items}}
+                      <tr style="border-bottom:1px solid #007b8f;">
+                        <td style="padding:4px; color:#555;">{{this.productName}}</td>
+                        <td style="padding:4px; text-align:right; color:#555;">${{this.unitPrice}}</td>
+                        <td style="padding:4px; text-align:right; color:#555;">{{this.quantity}}</td>
+                        <td style="padding:4px; text-align:right; color:#555;">${{this.subTotal}}</td>
+                      </tr>
+                      {{/each}}
+                    </tbody>
+                  </table>
+                </div>
+                <!-- Totals -->
+                <div style="text-align:right; margin-bottom:12px;">
+                  <table class="totals-table" style="margin-left:auto; min-width:150px;">
+                    <tr>
+                      <td style="padding:2px 6px; font-size:10px; color:#555;">Sub Total</td>
+                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.subTotal}}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:2px 6px; font-size:10px; color:#555;">VAT ({{invoiceData.taxPercentage}}%)</td>
+                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.totalTax}}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:2px 6px; font-size:10px; color:#555;">Discount ({{invoiceData.discountPercentage}}%)</td>
+                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.totalDiscount}}</td>
+                    </tr>
+                    <tr style="border-top:1px solid #007b8f;">
+                      <td style="padding:4px 6px; font-size:11px; font-weight:600; color:#333;">Grand Total</td>
+                      <td style="padding:4px 6px; text-align:right; font-size:11px; font-weight:600; color:#333;">${{invoiceData.grandTotal}}</td>
+                    </tr>
+                  </table>
+                </div>
+                <!-- Bank Details -->
+                <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Bank Details:</h3>
+                {{#if invoiceData.bank}}
+                <div style="border:1px solid #007b8f; border-radius:4px; padding:8px; margin-bottom:12px;">
+                  <table class="bank-details-table" style="width:100%; border-collapse:collapse;">
+                    <tr>
+                      <td style="width:50%; font-size:10px; color:#555; padding:1px 0;">Account Holder: {{invoiceData.bank.accountHolderName}}</td>
+                      <td style="width:50%; font-size:10px; color:#555; padding:1px 0;">IFSC: {{#if invoiceData.bank.ifscCode}}{{invoiceData.bank.ifscCode}}{{else}}EXMP123456{{/if}}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:10px; color:#555; padding:1px 0;">Account Number: {{invoiceData.bank.accountNumber}}</td>
+                      <td style="font-size:10px; color:#555; padding:1px 0;">IBAN: {{#if invoiceData.bank.iban}}{{invoiceData.bank.iban}}{{else}}EXMP123456780{{/if}}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:10px; color:#555; padding:1px 0;">Bank Name: {{invoiceData.bank.bankName}}</td>
+                      <td style="font-size:10px; color:#555; padding:1px 0;">SWIFT: {{#if invoiceData.bank.swiftCode}}{{invoiceData.bank.swiftCode}}{{else}}EXMP1512345{{/if}}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:10px; color:#555; padding:1px 0;" colspan="2">Branch Name: {{#if invoiceData.bank.branchName}}{{invoiceData.bank.branchName}}{{else}}Main Branch{{/if}}</td>
+                    </tr>
+                  </table>
+                </div>
+                {{else}}
+                <div style="border:1px solid #ddd; border-radius:4px; padding:8px; margin-bottom:12px;">
+                  <p style="margin:0; font-size:10px; color:#999;">No bank details configured</p>
+                </div>
+                {{/if}}
+                <!-- Seller Note -->
+                <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Seller Note:</h3>
+                <p style="margin:0 0 12px 0; font-size:10px; color:#555;">{{invoiceData.sellerNote}}</p>
+                <!-- Quotation Terms -->
+                <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Quotation Terms:</h3>
+                <p class="terms-text" style="margin:0 0 12px 0; font-size:9px; color:#666;">{{#if invoiceData.quotationTerms}}{{invoiceData.quotationTerms}}{{else}}Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of{{/if}}</p>
+                <!-- Sales Terms -->
+                <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Sales Terms:</h3>
+                <p class="terms-text" style="margin:0; font-size:9px; color:#666;">{{#if invoiceData.salesTerms}}{{invoiceData.salesTerms}}{{else}}Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of{{/if}}</p>
               </td>
             </tr>
           </table>
-
-          <!-- Items Table -->
-          <div style="overflow-x:auto; margin-bottom:12px;">
-            <table style="width:100%; border-collapse:collapse; font-size:10px;">
-              <thead>
-                <tr style="background-color: #007b8f; border-bottom:2px solid #007b8f;">
-                  <th style="padding:4px; text-align:left; font-weight:600; color:#fff;">Name</th>
-                  <th style="padding:4px; text-align:right; font-weight:600; color:#fff;">Rate</th>
-                  <th style="padding:4px; text-align:right; font-weight:600; color:#fff;">Qty</th>
-                  <th style="padding:4px; text-align:right; font-weight:600; color:#fff;">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {{#each invoiceData.items}}
-                <tr style="border-bottom:1px solid #007b8f;">
-                  <td style="padding:4px; color:#555;">{{this.productName}}</td>
-                  <td style="padding:4px; text-align:right; color:#555;">${{this.unitPrice}}</td>
-                  <td style="padding:4px; text-align:right; color:#555;">{{this.quantity}}</td>
-                  <td style="padding:4px; text-align:right; color:#555;">${{this.subTotal}}</td>
-                </tr>
-                {{/each}}
-              </tbody>
-            </table>
+          <!-- Footer -->
+          <div style="margin-top:24px; text-align:center; border-top:2px solid #007b8f; padding-top:16px;">
+            <p class="footer-text" style="margin:0; color:#007b8f; font-weight:bold; font-size:14px;">Thank You For Your Purchase From Us!</p>
           </div>
-
-
-          <!-- Totals -->
-          <div style="text-align:right; margin-bottom:12px;">
-            <table style="margin-left:auto; min-width:150px;">
-              <tr>
-                <td style="padding:2px 6px; font-size:10px; color:#555;">Sub Total</td>
-                <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.subTotal}}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:2px 6px; font-size:10px; color:#555;">VAT ({{invoiceData.taxPercentage}}%)</td>
-                <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.totalTax}}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:2px 6px; font-size:10px; color:#555;">Discount ({{invoiceData.discountPercentage}}%)
-                </td>
-                <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">
-                  ${{invoiceData.totalDiscount}}</td>
-              </tr>
-              <tr style="border-top:1px solid #007b8f;">
-                <td style="padding:4px 6px; font-size:11px; font-weight:600; color:#333;">Grand Total</td>
-                <td style="padding:4px 6px; text-align:right; font-size:11px; font-weight:600; color:#333;">
-                  ${{invoiceData.grandTotal}}</td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- Bank Details -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Bank Details:</h3>
-          {{#if invoiceData.bank}}
-          <div style="border:1px solid #007b8f; border-radius:4px; padding:8px; margin-bottom:12px;">
-            <table style="width:100%; border-collapse:collapse;">
-              <tr>
-                <td style="width:50%; font-size:10px; color:#555; padding:1px 0;">Account Holder:
-                  {{invoiceData.bank.accountHolderName}}</td>
-                <td style="width:50%; font-size:10px; color:#555; padding:1px 0;">IFSC: {{#if
-                  invoiceData.bank.ifscCode}}{{invoiceData.bank.ifscCode}}{{else}}EXMP123456{{/if}}</td>
-              </tr>
-              <tr>
-                <td style="font-size:10px; color:#555; padding:1px 0;">Account Number:
-                  {{invoiceData.bank.accountNumber}}</td>
-                <td style="font-size:10px; color:#555; padding:1px 0;">IBAN: {{#if
-                  invoiceData.bank.iban}}{{invoiceData.bank.iban}}{{else}}EXMP123456780{{/if}}</td>
-              </tr>
-              <tr>
-                <td style="font-size:10px; color:#555; padding:1px 0;">Bank Name: {{invoiceData.bank.bankName}}</td>
-                <td style="font-size:10px; color:#555; padding:1px 0;">SWIFT: {{#if
-                  invoiceData.bank.swiftCode}}{{invoiceData.bank.swiftCode}}{{else}}EXMP1512345{{/if}}</td>
-              </tr>
-              <tr>
-                <td style="font-size:10px; color:#555; padding:1px 0;" colspan="2">Branch Name: {{#if
-                  invoiceData.bank.branchName}}{{invoiceData.bank.branchName}}{{else}}Main Branch{{/if}}</td>
-              </tr>
-            </table>
-          </div>
-          {{else}}
-          <div style="border:1px solid #ddd; border-radius:4px; padding:8px; margin-bottom:12px;">
-            <p style="margin:0; font-size:10px; color:#999;">No bank details configured</p>
-          </div>
-          {{/if}}
-
-          <!-- Seller Note -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Seller Note:</h3>
-          <p style="margin:0 0 12px 0; font-size:10px; color:#555;">{{invoiceData.sellerNote}}</p>
-
-          <!-- Quotation Terms -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Quotation Terms:</h3>
-          <p style="margin:0 0 12px 0; font-size:9px; color:#666;">{{#if
-            invoiceData.quotationTerms}}{{invoiceData.quotationTerms}}{{else}}Lorem Ipsum is simply dummy text of the
-            printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the
-            1500s, when an unknown printer took a galley of{{/if}}</p>
-
-          <!-- Sales Terms -->
-          <h3 style="margin:0 0 4px 0; font-size:11px; font-weight:600; color:#007b8f;">Sales Terms:</h3>
-          <p style="margin:0; font-size:9px; color:#666;">{{#if
-            invoiceData.salesTerms}}{{invoiceData.salesTerms}}{{else}}Lorem Ipsum is simply dummy text of the printing
-            and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when
-            an unknown printer took a galley of{{/if}}</p>
-
-        </td>
-
-      </tr>
-    </table>
-
-    <!-- Footer -->
-    <div style="margin-top:24px; text-align:center; border-top:2px solid #007b8f; padding-top:16px;">
-      <p style="margin:0; color:#007b8f; font-weight:bold; font-size:14px;">Thank You For Your Purchase From Us!</p>
-    </div>
-
-  </div>
-
+        </div>
+      </td>
+    </tr>
+  </table>
 </body>
-
 </html>

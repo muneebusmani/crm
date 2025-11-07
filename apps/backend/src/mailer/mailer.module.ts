@@ -13,14 +13,16 @@ import { ConfigService, ConfigModule } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         transport: {
-          service: 'gmail',
+          host: configService.get<string>('MAIL_HOST'),
+          port: configService.get<number>('MAIL_PORT'),
+          secure: configService.get<boolean>('MAIL_SECURE'), // true for 465, false for other ports
           auth: {
-            user: configService.get<string>('MAIL_USER'), // ✅ injected properly
+            user: configService.get<string>('MAIL_USER'),
             pass: configService.get<string>('MAIL_PASS'),
           },
         },
         defaults: {
-          from: '"CRM Quotation System" <no-reply@crm.com>',
+          from: '"Enginefinders" <sales@enginefinders.co.uk>',
         },
         template: {
           dir:
