@@ -109,7 +109,7 @@ COPY packages/types/package.json packages/types/
 
 # --- Install dependencies with cache mount ---
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts
+  pnpm install --frozen-lockfile --ignore-scripts
 
 # --- Copy the rest of the source ---
 COPY . .
@@ -119,7 +119,7 @@ RUN cp apps/frontend/.env.production apps/frontend/.env.production || true
 
 # Run Turbo build with cache mount for Turborepo
 RUN --mount=type=cache,target=/app/.turbo \
-    pnpm run build-server
+  pnpm run build-server
 
 # --- frontend runtime ---
 FROM node:22-alpine AS frontend-runtime
@@ -156,10 +156,10 @@ ENV NODE_ENV=production
 
 RUN apk add chromium
 
-Tell Puppeteer to use the system Chromium
+# Tell Puppeteer to use the system Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-    
+  PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/apps/backend/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
