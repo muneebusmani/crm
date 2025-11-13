@@ -4,6 +4,7 @@ import { UserType } from '@crm/types';
 import { cookies } from 'next/headers';
 import GlobalLayout, { roboto } from '@/components/global-layout';
 import { Layout } from '@/components/sidebar';
+import DealerTopbarWrapper from '@/components/dealer-topbar-wrapper';
 
 export const metadata: Metadata = {
   title: 'CRM | Dealer',
@@ -25,7 +26,10 @@ export default async function DealerLayout({
     <html lang="en">
       <body className={`${roboto.variable} antialiased`}>
         <GlobalLayout>
-          <Layout {...LayoutProps}>{children}</Layout>
+          <Layout {...LayoutProps}>
+            <DealerTopbarWrapper />
+            {children}
+          </Layout>
         </GlobalLayout>
       </body>
     </html>

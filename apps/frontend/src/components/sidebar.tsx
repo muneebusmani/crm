@@ -688,7 +688,15 @@ const Layout: React.FC<{
         )}
 
         {/* Main content area */}
-        <Box height={'100%'}>{children}</Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );

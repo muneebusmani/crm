@@ -47,6 +47,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/uploads/**', // API uploads path
       },
+      {
+        protocol: 'https',
+        hostname: 'ceurdvhocykwltpxgktp.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/**', // Supabase Storage path (including signed URLs)
+      },
     ],
   },
 };

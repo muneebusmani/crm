@@ -264,9 +264,7 @@ export class InvoiceService {
       relations: ['dealer', 'lead'],
     });
 
-    if (existing) return existing; // already linked
-
-    // fetch dealer + lead (only ids needed)
+    // fetch dealer + lead (needed for credit deduction even if exists)
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
       relations: ['dealer'],
@@ -277,6 +275,19 @@ export class InvoiceService {
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
+    // ✅ CREDIT DEDUCTION: Deduct 1 credit for every invoice sent (even if lead already linked)
+    await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
+    console.log(
+      `💰 Credit deducted for dealer ${dealerId} sending invoice to lead ${leadId}`,
+    );
+
+    if (existing) {
+      console.log(
+        `🔗 DealerLead relationship already exists for dealer ${dealerId} and lead ${leadId}`,
+      );
+      return existing; // already linked
+    }
+
     // create new pivot entry
     const dealerLead = await this.dealerLeadRepository.create({
       dealer,
@@ -284,9 +295,9 @@ export class InvoiceService {
       status: status,
     });
     lead.status = status;
-    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result = await this.dealerLeadRepository.save(dealerLead);
     this.leadsGateway.emitUpdateLead(lead);
-    await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
+
     return result;
   }
 

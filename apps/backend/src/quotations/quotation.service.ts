@@ -284,9 +284,13 @@ export class QuotationService {
       status: status,
     });
     lead.status = status;
-    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result = await this.dealerLeadRepository.save(dealerLead);
     this.leadsGateway.emitUpdateLead(lead);
-    await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
+
+    // ❌ REMOVED: Credits should NOT be deducted for quotations
+    // Credits are only deducted when invoice is sent
+    // await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
+
     return result;
   }
 

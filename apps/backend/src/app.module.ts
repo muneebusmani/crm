@@ -20,6 +20,7 @@ import { DealerTierModule } from './dealer-tier/dealer-tier.module';
 import { MessagesModule } from './dealer-chat/messages.module';
 import { BusinessSettingModule } from './business-setting/business-setting.module';
 import { CompanyUserModule } from './company-user/company-user.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { CompanyUserModule } from './company-user/company-user.module';
     InvoiceModule,
     QuotationModule,
     BankDeatil,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -60,6 +60,12 @@ export class DealerController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('/credits')
+  async getCredits(@Req() req: AuthenticatedRequest) {
+    return this.dealerService.getDealerCredits(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Put('/profile/me')
   @UseInterceptors(FileInterceptor('logoFile'))
   async updateProfile(
@@ -68,6 +74,15 @@ export class DealerController {
     @UploadedFile() file?: Multer.File,
   ) {
     return this.dealerService.updateDealer(req.user.id, dto, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('/profile/logo-path')
+  async updateLogoPath(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { logoPath: string },
+  ) {
+    return this.dealerService.updateDealerLogoPath(req.user.id, body.logoPath);
   }
 
   @Get(':id')

@@ -30,6 +30,7 @@ import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { get, put } from '@/lib/api';
 import BankDetailsSection from './bank-details-selection';
+import LogoUpload from './logo-upload';
 
 interface DealerData extends User {
   dealer: Dealer;
@@ -53,6 +54,8 @@ const Profile = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [profileData, setProfileData] = useState<DealerInfo>();
   const [loading, setLoading] = useState(true);
+  const [credits, setCredits] = useState<number>(0);
+  const [creditsLoading, setCreditsLoading] = useState(true);
   // Business Settings state
   const [salesTerms, setSalesTerms] = useState('');
   const [quotationTerms, setQuotationTerms] = useState('');
@@ -97,6 +100,28 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  // Fetch dealer credits
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        setCreditsLoading(true);
+        const response = await fetch('/api/dealers/credits', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCredits(data.credits);
+        }
+      } catch (error) {
+        console.error('Failed to fetch credits:', error);
+      } finally {
+        setCreditsLoading(false);
+      }
+    };
+
+    fetchCredits();
+  }, []);
+
   const saveBusinessSettings = async () => {
     try {
       setBsSaving(true);
@@ -125,7 +150,9 @@ const Profile = () => {
     const loadBusinessSettings = async () => {
       try {
         setBsLoading(true);
-        const resp = await fetch('/api/business-setting', { credentials: 'include' });
+        const resp = await fetch('/api/business-setting', {
+          credentials: 'include',
+        });
         if (!resp.ok) throw new Error('Failed to load business settings');
         const data = await resp.json();
         setSalesTerms(data?.salesTerms ?? '');
@@ -147,6 +174,7 @@ const Profile = () => {
     owner: '',
     location: '',
     logo: '',
+    logoFile: null as File | null,
     website: '',
     contactEmail: '',
     tierId: 1,
@@ -185,6 +213,7 @@ const Profile = () => {
         owner: profileData.owner,
         location: profileData.location,
         logo: profileData.logo,
+        logoFile: null,
         website: profileData.website,
         contactEmail: profileData.contactEmail,
         tierId: profileData.tierId || 1,
@@ -217,9 +246,64 @@ const Profile = () => {
     if (!profileData) return;
 
     try {
+      let finalLogoPath = formData.logo;
+
+      // Step 1: If there's a new logo file, upload it to Supabase
+      if (formData.logoFile) {
+        // Request signed upload URL from backend
+        const signedUrlResponse = await fetch(
+          '/api/uploads/dealer-avatar-signed-url',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              fileName: formData.logoFile.name,
+              contentType: formData.logoFile.type,
+            }),
+          },
+        );
+
+        if (!signedUrlResponse.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+
+        const { data } = await signedUrlResponse.json();
+        const { uploadUrl, path } = data;
+
+        // Upload file directly to Supabase Storage using signed URL
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: formData.logoFile,
+          headers: {
+            'Content-Type': formData.logoFile.type,
+            'x-upsert': 'true',
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file to storage');
+        }
+
+        // Update dealer's logo path in backend
+        const logoPathResponse = await fetch('/api/dealers/logo-path', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ logoPath: path }),
+        });
+
+        if (!logoPathResponse.ok) {
+          throw new Error('Failed to update logo path');
+        }
+
+        finalLogoPath = path;
+      }
+
+      // Step 2: Update other profile fields
       const dataToSend = {
         ...formData,
-        // Backend expects password field — send empty string if not changing
+        logo: finalLogoPath,
         password: formData.password || '',
       };
 
@@ -335,11 +419,11 @@ const Profile = () => {
       {/* </Box> */}
 
       {/* MAIN GRID */}
-      <Grid spacing={3}>
-        {/* LEFT COLUMN */}
-        <Grid size={{ xs: 12, md: 4 }}>
+      <Grid container spacing={3}>
+        {/* TOP ROW - Tier and Credits side by side */}
+        <Grid size={{ xs: 12, md: 6 }}>
           {/* Tier Status Card */}
-          <Card sx={{ mb: 2 }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Tier
@@ -347,8 +431,8 @@ const Profile = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box
                   sx={{
-                    width: 40,
-                    height: 40,
+                    width: 60,
+                    height: 60,
                     borderRadius: '50%',
                     bgcolor: profileData.tierName
                       ?.toLowerCase()
@@ -376,17 +460,17 @@ const Profile = () => {
                   }}
                 >
                   {profileData.tierName?.toLowerCase().includes('gold') ? (
-                    <EmojiEvents fontSize="small" />
+                    <EmojiEvents fontSize="medium" />
                   ) : profileData.tierName?.toLowerCase().includes('silver') ? (
-                    <MilitaryTech fontSize="small" />
+                    <MilitaryTech fontSize="medium" />
                   ) : profileData.tierName?.toLowerCase().includes('bronze') ? (
-                    <WorkspacePremium fontSize="small" />
+                    <WorkspacePremium fontSize="medium" />
                   ) : (
                     <Typography fontWeight="bold">N/A</Typography>
                   )}
                 </Box>
                 <Box>
-                  <Typography variant="body1" fontWeight="bold">
+                  <Typography variant="h5" fontWeight="bold">
                     {profileData.tierName || 'No Tier Assigned'}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
@@ -396,9 +480,53 @@ const Profile = () => {
               </Box>
             </CardContent>
           </Card>
+        </Grid>
 
+        <Grid size={{ xs: 12, md: 6 }}>
+          {/* Credits Card */}
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Available Credits
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    bgcolor: theme.palette.success.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: theme.palette.success.contrastText,
+                  }}
+                >
+                  {creditsLoading ? (
+                    <Typography variant="body2">...</Typography>
+                  ) : (
+                    <Typography variant="h5" fontWeight="bold">
+                      {credits}
+                    </Typography>
+                  )}
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold">
+                    {creditsLoading ? 'Loading...' : `${credits} Credits`}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Used for sending invoices
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* SECOND ROW - Info and About Dealer side by side */}
+        <Grid size={{ xs: 12, md: 4 }}>
           {/* Info Card */}
-          <Card>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Info
@@ -457,9 +585,9 @@ const Profile = () => {
           </Card>
         </Grid>
 
-        {/* RIGHT COLUMN */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Card sx={{ mb: 3 }}>
+          {/* About Dealer Card */}
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 About Dealer
@@ -470,7 +598,7 @@ const Profile = () => {
                 {profileData.location}. Visit our website to learn more!
               </Typography>
 
-              <Box sx={{ display: 'flex', gap: 4, mt: 3 }}>
+              <Box sx={{ display: 'flex', gap: 4, mt: 3, flexWrap: 'wrap' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Person sx={{ color: theme.palette.text.secondary }} />
                   <Box>
@@ -509,55 +637,86 @@ const Profile = () => {
               </Box>
             </CardContent>
           </Card>
+        </Grid>
 
-          {/* Business Settings (Quotation & Sales Terms) */}
+        {/* THIRD ROW - Business Settings */}
+        <Grid size={{ xs: 12 }}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Quotation & Sales Terms
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  label="Quotation Terms"
-                  value={quotationTerms}
-                  onChange={(e) => setQuotationTerms(e.target.value)}
-                  multiline
-                  minRows={4}
-                  placeholder="Enter quotation terms shown to customers in quotation emails"
-                  disabled={bsLoading}
-                  helperText={`${Math.max(0, quotationTerms.trim().length)} chars`}
-                />
-                <TextField
-                  label="Sales Terms"
-                  value={salesTerms}
-                  onChange={(e) => setSalesTerms(e.target.value)}
-                  multiline
-                  minRows={4}
-                  placeholder="Enter sales terms included in quotation emails"
-                  disabled={bsLoading}
-                  helperText={`${Math.max(0, salesTerms.trim().length)} chars`}
-                />
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                  <Button
-                    variant="contained"
-                    onClick={saveBusinessSettings}
-                    disabled={
-                      bsSaving ||
-                      quotationTerms.trim().length < 10 ||
-                      salesTerms.trim().length < 10
-                    }
-                  >
-                    {bsSaving ? 'Saving…' : 'Save Terms'}
-                  </Button>
-                </Box>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Quotation Terms"
+                    value={quotationTerms}
+                    onChange={(e) => setQuotationTerms(e.target.value)}
+                    multiline
+                    placeholder="Enter quotation terms shown to customers in quotation emails"
+                    disabled={bsLoading}
+                    helperText={`${Math.max(0, quotationTerms.trim().length)} chars`}
+                    slotProps={{
+                      input: {
+                        style: {
+                          height: '200px',
+                          alignItems: 'flex-start',
+                          overflow: 'auto',
+                        },
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Sales Terms"
+                    value={salesTerms}
+                    onChange={(e) => setSalesTerms(e.target.value)}
+                    multiline
+                    placeholder="Enter sales terms included in quotation emails"
+                    disabled={bsLoading}
+                    helperText={`${Math.max(0, salesTerms.trim().length)} chars`}
+                    slotProps={{
+                      input: {
+                        style: {
+                          height: '200px',
+                          alignItems: 'flex-start',
+                          overflow: 'auto',
+                        },
+                      },
+                    }}
+                  />
+                </Grid>
+              </Grid>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  justifyContent: 'flex-end',
+                  mt: 2,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  onClick={saveBusinessSettings}
+                  disabled={
+                    bsSaving ||
+                    quotationTerms.trim().length < 10 ||
+                    salesTerms.trim().length < 10
+                  }
+                >
+                  {bsSaving ? 'Saving…' : 'Save Terms'}
+                </Button>
               </Box>
             </CardContent>
           </Card>
+        </Grid>
 
-          {/* Bank Details Section */}
-          <Box sx={{ mt: 3 }}>
-            <BankDetailsSection />
-          </Box>
+        {/* FOURTH ROW - Bank Details */}
+        <Grid size={{ xs: 12 }}>
+          <BankDetailsSection />
         </Grid>
       </Grid>
 
@@ -584,6 +743,18 @@ const Profile = () => {
         </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+            {/* Logo Upload */}
+            <LogoUpload
+              value={formData.logo}
+              onChange={(file, previewUrl) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  logo: previewUrl || '',
+                  logoFile: file,
+                }))
+              }
+            />
+
             <Grid container spacing={3}>
               <Grid size={{ xs: 12 }}>
                 <TextField
@@ -655,16 +826,6 @@ const Profile = () => {
                   onChange={handleInputChange}
                   required
                   type="email"
-                />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  fullWidth
-                  label="Logo URL"
-                  name="logo"
-                  value={formData.logo}
-                  onChange={handleInputChange}
-                  placeholder="/static/images/avatar/default.jpg"
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
