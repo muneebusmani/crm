@@ -1,339 +1,628 @@
-<!-- Here’s a fully rewritten `README.md` for your CRM project, combining your tech stack, setup instructions, post-setup workflow, and developer guidance: -->
-<!---->
-<!-- # CRM -->
-<!---->
-<!-- A modern CRM project using a monorepo setup with separate frontend and backend packages. -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Tech Stack -->
-<!---->
-<!-- This project uses the following technologies and tools: -->
-<!---->
-<!-- - **Package Manager:** [pnpm](https://pnpm.io/) -->
-<!-- - **Node Version Management:** `.nvmrc` for specifying Node.js version -->
-<!-- - **Code Quality:** [Biome.js](https://biomejs.dev/) (replacing Prettier + ESLint) -->
-<!-- - **Containerization:** [Docker](https://www.docker.com/) -->
-<!-- - **Backend:** [NestJS](https://nestjs.com/) with [Fastify](https://www.fastify.io/) as the HTTP adapter -->
-<!-- - **Frontend:** [Next.js](https://nextjs.org/) with [Tailwind CSS](https://tailwindcss.com/) -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Getting Started -->
-<!---->
-<!-- ### Prerequisites -->
-<!---->
-<!-- Make sure you have the following installed: -->
-<!---->
-<!-- - [Node.js](https://nodejs.org/) (version specified in `.nvmrc`) -->
-<!-- - [pnpm](https://pnpm.io/) -->
-<!-- - [Docker](https://www.docker.com/) (optional, for containerized setup) -->
-<!---->
-<!-- ### Setup -->
-<!---->
-<!-- 1. **Install dependencies** -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm install -->
-<!-- ``` -->
-<!---->
-<!-- 2. **Use the correct Node.js version** -->
-<!---->
-<!-- ```bash -->
-<!-- nvm use -->
-<!-- ``` -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Running the Project -->
-<!---->
-<!-- This is a **monorepo** with `frontend` and `backend` packages. You can run them independently using `pnpm` scripts. -->
-<!---->
-<!-- ### Frontend (Next.js + Tailwind) -->
-<!---->
-<!-- Start development: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm dev:frontend -->
-<!-- ``` -->
-<!---->
-<!-- Build for production: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm build:frontend -->
-<!-- ``` -->
-<!---->
-<!-- Run the production build: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm start:frontend -->
-<!-- ``` -->
-<!---->
-<!-- > Default port: `3000` -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ### Backend (NestJS + Fastify) -->
-<!---->
-<!-- Start development: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm dev:backend -->
-<!-- ``` -->
-<!---->
-<!-- Build for production: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm build:backend -->
-<!-- ``` -->
-<!---->
-<!-- Run the production build: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm start:backend -->
-<!-- ``` -->
-<!---->
-<!-- > Default port: `3001`. Change in `backend/.env` or `main.ts` if needed. -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Code Quality -->
-<!---->
-<!-- This project uses **Biome.js** for formatting and linting. -->
-<!---->
-<!-- Check for issues: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm --filter backend biome check -->
-<!-- pnpm --filter frontend biome check -->
-<!-- ``` -->
-<!---->
-<!-- Automatically fix issues: -->
-<!---->
-<!-- ```bash -->
-<!-- pnpm --filter backend biome fix -->
-<!-- pnpm --filter frontend biome fix -->
-<!-- ``` -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Docker (Optional) -->
-<!---->
-<!-- Run both frontend and backend in Docker: -->
-<!---->
-<!-- ```bash -->
-<!-- docker-compose up --build -->
-<!-- ``` -->
-<!---->
-<!-- > Make sure ports `3000` (frontend) and `3001` (backend) are free. -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Project Structure Overview -->
-<!---->
-<!-- ``` -->
-<!-- crm -->
-<!-- ├── backend        # NestJS backend -->
-<!-- │   ├── src        # Modules, controllers, services -->
-<!-- │   └── ... -->
-<!-- ├── frontend       # Next.js frontend -->
-<!-- │   ├── src        # Pages, components, styles -->
-<!-- │   └── ... -->
-<!-- ├── package.json   # Workspace-level scripts -->
-<!-- ├── pnpm-lock.yaml -->
-<!-- ├── pnpm-workspace.yaml -->
-<!-- └── README.md -->
-<!-- ``` -->
-<!---->
-<!-- --- -->
-<!---->
-<!-- ## Contributing -->
-<!---->
-<!-- 1. Pull the latest changes. -->
-<!-- 2. Install dependencies: `pnpm install` -->
-<!-- 3. Run frontend and backend in development mode. -->
-<!-- 4. Follow **Biome.js** rules for code style. -->
-<!-- 5. Open pull requests when ready. -->
-
 # CRM Monorepo
 
-A modern CRM project using a **Turborepo monorepo** with separate frontend and backend packages.
+A modern, production-ready CRM system built with a **Turborepo monorepo** architecture, featuring automated CI/CD, Supabase integration, and multi-profile dealer management.
 
 ---
 
-## Tech Stack
+## 📋 Table of Contents
 
-- **Monorepo / Task Runner:** [Turborepo](https://turbo.build/)
-- **Package Manager:** [pnpm](https://pnpm.io/)
-- **Node Version Management:** `.nvmrc`
-- **Code Quality:** [Biome.js](https://biomejs.dev/)
-- **Backend:** [NestJS](https://nestjs.com/) + [Fastify](https://www.fastify.io/)
-- **Frontend:** [Next.js](https://nextjs.org/) + [Tailwind CSS](https://tailwindcss.com/)
-- **Containerization (Optional):** [Docker](https://www.docker.com/)
+- [Tech Stack](#-tech-stack)
+- [Quick Start](#-quick-start)
+- [Project Structure](#-project-structure)
+- [Development](#-development)
+- [Deployment](#-deployment)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Testing](#-testing)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
 
 ---
 
-## Prerequisites
+## 🛠 Tech Stack
+
+### Core Technologies
+- **Monorepo / Task Runner:** [Turborepo](https://turbo.build/) with optimized caching (96% faster builds!)
+- **Package Manager:** [pnpm](https://pnpm.io/) with workspace support
+- **Node Version Management:** `.nvmrc` for consistent environment
+- **Code Quality:** [Biome.js](https://biomejs.dev/) for formatting and linting
+
+### Backend
+- **Framework:** [NestJS](https://nestjs.com/) with [Fastify](https://www.fastify.io/) HTTP adapter
+- **Database:** PostgreSQL with TypeORM
+- **Storage:** [Supabase Storage](https://supabase.com/storage) for file uploads
+- **Authentication:** JWT-based with refresh tokens
+- **Real-time:** WebSocket support for live updates
+
+### Frontend
+- **Framework:** [Next.js 14](https://nextjs.org/) with App Router
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [Material-UI](https://mui.com/)
+- **State Management:** React Context + Server Actions
+- **Forms:** React Hook Form with validation
+
+### Infrastructure
+- **Containerization:** [Docker](https://www.docker.com/) with multi-stage builds
+- **CI/CD:** GitHub Actions with automated deployments
+- **Container Registry:** GitHub Container Registry (GHCR)
+- **Reverse Proxy:** Traefik for routing and SSL
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 - Node.js (version specified in `.nvmrc`)
-- [pnpm](https://pnpm.io/)
-- [Docker](https://www.docker.com/) (optional)
+- [pnpm](https://pnpm.io/) installed globally
+- [Docker](https://www.docker.com/) (optional for containerized development)
+- Git for version control
 
----
+### Installation
 
-## Setup
+1. **Clone the repository**
 
-1. **Install dependencies for the workspace**
+```bash
+git clone https://github.com/xytrixsolutions/crm.git
+cd crm
+```
+
+2. **Install dependencies**
 
 ```bash
 pnpm install
 ```
 
-2. **Use the correct Node.js version**
+3. **Use the correct Node.js version**
 
 ```bash
 nvm use
 ```
 
----
-## New Types or Chnaging Schema
-pnpm --filter @crm/types run build
-----
-## Running the Project
+4. **Setup environment files**
 
-All scripts now run **concurrently for frontend and backend** using Turbo.
+Backend environment (`.env.production`):
+```env
+# Database
+DATABASE_HOST=your_db_host
+DATABASE_PORT=5432
+DATABASE_USERNAME=your_db_user
+DATABASE_PASSWORD=your_db_password
+DATABASE_NAME=crm
 
-### Development
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION=7d
+
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+```
+
+Frontend environment (`.env.production`):
+```env
+NEXT_PUBLIC_API_URL=https://api-crm.enginesmarket.co.uk
+```
+
+5. **Run the development servers**
 
 ```bash
 pnpm dev
 ```
 
-> Runs both frontend (Next.js) on port `3000` and backend (NestJS) on port `3001` concurrently.
-
-### Build
-
-```bash
-pnpm build
-```
-
-> Builds frontend and backend for production.
-
-### Start Production
-
-```bash
-pnpm start
-```
-
-> Runs the production builds of both packages concurrently.
+> Runs both frontend (port `3000`) and backend (port `3001`) concurrently.
 
 ---
 
-## Code Quality
+## 📁 Project Structure
 
-Check issues across the monorepo:
+```
+crm/
+├── apps/
+│   ├── backend/                    # NestJS backend application
+│   │   ├── src/
+│   │   │   ├── auth/              # Authentication module
+│   │   │   ├── user/              # User management (dealers, admins)
+│   │   │   ├── company-user/      # Multi-profile system
+│   │   │   ├── leads/             # Lead management
+│   │   │   ├── quotations/        # Quote generation
+│   │   │   ├── invoices/          # Invoice management
+│   │   │   ├── uploads/           # File upload handling
+│   │   │   ├── common/            # Shared services & utilities
+│   │   │   └── migrations/        # Database migrations
+│   │   └── package.json
+│   │
+│   └── frontend/                   # Next.js frontend application
+│       ├── src/
+│       │   ├── app/               # Next.js 14 App Router
+│       │   │   ├── (auth)/        # Auth pages
+│       │   │   ├── (dealer)/      # Dealer portal
+│       │   │   └── api/           # API routes
+│       │   ├── components/        # Reusable UI components
+│       │   ├── features/          # Feature-specific components
+│       │   ├── services/          # API service layer
+│       │   ├── actions/           # Server actions
+│       │   └── lib/               # Utility functions
+│       └── package.json
+│
+├── packages/
+│   └── types/                      # Shared TypeScript types
+│       ├── src/
+│       │   ├── types/             # Type definitions
+│       │   └── schemas/           # Validation schemas
+│       └── package.json
+│
+├── supabase/
+│   └── functions/                  # Supabase Edge Functions
+│       └── receive-lead/          # Lead ingestion endpoint
+│
+├── .github/
+│   └── workflows/
+│       └── docker.yml             # CI/CD pipeline
+│
+├── docker-compose.yaml            # Docker orchestration
+├── Dockerfile                     # Multi-stage build config
+├── turbo.json                     # Turborepo configuration
+├── pnpm-workspace.yaml            # pnpm workspace config
+└── README.md                      # This file
+```
 
+---
+
+## 💻 Development
+
+### Running Services
+
+**All services (recommended):**
+```bash
+pnpm dev
+```
+
+**Frontend only:**
+```bash
+pnpm --filter frontend dev
+```
+
+**Backend only:**
+```bash
+pnpm --filter backend dev
+```
+
+**Types (when changing schemas):**
+```bash
+pnpm --filter @crm/types run build
+```
+
+### Code Quality
+
+**Lint all packages:**
 ```bash
 pnpm lint
 ```
 
-Format code across the monorepo:
-
+**Format code:**
 ```bash
 pnpm format
 ```
 
-> Turbo will run these commands concurrently in all packages.
-
----
-
-## Turbo Tips: Run Scripts for Specific Packages
-
-Sometimes you may want to run tasks only for frontend or backend:
-
-### Frontend Only
-
+**Type checking:**
 ```bash
-pnpm --filter frontend dev
-pnpm --filter frontend build
-pnpm --filter frontend start
-pnpm --filter frontend lint
-pnpm --filter frontend format
+pnpm typecheck
 ```
 
-### Backend Only
+### Building for Production
 
+**Build all packages:**
 ```bash
-pnpm --filter backend dev
-pnpm --filter backend build
-pnpm --filter backend start
-pnpm --filter backend lint
-pnpm --filter backend format
+pnpm build
 ```
 
-> Using `--filter <package>` ensures the command runs only in that package, without triggering the other packages in the monorepo.
-
----
-
-## Docker (Optional)
-
-Run both frontend and backend in Docker:
-
+**Run production builds:**
 ```bash
-docker-compose up --build
+pnpm start
 ```
 
-> Ensure ports `3000` (frontend) and `3001` (backend) are free.
+### Database Migrations
 
----
-
-## Project Structure
-
-```
-crm
-├── backend        # NestJS backend
-│   ├── src        # Modules, controllers, services
-│   └── ...
-├── frontend       # Next.js frontend
-│   ├── src        # Pages, components, styles
-│   └── ...
-├── package.json   # Workspace-level scripts
-├── pnpm-lock.yaml
-├── pnpm-workspace.yaml
-├── turbo.json
-└── README.md
+**Generate migration:**
+```bash
+cd apps/backend
+pnpm migration:generate -- src/migrations/MigrationName
 ```
 
----
+**Run migrations:**
+```bash
+pnpm migration:run
+```
 
-## Contributing
-
-1. Pull the latest changes.
-2. Install dependencies: `pnpm install`
-3. Run all packages in development mode: `pnpm dev`
-4. Use **Turbo Tips** to run specific packages if needed.
-5. Follow **Biome.js** rules for code style.
-6. Open a pull request when ready.
+**Revert migration:**
+```bash
+pnpm migration:revert
+```
 
 ---
 
 ## 🚀 Deployment
 
-For deployment instructions, see:
-- **[QUICK-DEPLOY.md](./QUICK-DEPLOY.md)** - Quick reference for daily deployments
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guide and troubleshooting
-- **[TURBOREPO-CACHE-OPTIMIZATION.md](./TURBOREPO-CACHE-OPTIMIZATION.md)** - Build cache optimization (96% faster builds!)
+### Automated Deployment (Recommended)
 
-**TL;DR:** Just push a git tag and let GitHub Actions handle the rest!
+Simply push a git tag to trigger automated CI/CD:
 
 ```bash
+# Create a new release tag
 git tag v0.5.15
 git push origin v0.5.15
 ```
 
+**What happens automatically:**
+1. ✅ GitHub Actions builds Docker images (3-5 min)
+2. ✅ Images pushed to GitHub Container Registry
+3. ✅ Server pulls pre-built images (30 sec)
+4. ✅ Containers restart with new version
+5. ✅ Old images cleaned up
+
 **Build Performance:**
-- ✅ First build: ~5.5 minutes
-- ✅ Cached build (no changes): ~13 seconds (96% faster!)
-- ✅ Partial changes: ~1-2 minutes
+- First build: ~5.5 minutes
+- Cached build (no changes): ~13 seconds (**96% faster!**)
+- Partial changes: ~1-2 minutes
+
+### Manual Deployment
+
+**Using deployment script (Windows):**
+```powershell
+.\deploy.ps1 -Tag v0.5.15
+```
+
+**Using deployment script (Linux/Mac):**
+```bash
+chmod +x deploy.sh
+./deploy.sh v0.5.15
+```
+
+### Docker Compose (Local)
+
+```bash
+docker compose up -d --build
+```
+
+### Rollback
+
+```bash
+# Deploy previous version
+git push origin v0.5.14
+# Or
+.\deploy.ps1 -Tag v0.5.14
+```
+
+For detailed deployment instructions, see:
+- 📖 [QUICK-DEPLOY.md](./QUICK-DEPLOY.md) - Quick reference
+- 📖 [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete guide
+- 📖 [SETUP-CHECKLIST.md](./SETUP-CHECKLIST.md) - First-time setup
+- 📖 [CI-CD-SUMMARY.md](./CI-CD-SUMMARY.md) - Architecture overview
+- 📖 [TURBOREPO-CACHE-OPTIMIZATION.md](./TURBOREPO-CACHE-OPTIMIZATION.md) - Cache strategies
 
 ---
+
+## ✨ Features
+
+### Multi-Profile Dealer System
+- Chrome-like profile selection for dealers
+- Default profile auto-created on registration
+- Quick profile switching without re-authentication
+- Profile-specific permissions and contexts
+
+📖 See: [FRONTEND-IMPLEMENTATION.md](./FRONTEND-IMPLEMENTATION.md), [LINKING-GUIDE.md](./LINKING-GUIDE.md)
+
+### Supabase Storage Integration
+- Direct browser → Supabase uploads (no backend bandwidth)
+- Signed upload URLs (60-second expiry)
+- Signed view URLs with caching (15-minute TTL)
+- Private bucket with Row-Level Security (RLS)
+- Support for JPEG, PNG, WebP (5MB limit)
+
+📖 See: [SUPABASE-STORAGE-SETUP.md](./SUPABASE-STORAGE-SETUP.md), [SUPABASE-IMPLEMENTATION.md](./SUPABASE-IMPLEMENTATION.md), [TESTING-GUIDE.md](./TESTING-GUIDE.md)
+
+### Lead Reception Edge Function
+- Highly available lead ingestion (99.9% uptime)
+- Direct database insertion (no backend dependency)
+- Compatible with existing PHP integration (enginefinders.co.uk)
+- No PHP changes required
+
+📖 See: [LEAD-RECEPTION-SOLUTION.md](./LEAD-RECEPTION-SOLUTION.md), [EDGE-FUNCTION-DEPLOY.md](./EDGE-FUNCTION-DEPLOY.md)
+
+### Automated CI/CD Pipeline
+- GitHub Actions workflow
+- Pre-built Docker images (faster deployments)
+- Dual caching strategy (Registry + GitHub Actions)
+- Automatic cleanup of old images
+- SSH-based deployment
+
+📖 See: [CI-CD-SUMMARY.md](./CI-CD-SUMMARY.md)
+
+### Core Business Features
+- Lead management with real-time updates
+- Quotation generation with PDF export
+- Invoice creation and tracking
+- Dealer tier and credit system
+- Activity logging and analytics
+- Email notifications (SMTP)
+- Bank details management
+- User authentication and authorization
+
+---
+
+## 🏗 Architecture
+
+### Upload Flow (Supabase Storage)
+
+```
+┌─────────────┐     1. Request    ┌─────────────┐
+│   Browser   │ ─────────────────> │   Backend   │
+│             │    signed URL      │   (NestJS)  │
+└─────────────┘                    └─────────────┘
+       │                                    │
+       │                           2. Generate
+       │                              signed URL
+       │                                    │
+       │         3. Signed URL              │
+       │ <──────────────────────────────────┘
+       │
+       │         4. Upload file directly
+       v
+┌─────────────┐
+│  Supabase   │
+│   Storage   │
+└─────────────┘
+       │
+       │         5. Update DB path
+       v
+┌─────────────┐
+│  Database   │
+└─────────────┘
+```
+
+### Deployment Architecture
+
+```
+┌─────────────────────────────────────────┐
+│ Developer                               │
+│ git tag v1.0.0                         │
+│ git push origin v1.0.0                 │
+└────────────────┬────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────┐
+│ GitHub Actions                          │
+│ - Build frontend image (parallel)       │
+│ - Build backend image (parallel)        │
+│ - Push to GHCR                          │
+└────────────────┬────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────┐
+│ Production Server                       │
+│ - Pull pre-built images                 │
+│ - docker compose up --no-build          │
+│ - Cleanup old images                    │
+└─────────────────────────────────────────┘
+```
+
+### Multi-Profile System Flow
+
+```
+┌─────────────┐
+│ Dealer Login│
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐     No Profile     ┌──────────────┐
+│ Middleware  │ ───────────────────>│ Select       │
+│   Check     │                     │ Profile Page │
+└──────┬──────┘                     └──────┬───────┘
+       │                                   │
+       │ Profile Selected                  │ User Selects
+       │                                   │ Profile
+       ▼                                   ▼
+┌─────────────┐                     ┌──────────────┐
+│   Dealer    │<────────────────────│ Profile      │
+│  Dashboard  │   Set Cookie        │ Selected     │
+└─────────────┘                     └──────────────┘
+```
+
+---
+
+## 🧪 Testing
+
+### Backend Testing
+
+```bash
+cd apps/backend
+pnpm test           # Unit tests
+pnpm test:e2e       # End-to-end tests
+pnpm test:cov       # Coverage report
+```
+
+### Frontend Testing
+
+```bash
+cd apps/frontend
+pnpm test           # Jest tests
+pnpm test:e2e       # Playwright E2E tests
+```
+
+### Manual Testing
+
+Refer to testing guides:
+- 📖 [TESTING-GUIDE.md](./TESTING-GUIDE.md) - Supabase Storage testing
+- 📖 [DEBUGGING-GUIDE.md](./DEBUGGING-GUIDE.md) - Company user debugging
+
+### Testing Endpoints
+
+**Lead ingestion Edge Function:**
+```bash
+curl -X POST https://ceurdvhocykwltpxgktp.supabase.co/functions/v1/receive-lead \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","email":"test@example.com","phone":"1234567890"}'
+```
+
+**Signed upload URL:**
+```bash
+curl -X POST http://localhost:3001/api/v1/uploads/dealer-avatar-signed-url \
+  -H "Cookie: access_token=YOUR_TOKEN" \
+  -d '{"fileName":"avatar.jpg","contentType":"image/jpeg"}'
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Build fails in CI/CD:**
+- Check GitHub Actions logs
+- Verify Docker Buildx is enabled
+- Check GHCR permissions
+
+**Images not displaying:**
+- Verify Supabase signed URLs are generated
+- Check Next.js remote image configuration
+- Verify bucket and RLS policies
+
+**Profile not created:**
+- Check migration status
+- Verify CompanyUserModule is imported
+- Check backend logs for errors
+
+**Deployment fails:**
+- Verify SSH key in GitHub secrets
+- Check server has Docker and Git
+- Verify GHCR login on server
+
+### Debug Commands
+
+**View Docker logs:**
+```bash
+docker compose logs -f
+```
+
+**Check database migrations:**
+```bash
+cd apps/backend
+pnpm migration:show
+```
+
+**View Supabase function logs:**
+```bash
+supabase functions logs receive-lead --follow
+```
+
+**Check Turborepo cache:**
+```bash
+pnpm turbo run build --dry-run
+```
+
+For detailed troubleshooting:
+- 📖 [DEBUGGING-GUIDE.md](./DEBUGGING-GUIDE.md)
+- 📖 [DEPLOYMENT.md#troubleshooting](./DEPLOYMENT.md#troubleshooting)
+
+---
+
+## 🤝 Contributing
+
+1. **Pull the latest changes**
+   ```bash
+   git pull origin main
+   ```
+
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+4. **Run development servers**
+   ```bash
+   pnpm dev
+   ```
+
+5. **Follow code quality standards**
+   - Use Biome.js formatting
+   - Write TypeScript types
+   - Add tests for new features
+   - Update documentation
+
+6. **Commit your changes**
+   ```bash
+   git add .
+   git commit -m "feat: your feature description"
+   ```
+
+7. **Push and create PR**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+### Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `chore:` - Maintenance tasks
+- `refactor:` - Code refactoring
+- `test:` - Test updates
+
+---
+
+## 📚 Documentation
+
+### Setup & Configuration
+- [SETUP-CHECKLIST.md](./SETUP-CHECKLIST.md) - First-time setup guide
+- [SUPABASE-STORAGE-SETUP.md](./SUPABASE-STORAGE-SETUP.md) - Storage configuration
+- [EDGE-FUNCTION-DEPLOY.md](./EDGE-FUNCTION-DEPLOY.md) - Edge function deployment
+
+### Implementation Guides
+- [FRONTEND-IMPLEMENTATION.md](./FRONTEND-IMPLEMENTATION.md) - Frontend features
+- [SUPABASE-IMPLEMENTATION.md](./SUPABASE-IMPLEMENTATION.md) - Supabase integration
+- [LINKING-GUIDE.md](./LINKING-GUIDE.md) - Module integration
+- [IMPLEMENTATION-REVIEW.md](./IMPLEMENTATION-REVIEW.md) - Architecture review
+
+### Operations
+- [QUICK-DEPLOY.md](./QUICK-DEPLOY.md) - Quick deployment reference
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
+- [CI-CD-SUMMARY.md](./CI-CD-SUMMARY.md) - CI/CD architecture
+
+### Optimization & Testing
+- [TURBOREPO-CACHE-OPTIMIZATION.md](./TURBOREPO-CACHE-OPTIMIZATION.md) - Build optimization
+- [TESTING-GUIDE.md](./TESTING-GUIDE.md) - Testing procedures
+- [DEBUGGING-GUIDE.md](./DEBUGGING-GUIDE.md) - Debugging workflows
+
+### Solutions
+- [LEAD-RECEPTION-SOLUTION.md](./LEAD-RECEPTION-SOLUTION.md) - Lead ingestion setup
+
+---
+
+## 📞 Support
+
+- **Issues:** Open a GitHub issue
+- **Documentation:** Check the docs folder
+- **Email:** support@enginesmarket.co.uk
+
+---
+
+## 📄 License
+
+This project is proprietary software. All rights reserved.
+
+---
+
+**Built with ❤️ by [Xytrix Solutions](https://github.com/xytrixsolutions)**

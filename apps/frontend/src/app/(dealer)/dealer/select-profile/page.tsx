@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -24,13 +24,28 @@ export default function SelectProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selecting, setSelecting] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetchProfiles();
-  }, []);
-
-  const fetchProfiles = async () => {
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(
+    null,
+  );
+  const handleSelectProfile = async (profileId: number) => {
+    setSelecting(profileId);
     try {
+      const result = await selectProfileAction(profileId);
+
+      if (result.success) {
+        router.push('/dealer');
+      } else {
+        setError(result.message || 'Failed to select profile');
+        setSelecting(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to select profile');
+      setSelecting(null);
+    }
+  };
+  const fetchProfiles = useCallback(async () => {
+    try {
+      // Fetch profiles
       const response = await fetch('/api/company-users', {
         credentials: 'include',
       });
@@ -41,7 +56,19 @@ export default function SelectProfilePage() {
 
       const data = await response.json();
       setProfiles(data);
-      
+
+      // Get currently selected profile ID from server-side cookies
+      const selectedResponse = await fetch('/api/selected-profile', {
+        credentials: 'include',
+      });
+
+      if (selectedResponse.ok) {
+        const selectedData = await selectedResponse.json();
+        if (selectedData.selected && selectedData.id) {
+          setSelectedProfileId(selectedData.id);
+        }
+      }
+
       // Auto-select if only one profile (default)
       // if (data.length === 1) {
       //   handleSelectProfile(data[0].id);
@@ -51,24 +78,10 @@ export default function SelectProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSelectProfile = async (profileId: number) => {
-    setSelecting(profileId);
-    try {
-      const result = await selectProfileAction(profileId);
-      
-      if (result.success) {
-        router.push('/dealer');
-      } else {
-        setError(result.message || 'Failed to select profile');
-        setSelecting(null);
-      }
-    } catch (err) {
-      setError('An error occurred while selecting profile');
-      setSelecting(null);
-    }
-  };
+  }, []);
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
 
   if (loading) {
     return (
@@ -128,18 +141,36 @@ export default function SelectProfilePage() {
                   elevation: 6,
                   transform: 'translateY(-4px)',
                 },
-                border: profile.is_default ? 2 : 0,
+                border: selectedProfileId === profile.id ? 2 : 0,
                 borderColor: 'primary.main',
                 position: 'relative',
               }}
             >
-              {profile.is_default && (
+              {selectedProfileId === profile.id && (
                 <Box
                   sx={{
                     position: 'absolute',
                     top: 8,
                     right: 8,
-                    bgcolor: 'primary.main',
+                    bgcolor: 'success.main',
+                    color: 'white',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  SELECTED
+                </Box>
+              )}
+              {profile.is_default && selectedProfileId !== profile.id && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    bgcolor: 'grey.400',
                     color: 'white',
                     px: 1,
                     py: 0.5,
@@ -151,7 +182,7 @@ export default function SelectProfilePage() {
                   DEFAULT
                 </Box>
               )}
-              
+
               <CardActionArea
                 onClick={() => handleSelectProfile(profile.id)}
                 disabled={selecting !== null}
@@ -167,7 +198,7 @@ export default function SelectProfilePage() {
                     >
                       <PersonOutline fontSize="large" />
                     </Avatar>
-                    
+
                     <Box flex={1}>
                       <Typography variant="h6" gutterBottom>
                         {profile.name}
@@ -186,9 +217,7 @@ export default function SelectProfilePage() {
                       )}
                     </Box>
 
-                    {selecting === profile.id && (
-                      <CircularProgress size={24} />
-                    )}
+                    {selecting === profile.id && <CircularProgress size={24} />}
                   </Box>
                 </CardContent>
               </CardActionArea>
@@ -198,7 +227,13 @@ export default function SelectProfilePage() {
       </Box>
 
       {profiles.length === 0 && !error && (
-        <Box display="flex" flexDirection="column" alignItems="center" mt={4} gap={2}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          mt={4}
+          gap={2}
+        >
           <Alert severity="warning" sx={{ width: '100%' }}>
             No profiles found.
           </Alert>

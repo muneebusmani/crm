@@ -36,11 +36,12 @@ import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 import { CompanyUserService } from 'src/company-user/company-user.service';
 import { Logger } from '@nestjs/common';
+import { SupabaseStorageService } from 'src/common/supabase-storage.service';
 
 @Injectable()
 export class DealerService {
   private readonly logger = new Logger(DealerService.name);
-  
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -75,11 +76,39 @@ export class DealerService {
     private readonly configService: ConfigService, // 👈 inject here
 
     private readonly leadsGateway: LeadsGateway,
-    
+
     private readonly companyUserService: CompanyUserService, // 👈 Inject CompanyUserService
+
+    private readonly supabaseStorageService: SupabaseStorageService, // 👈 Inject Supabase Storage
   ) {}
 
-  // dealer.service.ts
+  /**
+   * Helper method to convert Supabase Storage paths to signed URLs
+   * @param logoPath The logo path from database
+   * @returns Signed URL if it's a Supabase path, or original URL
+   */
+  private async convertLogoToSignedUrl(
+    logoPath: string | null,
+  ): Promise<string | null> {
+    if (!logoPath) return null;
+
+    // If it's already a full URL (old format or already signed), return as is
+    if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+      return logoPath;
+    }
+
+    // If it's a Supabase Storage path, generate signed URL
+    if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
+      try {
+        return await this.supabaseStorageService.getSignedUrl(logoPath, 3600);
+      } catch (error) {
+        this.logger.warn(`Failed to generate signed URL for path: ${logoPath}`);
+        return logoPath; // Return original path if signing fails
+      }
+    }
+
+    return logoPath;
+  } // dealer.service.ts
 
   // async createDealer(dto: Omit<CreateDealerDto, 'logo'>, logoFile?: Multer.File) {
   //   const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -208,7 +237,9 @@ export class DealerService {
     this.logger.log(`✅ Dealer saved successfully with ID: ${savedDealer.id}`);
 
     // 6 Create default company user profile
-    this.logger.log(`🔄 Attempting to create default company user profile for dealer ${savedDealer.id}...`);
+    this.logger.log(
+      `🔄 Attempting to create default company user profile for dealer ${savedDealer.id}...`,
+    );
     try {
       // IMPORTANT: Need to fetch dealer with user relation for createDefaultProfile
       const dealerWithUser = await this.dealerRepository.findOne({
@@ -217,21 +248,30 @@ export class DealerService {
       });
 
       if (!dealerWithUser) {
-        throw new Error(`Could not find dealer ${savedDealer.id} with user relation`);
+        throw new Error(
+          `Could not find dealer ${savedDealer.id} with user relation`,
+        );
       }
 
-      this.logger.debug(`Dealer with user relation: ${JSON.stringify({
-        dealerId: dealerWithUser.id,
-        dealerName: dealerWithUser.name,
-        contactEmail: dealerWithUser.contactEmail,
-        userId: dealerWithUser.user?.id,
-        userEmail: dealerWithUser.user?.email
-      })}`);
+      this.logger.debug(
+        `Dealer with user relation: ${JSON.stringify({
+          dealerId: dealerWithUser.id,
+          dealerName: dealerWithUser.name,
+          contactEmail: dealerWithUser.contactEmail,
+          userId: dealerWithUser.user?.id,
+          userEmail: dealerWithUser.user?.email,
+        })}`,
+      );
 
-      const defaultProfile = await this.companyUserService.createDefaultProfile(dealerWithUser);
-      this.logger.log(`✅ Default profile created successfully! Profile ID: ${defaultProfile.id}`);
+      const defaultProfile =
+        await this.companyUserService.createDefaultProfile(dealerWithUser);
+      this.logger.log(
+        `✅ Default profile created successfully! Profile ID: ${defaultProfile.id}`,
+      );
     } catch (error) {
-      this.logger.error(`❌ Failed to create default company profile for dealer ${savedDealer.id}`);
+      this.logger.error(
+        `❌ Failed to create default company profile for dealer ${savedDealer.id}`,
+      );
       this.logger.error(error);
       if (error instanceof Error) {
         this.logger.error(`Error message: ${error.message}`);
@@ -239,7 +279,9 @@ export class DealerService {
       }
       // Don't fail dealer creation if profile creation fails
       // Profile can be created manually later
-      this.logger.warn(`⚠️ Continuing dealer creation despite profile creation failure`);
+      this.logger.warn(
+        `⚠️ Continuing dealer creation despite profile creation failure`,
+      );
     }
 
     // 7 Insert dealer_tier_credit record for tracking
@@ -251,17 +293,26 @@ export class DealerService {
     await this.dealerTierCreditRepository.save(dealerTierCredit);
 
     // 8 Return dealer with relations
-    return this.userRepository.findOne({
+    const createdUser = await this.userRepository.findOne({
       where: { id: savedUser.id },
       relations: [
         'dealer',
         'dealer.dealerTierCredits', // ✅ belongs to Dealer, not User
       ],
     });
+
+    // Convert logo path to signed URL before returning
+    if (createdUser?.dealer?.logo) {
+      createdUser.dealer.logo = await this.convertLogoToSignedUrl(
+        createdUser.dealer.logo,
+      );
+    }
+
+    return createdUser;
   }
 
   async getAllDealers() {
-    return await this.userRepository.find({
+    const dealers = await this.userRepository.find({
       where: {
         dealer: {
           id: undefined, // Find users who have a dealer relationship
@@ -269,6 +320,17 @@ export class DealerService {
       },
       relations: ['dealer', 'dealer.dealerTierCredits.tier'],
     });
+
+    // Convert all logo paths to signed URLs
+    for (const dealer of dealers) {
+      if (dealer.dealer?.logo) {
+        dealer.dealer.logo = await this.convertLogoToSignedUrl(
+          dealer.dealer.logo,
+        );
+      }
+    }
+
+    return dealers;
   }
 
   async getDealerById(id: number) {
@@ -281,7 +343,32 @@ export class DealerService {
       throw new NotFoundException('Dealer not found');
     }
 
+    // Convert logo path to signed URL
+    if (user.dealer.logo) {
+      user.dealer.logo = await this.convertLogoToSignedUrl(user.dealer.logo);
+    }
+
     return user;
+  }
+
+  async getDealerCredits(userId: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['dealer', 'dealer.dealerTierCredits'],
+    });
+
+    if (!user || !user.dealer) {
+      throw new NotFoundException('Dealer not found');
+    }
+
+    // Get credits from dealer_tier_credit table
+    const dealerTierCredit = user.dealer.dealerTierCredits?.[0];
+    const credits = dealerTierCredit?.credit ?? 0;
+
+    return {
+      credits,
+      dealerId: user.dealer.id,
+    };
   }
 
   async updateDealer(id: number, dto: UpdateDealerDto, logoFile?: Multer.File) {
@@ -343,10 +430,56 @@ export class DealerService {
     }
 
     // Return updated user with dealer relation
-    return this.userRepository.findOne({
+    const updatedUser = await this.userRepository.findOne({
       where: { id },
       relations: ['dealer', 'dealer.dealerTierCredits.tier'],
     });
+
+    // Convert logo path to signed URL before returning
+    if (updatedUser?.dealer?.logo) {
+      updatedUser.dealer.logo = await this.convertLogoToSignedUrl(
+        updatedUser.dealer.logo,
+      );
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Update dealer logo path (for Supabase Storage integration)
+   * @param userId User ID
+   * @param logoPath Path to the logo in Supabase Storage
+   */
+  async updateDealerLogoPath(userId: number, logoPath: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['dealer'],
+    });
+
+    if (!user || !user.dealer) {
+      throw new NotFoundException('Dealer not found');
+    }
+
+    // Clear old logo cache if exists
+    if (user.dealer.logo) {
+      this.supabaseStorageService.clearCache(user.dealer.logo);
+    }
+
+    await this.dealerRepository.update(user.dealer.id, { logo: logoPath });
+
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
+    });
+
+    // Convert logo path to signed URL before returning
+    if (updatedUser?.dealer?.logo) {
+      updatedUser.dealer.logo = await this.convertLogoToSignedUrl(
+        updatedUser.dealer.logo,
+      );
+    }
+
+    return updatedUser;
   }
 
   async deleteDealer(id: number) {

@@ -15,6 +15,7 @@ import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
 // import { QuotationItem } from '../entities/quotation-item.entity';
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 import { CompanyUserModule } from 'src/company-user/company-user.module'; // 👈 Import CompanyUserModule
+import { SupabaseStorageService } from 'src/common/supabase-storage.service';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { CompanyUserModule } from 'src/company-user/company-user.module'; // �
     CompanyUserModule, // 👈 Add CompanyUserModule to imports
   ],
   controllers: [DealerController],
-  providers: [DealerService, LeadsGateway],
+  providers: [DealerService, LeadsGateway, SupabaseStorageService], // 👈 Add SupabaseStorageService
   exports: [DealerService],
 })
 export class DealerModule {}

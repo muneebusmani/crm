@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { Dealer, DealerTier } from 'src/user/entities';
 import { DealerTierCredit } from 'src/user/entities/dealer-tier-credit.entity';
 
-
 @Injectable()
 export class DealerTierService {
   constructor(
@@ -19,12 +18,17 @@ export class DealerTierService {
 
   // Fetch all tiers with their default credits
   async getAllTiers(): Promise<any[]> {
-    const tiers = await this.dealerTierRepo.find({ relations: ['dealerTierCredits'] });
+    const tiers = await this.dealerTierRepo.find({
+      relations: ['dealerTierCredits'],
+    });
     return tiers.map((tier) => ({
       id: tier.id,
       name: tier.name,
       creditLimit: tier.creditLimit,
-      defaultCredit: tier.dealerTierCredits.length > 0 ? tier.dealerTierCredits[0].credit : 0,
+      defaultCredit:
+        tier.dealerTierCredits.length > 0
+          ? tier.dealerTierCredits[0].credit
+          : 0,
     }));
   }
 
@@ -40,21 +44,37 @@ export class DealerTierService {
       id: tier.id,
       name: tier.name,
       creditLimit: tier.creditLimit,
-      defaultCredit: tier.dealerTierCredits.length > 0 ? tier.dealerTierCredits[0].credit : 0,
+      defaultCredit:
+        tier.dealerTierCredits.length > 0
+          ? tier.dealerTierCredits[0].credit
+          : 0,
     };
   }
 
   // Subtract credits from dealer when lead is won
-  async subtractCredits(dealerId: number, amount: number): Promise<Dealer> {
-    const dealer = await this.dealerRepo.findOne({ where: { id: dealerId } });
-    if (!dealer) throw new BadRequestException('Dealer not found');
+  async subtractCredits(
+    dealerId: number,
+    amount: number,
+  ): Promise<DealerTierCredit> {
+    // Find the dealer's tier credit entry
+    const dealerTierCredit = await this.dealerTierCreditRepo.findOne({
+      where: { dealerId },
+      relations: ['dealer', 'tier'],
+    });
 
-    if (dealer.credits < amount) {
+    if (!dealerTierCredit) {
+      throw new BadRequestException('Dealer tier credit not found');
+    }
+
+    if (dealerTierCredit.credit < amount) {
       throw new BadRequestException('Insufficient credits');
     }
 
-    dealer.credits -= amount;
-    console.log("dealer"+ dealer.credits);
-    return await this.dealerRepo.save(dealer);
+    dealerTierCredit.credit -= amount;
+    console.log(
+      `🔻 Deducting ${amount} credit(s) from dealer ${dealerId}. Remaining: ${dealerTierCredit.credit}`,
+    );
+
+    return await this.dealerTierCreditRepo.save(dealerTierCredit);
   }
 }

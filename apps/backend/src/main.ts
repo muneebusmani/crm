@@ -10,17 +10,33 @@ import * as express from 'express';
 import { join } from 'path';
 import { AppLogger } from './common/logger.service';
 import { LogLevel } from '@nestjs/common';
+import { SupabaseStorageService } from './common/supabase-storage.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'] as LogLevel[],
+    bodyParser: true,
   });
   const port = process.env.PORT ?? 3001;
   const host = process.env.HOST ?? '0.0.0.0';
   const frontend_url = process.env.FRONTEND_URL;
   const frontendUrl = frontend_url ?? 'http://localhost:3000';
 
+  // Verify Supabase Storage bucket on startup
+  try {
+    const supabaseStorage = app.get(SupabaseStorageService);
+    await supabaseStorage.verifyBucket();
+  } catch {
+    console.warn(
+      '⚠️  Supabase Storage not configured. File uploads will use local storage.',
+    );
+  }
+
   app.setGlobalPrefix('api/v1');
+
+  // Increase body size limit for file uploads (10MB)
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   const appLogger = app.get(AppLogger);
   app.useLogger(appLogger); // 👈 tell Nest to use it
