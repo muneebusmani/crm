@@ -19,6 +19,7 @@ import {
   SwitchAccount as SwitchAccountIcon,
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
+  SupportAgent as SupportAgentIcon,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -185,6 +186,7 @@ const userRoutesMap: Record<UserType, NavigationItem[]> = {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Leads', icon: <GroupOutlinedIcon />, path: '/leads' },
     { text: 'Dealers', icon: <PersonIcon />, path: '/dealer' },
+    { text: 'Support', icon: <SupportAgentIcon />, path: '/support' },
   ],
   dealer: [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
@@ -196,6 +198,11 @@ const userRoutesMap: Record<UserType, NavigationItem[]> = {
       text: 'Packages',
       icon: <Inventory2OutlinedIcon />,
       path: '/packages',
+    },
+    {
+      text: 'Support',
+      icon: <SupportAgentIcon />,
+      path: '/support',
     },
     {
       text: 'Profile',

@@ -46,7 +46,9 @@ export class MessagesService {
     });
   }
 
-  async getAllConversations(): Promise<Conversation[]> {
-    return this.convoRepo.find({ relations: ['messages'] });
+  async getAllConversations(): Promise<Message[]> {
+    return this.msgRepo.find({
+      order: { createdAt: 'ASC' }
+    });
   }
 }

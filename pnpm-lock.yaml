@@ -265,7 +265,7 @@ importers:
         specifier: ^9.2.0
         version: 9.2.0(@types/react@19.1.12)(react@19.1.1)(redux@5.0.1)
       recharts:
-        specifier: ^3.1.2
+        specifier: ^3.2.0
         version: 3.2.0(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react-is@19.1.1)(react@19.1.1)(redux@5.0.1)
       socket.io-client:
         specifier: ^4.8.1
