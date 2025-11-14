@@ -1,11 +1,11 @@
 // src/analytics/analytics.controller.ts
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { CustomError } from 'src/common/custom-error';
 import { type ApiResponse } from '@crm/types';
-// import { AdminAuthGuard } from '../admin/guards/admin-auth.guard'; // adjust to your guard path
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+
 @Controller('analytics')
-// @UseGuards(AdminAuthGuard) // ✅ Only admins can see analytics
 export class AnalyticsController {
   constructor(private readonly analytics: AnalyticsService) {}
 
@@ -18,7 +18,34 @@ export class AnalyticsController {
       return { error: message, success: false };
     }
   }
-  // Get leads count grouped by status (e.g., new, contacted, converted)
+
+  // ========================================
+  // DASHBOARD ENDPOINT (Main endpoint for dashboard)
+  // ========================================
+  @UseGuards(JwtAuthGuard)
+  @Get('dashboard')
+  async getDashboard(@Req() req) {
+    try {
+      console.log('🎯 Dashboard endpoint hit');
+      console.log('👤 User:', req.user);
+      const userType = req.user.type; // 'admin' or 'dealer'
+      const dealerId = userType === 'dealer' ? req.user.id : undefined;
+      console.log('🔍 User type:', userType, 'Dealer ID:', dealerId);
+
+      const stats = await this.analytics.getDashboardStats(dealerId);
+      console.log('✅ Dashboard stats retrieved:', Object.keys(stats));
+      return this.buildResponse(stats);
+    } catch (error) {
+      console.error('❌ Dashboard endpoint error:', error);
+      const message =
+        error instanceof CustomError ? error.message : 'Internal server error';
+      return { success: false, error: message };
+    }
+  }
+
+  // ========================================
+  // LEGACY ENDPOINTS (Keep for backward compatibility)
+  // ========================================
   @Get('leads/total')
   async getTotalLeads() {
     const total = await this.analytics.getTotalLeadsCount();
@@ -30,7 +57,6 @@ export class AnalyticsController {
     return await this.analytics.getMonthlyLeads();
   }
 
-  // 📊 Leads grouped by day (within a date range)
   @Get('leads/date-range')
   async getLeadsByDateRange(
     @Query('start') start: string,
