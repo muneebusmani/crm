@@ -27,8 +27,9 @@ services:
     networks:
       - web
     restart: unless-stopped
-    volumes:
-      - frontend_node_modules:/app/node_modules
+    # For production, don't mount node_modules — image already contains the
+    # installed dependencies. For local dev, use a docker-compose.override.yml
+    # to mount host node_modules or run `pnpm install` in a container.
     depends_on:
       - backend
 
@@ -54,8 +55,8 @@ services:
     networks:
       - web
     restart: unless-stopped
-    volumes:
-      - backend_node_modules:/app/node_modules
-volumes:
-  frontend_node_modules:
-  backend_node_modules:
+    # Do not mount node_modules here — mounting the volume will hide the
+    # node_modules directory that was copied into the image at build time.
+    # If you need a dev mount, move it to a docker-compose.override.yml for
+    # local development.
+volumes: {}
