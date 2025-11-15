@@ -109,7 +109,7 @@ COPY packages/types/package.json packages/types/
 
 # --- Install dependencies with cache mount ---
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts
+  pnpm install --frozen-lockfile --ignore-scripts
 
 # --- Copy the rest of the source ---
 COPY . .
@@ -119,7 +119,7 @@ RUN cp apps/frontend/.env.production apps/frontend/.env.production || true
 
 # Run Turbo build with cache mount for Turborepo
 RUN --mount=type=cache,target=/app/.turbo \
-    pnpm run build-server
+  pnpm run build-server
 
 # --- frontend runtime ---
 FROM node:22-alpine AS frontend-runtime
@@ -144,26 +144,31 @@ FROM node:22-alpine AS backend-runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install Chromium and dependencies required by Puppeteer
-# RUN apk add --no-cache \
-#     chromium \
-#     nss \
-#     freetype \
-#     harfbuzz \
-#     ca-certificates \
-#     ttf-freefont \
-#     font-noto-emoji
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Install Chromium and dependencies required by Puppeteer
 RUN apk add chromium
 
 # Tell Puppeteer to use the system Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+  PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /app/apps/backend/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+# Copy workspace configuration files
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+
+# Copy all package.json files to maintain workspace structure
+COPY --from=builder /app/apps/backend/package.json ./apps/backend/
+COPY --from=builder /app/packages/types/package.json ./packages/types/
+
+# Install ONLY production dependencies with proper workspace resolution
+RUN pnpm install --frozen-lockfile --prod --filter backend...
+
+# Copy built code and packages
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/packages ./packages
+
+WORKDIR /app/apps/backend
 
 EXPOSE 3001
 CMD ["npm", "run", "start:prod"]
