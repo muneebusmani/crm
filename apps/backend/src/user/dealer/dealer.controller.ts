@@ -101,8 +101,14 @@ export class DealerController {
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.dealerService.deleteDealer(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const result = await this.dealerService.deleteDealer(id);
+      return result;
+    } catch (error) {
+      console.error('Error deleting dealer:', error);
+      throw error;
+    }
   }
 
   // @UseGuards(JwtAuthGuard, DealerGuard)

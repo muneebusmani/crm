@@ -102,6 +102,9 @@ export class Lead {
   @Column({ type: 'boolean', default: false })
   is_deleted!: boolean;
 
+  @Column({ nullable: true })
+  wonByDealerId!: number;
+
   @OneToMany('DealerLead', 'lead')
   dealerLeads!: any[];
 

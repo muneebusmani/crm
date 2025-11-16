@@ -255,14 +255,25 @@ const Dealers = ({ token }: { token: string }) => {
   // Handle delete
   const handleDelete = async (id: number) => {
     try {
+      console.log('Attempting to delete dealer:', id);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
         {
           method: 'DELETE',
+          credentials: 'include',
         },
       );
 
-      if (!response.ok) throw new Error('Failed to delete dealer');
+      console.log('Delete response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Delete failed:', errorData);
+        throw new Error(errorData.message || 'Failed to delete dealer');
+      }
+
+      const result = await response.json();
+      console.log('Delete successful:', result);
 
       const updatedDealers = dealers.filter((dealer) => dealer.id !== id);
       setDealers(updatedDealers);
@@ -275,6 +286,7 @@ const Dealers = ({ token }: { token: string }) => {
         }
       }
     } catch (err) {
+      console.error('Error in handleDelete:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete dealer');
     }
   };

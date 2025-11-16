@@ -1,5 +1,5 @@
 import { LeadStatus, type CreateLeadMessageDto, type UpdateLeadMessageDto } from '@crm/types';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CustomError } from 'src/common/custom-error';
@@ -36,6 +36,13 @@ export class LeadMessageService {
 
       const lead = await this.leadRepo.findOneBy({ id: dto.leadId });
       if (!lead) throw new NotFoundException('Lead not found');
+
+      // 🚫 Check if lead is won by another dealer
+      if (lead.wonByDealerId && lead.wonByDealerId !== delertId) {
+        throw new ForbiddenException(
+          'This lead has already been won by another dealer',
+        );
+      }
 
       const message = this.leadMessageRepo.create({
         content: dto.content,

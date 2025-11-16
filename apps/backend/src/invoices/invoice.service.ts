@@ -72,19 +72,22 @@ export class InvoiceService {
     dealerId: number,
     companyUserId?: number,
   ): Promise<Invoice> {
-    // 🔍 1. Verify lead ownership
+    // 🔍 1. Verify lead ownership and availability
     const lead = await this.leadRepository.findOne({
       where: {
         id: createInvoiceDto.leadId,
         is_deleted: false,
-        dealerLeads: { dealer: { id: dealerId } },
       },
-      relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
     if (!lead) {
-      throw new NotFoundException(
-        'Lead not found or does not belong to this dealer',
+      throw new NotFoundException('Lead not found');
+    }
+
+    // 🚫 Check if lead is won by another dealer (but allow same dealer to send more invoices)
+    if (lead.wonByDealerId && lead.wonByDealerId !== dealerId) {
+      throw new ForbiddenException(
+        'This lead has already been won by another dealer',
       );
     }
 
@@ -238,8 +241,15 @@ export class InvoiceService {
       context: { invoiceData },
     });
 
-    // 🔒 10. Close lead
+    // 🔒 10. Close lead and lock to dealer (first invoice wins)
     await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+    
+    // 🏆 Set wonByDealerId if this is the first invoice for this lead
+    if (!lead.wonByDealerId) {
+      lead.wonByDealerId = dealerId;
+      await this.leadRepository.save(lead);
+      console.log(`🏆 Lead ${lead.id} won by dealer ${dealerId}`);
+    }
 
     return savedInvoice;
   }

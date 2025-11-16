@@ -39,7 +39,7 @@ import {
   DialogContent,
   Select,
 } from '@mui/material';
-import { useRouter } from 'next/navigation'; // ✅ App Router hook
+import { useRouter, useSearchParams } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState, useMemo } from 'react';
 import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
@@ -51,6 +51,7 @@ import LeadNotesPanel from '../LeadNotesPanel';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const handleOpenChat = (leadId: number) => {
     router.push(`/dealer/messages?leadId=${leadId}`);
   };
@@ -204,6 +205,22 @@ const LeadsTable: React.FC = () => {
   useEffect(() => {
     fetchLeads();
   }, []);
+
+  // Handle opening lead from URL query parameter
+  useEffect(() => {
+    const leadId = searchParams.get('id');
+    if (leadId && leads.length > 0 && !openInfoDialog) {
+      const lead = leads.find((l) => String(l.id) === leadId);
+      if (lead) {
+        console.log('Opening lead from URL:', leadId);
+        handleActionClick('info', lead);
+        // Clear the query parameter after a short delay
+        setTimeout(() => {
+          router.replace('/dealer/leads', { scroll: false });
+        }, 100);
+      }
+    }
+  }, [searchParams, leads, openInfoDialog, router]);
 
   // Fetch current profile ID
   useEffect(() => {
@@ -735,11 +752,21 @@ const LeadsTable: React.FC = () => {
                       minWidth: STATUS_COL_WIDTH,
                     }}
                   >
-                    <Chip
-                      label={lead.status || 'Unknown'}
-                      color={getStatusColor(lead.status)}
-                      size="small"
-                    />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Chip
+                        label={lead.status || 'Unknown'}
+                        color={getStatusColor(lead.status)}
+                        size="small"
+                      />
+                      {lead.wonByDealerId && (
+                        <Chip
+                          label={lead.wonByDealerId === currentProfileId ? '🏆 Won by You' : '🔒 Won by Other'}
+                          color={lead.wonByDealerId === currentProfileId ? 'success' : 'error'}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell
                     sx={{
@@ -751,33 +778,47 @@ const LeadsTable: React.FC = () => {
                     }}
                   >
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                      {/* Quotation Icon - Outside Menu */}
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => {
-                          setSelectedLead(lead);
-                          setOpenQuotationDialog(true);
-                        }}
-                        title="Send Quotation"
-                      >
-                        <RequestQuoteIcon fontSize="small" />
-                      </IconButton>
+                      {/* Check if lead is won by another dealer */}
+                      {lead.wonByDealerId && lead.wonByDealerId !== currentProfileId ? (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ fontStyle: 'italic' }}
+                          title="This lead has been won by another dealer"
+                        >
+                          Won by other dealer
+                        </Typography>
+                      ) : (
+                        <>
+                          {/* Quotation Icon - Outside Menu */}
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setOpenQuotationDialog(true);
+                            }}
+                            title="Send Quotation"
+                          >
+                            <RequestQuoteIcon fontSize="small" />
+                          </IconButton>
 
-                      {/* Invoice Icon - Outside Menu */}
-                      <IconButton
-                        size="small"
-                        color="warning"
-                        onClick={() => {
-                          setSelectedLead(lead);
-                          setOpenInvoiceDialog(true);
-                        }}
-                        title="Send Invoice"
-                      >
-                        <ReceiptLongIcon fontSize="small" />
-                      </IconButton>
+                          {/* Invoice Icon - Outside Menu */}
+                          <IconButton
+                            size="small"
+                            color="warning"
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setOpenInvoiceDialog(true);
+                            }}
+                            title="Send Invoice"
+                          >
+                            <ReceiptLongIcon fontSize="small" />
+                          </IconButton>
+                        </>
+                      )}
 
-                      {/* Three Dots Menu for remaining actions */}
+                      {/* Three Dots Menu for remaining actions - always available */}
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, lead)}
@@ -859,7 +900,10 @@ const LeadsTable: React.FC = () => {
           </ListItemIcon>
           <ListItemText>View Info</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('chat')}>
+        <MenuItem 
+          onClick={() => handleMenuAction('chat')}
+          disabled={currentMenuLead?.wonByDealerId !== undefined && currentMenuLead?.wonByDealerId !== null && currentMenuLead?.wonByDealerId !== currentProfileId}
+        >
           <ListItemIcon>
             <ChatIcon fontSize="small" />
           </ListItemIcon>

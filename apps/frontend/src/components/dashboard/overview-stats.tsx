@@ -16,6 +16,8 @@ import {
   Receipt as ReceiptIcon,
   Percent as PercentIcon,
   AccountBalance as AccountBalanceIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
 
 interface OverviewStatsProps {
@@ -25,6 +27,9 @@ interface OverviewStatsProps {
   conversionRate: number;
   totalDealers?: number;
   dealerCredits?: number;
+  dealerTier?: string;
+  totalRevenue?: number;
+  pendingQuotations?: number;
   userType: 'admin' | 'dealer';
 }
 
@@ -99,6 +104,9 @@ export default function OverviewStats({
   conversionRate,
   totalDealers,
   dealerCredits,
+  dealerTier,
+  totalRevenue,
+  pendingQuotations,
   userType,
 }: OverviewStatsProps) {
   const theme = useTheme();
@@ -132,20 +140,52 @@ export default function OverviewStats({
       icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
       color: theme.palette.warning.main,
     });
-  } else if (userType === 'dealer' && dealerCredits !== undefined) {
-    stats.push({
-      title: 'My Credits',
-      value: dealerCredits.toLocaleString(),
-      icon: <TrendingUpIcon sx={{ fontSize: 32 }} />,
-      color: theme.palette.warning.main,
-    });
-    // Add conversion rate as 5th card for dealers with credits
+  } else if (userType === 'dealer') {
+    // Sales funnel flow: Pending Quotations → Conversion Rate
+    if (pendingQuotations !== undefined) {
+      stats.push({
+        title: 'Pending Quotations',
+        value: pendingQuotations.toLocaleString(),
+        icon: <HourglassEmptyIcon sx={{ fontSize: 32 }} />,
+        color: theme.palette.warning.main,
+      });
+    }
+    
     stats.push({
       title: 'Conversion Rate',
       value: `${conversionRate.toFixed(1)}%`,
       icon: <PercentIcon sx={{ fontSize: 32 }} />,
       color: theme.palette.secondary.main,
     });
+    
+    // Financial results: Total Revenue
+    if (totalRevenue !== undefined) {
+      stats.push({
+        title: 'Total Revenue',
+        value: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        icon: <AttachMoneyIcon sx={{ fontSize: 32 }} />,
+        color: theme.palette.success.main,
+      });
+    }
+    
+    // Account status: Credits → Tier
+    if (dealerCredits !== undefined) {
+      stats.push({
+        title: 'My Credits',
+        value: dealerCredits.toLocaleString(),
+        icon: <TrendingUpIcon sx={{ fontSize: 32 }} />,
+        color: theme.palette.warning.main,
+      });
+    }
+    
+    if (dealerTier) {
+      stats.push({
+        title: 'My Tier',
+        value: dealerTier,
+        icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
+        color: theme.palette.warning.main,
+      });
+    }
   } else {
     stats.push({
       title: 'Conversion Rate',

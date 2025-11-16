@@ -488,15 +488,115 @@ export class DealerService {
       relations: ['dealer'],
     });
 
-    if (!user || !user.dealer) {
-      throw new NotFoundException('Dealer not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    // Delete dealer record first (due to foreign key constraint)
-    await this.dealerRepository.delete(user.dealer.id);
+    const userId = user.id;
+    const dealerId = user.dealer?.id; // May be null if dealer entry is already deleted
 
-    // Then delete user
-    return await this.userRepository.delete(id);
+    // CASCADE DELETE: Remove all related records in correct order
+    // Use QueryRunner for transaction to ensure atomicity
+    const queryRunner = this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Delete invoice items (child of invoices)
+      await queryRunner.query(
+        `DELETE FROM invoice_items WHERE "invoiceId" IN (SELECT id FROM invoices WHERE "userId" = $1)`,
+        [userId]
+      );
+
+      // 2. Delete invoices
+      await queryRunner.query(
+        `DELETE FROM invoices WHERE "userId" = $1`,
+        [userId]
+      );
+
+      // 3. Delete quotation items (child of quotations)
+      await queryRunner.query(
+        `DELETE FROM quotation_items WHERE "quotationId" IN (SELECT id FROM quotations WHERE "userId" = $1)`,
+        [userId]
+      );
+
+      // 4. Delete quotations
+      await queryRunner.query(
+        `DELETE FROM quotations WHERE "userId" = $1`,
+        [userId]
+      );
+
+      // 5. Delete dealer leads (pivot table) - uses userId
+      await queryRunner.query(
+        `DELETE FROM dealer_leads WHERE "userId" = $1`,
+        [userId]
+      );
+
+      // 6. Delete bank details
+      await queryRunner.query(
+        `DELETE FROM bank_details WHERE "userId" = $1`,
+        [userId]
+      );
+
+      // Only delete dealer-specific records if dealerId exists
+      if (dealerId) {
+        // 7. Delete lead messages
+        await queryRunner.query(
+          `DELETE FROM lead_messages WHERE "dealerId" = $1`,
+          [dealerId]
+        );
+
+        // 8. Update leads: Remove wonByDealerId references
+        await queryRunner.query(
+          `UPDATE leads SET "wonByDealerId" = NULL WHERE "wonByDealerId" = $1`,
+          [dealerId]
+        );
+
+        // 9. Delete business settings
+        await queryRunner.query(
+          `DELETE FROM business_settings WHERE "dealerId" = $1`,
+          [dealerId]
+        );
+
+        // 10. Delete dealer tier credits
+        await queryRunner.query(
+          `DELETE FROM dealer_tier_credit WHERE "dealerId" = $1`,
+          [dealerId]
+        );
+
+        // 11. Delete company users
+        await queryRunner.query(
+          `DELETE FROM company_users WHERE "dealer_id" = $1`,
+          [dealerId]
+        );
+
+        // 12. Delete dealer record
+        await queryRunner.query(
+          `DELETE FROM dealer WHERE id = $1`,
+          [dealerId]
+        );
+      }
+
+      // 13. Finally delete user
+      await queryRunner.query(
+        `DELETE FROM "user" WHERE id = $1`,
+        [userId]
+      );
+
+      await queryRunner.commitTransaction();
+      
+      this.logger.log(`Successfully deleted user ${userId}${dealerId ? ` (dealer ${dealerId})` : ''} and all related records`);
+      return { success: true, message: 'Dealer and all related data deleted successfully' };
+      
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Failed to delete user ${userId}:`, error);
+      throw new BadRequestException(
+        `Failed to delete dealer: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // async createQuotation(dto: CreateQuotationDto, dealerId: number) {

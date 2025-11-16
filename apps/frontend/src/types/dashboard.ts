@@ -65,6 +65,9 @@ export interface DashboardStats {
     totalDealers?: number;
     conversionRate: number;
     dealerCredits?: number;
+    dealerTier?: string;
+    totalRevenue?: number;
+    pendingQuotations?: number;
   };
   leadsByStatus: StatusCount[];
   monthlyTrends: MonthlyTrend[];

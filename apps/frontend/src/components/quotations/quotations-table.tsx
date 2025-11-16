@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Box,
   IconButton,
@@ -29,6 +30,8 @@ import QuotationDetailDialog from './quotation-detail-dialog';
 
 const QuotationsTable: React.FC = () => {
   const theme = useTheme();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [quotations, setQuotations] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -68,6 +71,23 @@ const QuotationsTable: React.FC = () => {
     };
     fetchQuotations();
   }, []);
+
+  // Handle opening quotation from URL query parameter
+  useEffect(() => {
+    const quotationId = searchParams.get('id');
+    if (quotationId && quotations.length > 0 && !openDetailDialog) {
+      const quotation = quotations.find((q) => q.id === quotationId);
+      if (quotation) {
+        console.log('Opening quotation from URL:', quotationId);
+        setSelectedQuotation(quotation);
+        setOpenDetailDialog(true);
+        // Clear the query parameter after a short delay
+        setTimeout(() => {
+          router.replace('/dealer/quotations', { scroll: false });
+        }, 100);
+      }
+    }
+  }, [searchParams, quotations, openDetailDialog, router]);
 
   // Filter and paginate
   const filteredQuotations = quotations.filter((quotation) =>

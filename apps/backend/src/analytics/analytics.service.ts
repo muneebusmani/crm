@@ -7,6 +7,7 @@ import { Quotation } from '../quotations/entities/quotation.entity';
 import { Invoice } from '../invoices/entities/invoice.entity';
 import { User } from '../user/entities/user.entity';
 import { DealerLead } from '../user/entities/dealer-lead.entity';
+import { DealerTier } from '../user/entities/dealer-tier.entity';
 import { CustomError } from 'src/common/custom-error';
 import { UserType } from '@crm/types';
 import type {
@@ -31,6 +32,8 @@ export class AnalyticsService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(DealerLead)
     private readonly dealerLeadRepo: Repository<DealerLead>,
+    @InjectRepository(DealerTier)
+    private readonly dealerTierRepo: Repository<DealerTier>,
   ) {}
 
   // ========================================
@@ -49,6 +52,9 @@ export class AnalyticsService {
         topDealers,
         recentActivity,
         dealerCredits,
+        dealerTier,
+        totalRevenue,
+        pendingQuotations,
       ] = await Promise.all([
         this.getTotalLeadsCount(dealerId),
         this.getQuotationsCount(dealerId),
@@ -60,6 +66,9 @@ export class AnalyticsService {
         dealerId ? Promise.resolve(undefined) : this.getTopDealers(10),
         this.getRecentActivity(dealerId, 5),
         dealerId ? this.getDealerCredits(dealerId) : Promise.resolve(undefined),
+        dealerId ? this.getDealerTier(dealerId) : Promise.resolve(undefined),
+        dealerId ? this.getTotalRevenue(dealerId) : Promise.resolve(undefined),
+        dealerId ? this.getPendingQuotationsCount(dealerId) : Promise.resolve(undefined),
       ]);
 
       return {
@@ -70,6 +79,9 @@ export class AnalyticsService {
           totalDealers,
           conversionRate, // Based on unique won leads / quotations
           dealerCredits,
+          dealerTier,
+          totalRevenue,
+          pendingQuotations,
         },
         leadsByStatus,
         monthlyTrends,
@@ -97,7 +109,7 @@ export class AnalyticsService {
       return this.leadRepo
         .createQueryBuilder('lead')
         .innerJoin('lead.dealerLeads', 'dealerLead')
-        .where('dealerLead.dealerId = :dealerId', { dealerId })
+        .where('"dealerLead"."userId" = :dealerId', { dealerId })
         .andWhere('lead.is_deleted = false')
         .getCount();
     }
@@ -127,19 +139,16 @@ export class AnalyticsService {
   }
 
   async getWonLeadsCount(dealerId?: number): Promise<number> {
-    // Count unique leads that have at least one invoice (won leads)
-    let query = this.invoiceRepo
-      .createQueryBuilder('invoice')
-      .select('COUNT(DISTINCT invoice.leadId)', 'count');
+    // Count leads won by dealer (using wonByDealerId field)
+    let query = this.leadRepo
+      .createQueryBuilder('lead')
+      .where('lead.wonByDealerId IS NOT NULL');
 
     if (dealerId) {
-      query = query
-        .innerJoin('invoice.dealer', 'dealer')
-        .where('dealer.id = :dealerId', { dealerId });
+      query = query.andWhere('lead.wonByDealerId = :dealerId', { dealerId });
     }
 
-    const result = await query.getRawOne();
-    return parseInt(result?.count || '0', 10);
+    return await query.getCount();
   }
 
   async getTotalDealersCount(): Promise<number> {
@@ -157,6 +166,58 @@ export class AnalyticsService {
       relations: ['dealer'],
     });
     return user?.dealer?.credits || 0;
+  }
+
+  async getDealerTier(dealerId: number): Promise<string | undefined> {
+    const user = await this.userRepo.findOne({
+      where: { id: dealerId },
+      relations: ['dealer'],
+    });
+    
+    if (!user?.dealer?.tierId) return undefined;
+
+    const tier = await this.dealerTierRepo.findOne({ 
+      where: { id: user.dealer.tierId } 
+    });
+    
+    return tier?.name;
+  }
+
+  async getTotalRevenue(dealerId: number): Promise<number> {
+    // Sum all invoice amounts for the dealer
+    const result = await this.invoiceRepo
+      .createQueryBuilder('invoice')
+      .select('SUM(invoice.grandTotal)', 'total')
+      .innerJoin('invoice.dealer', 'dealer')
+      .where('dealer.id = :dealerId', { dealerId })
+      .getRawOne();
+
+    return parseFloat(result?.total || '0');
+  }
+
+  async getPendingQuotationsCount(dealerId: number): Promise<number> {
+    // Count quotations that haven't converted to invoices yet
+    const quotationsWithInvoices = await this.invoiceRepo
+      .createQueryBuilder('invoice')
+      .select('DISTINCT invoice.leadId', 'leadId')
+      .innerJoin('invoice.dealer', 'dealer')
+      .where('dealer.id = :dealerId', { dealerId })
+      .getRawMany();
+
+    const leadsWithInvoices = quotationsWithInvoices.map((row) => row.leadId);
+
+    const query = this.quotationRepo
+      .createQueryBuilder('quotation')
+      .innerJoin('quotation.dealer', 'dealer')
+      .where('dealer.id = :dealerId', { dealerId });
+
+    if (leadsWithInvoices.length > 0) {
+      query.andWhere('quotation.lead NOT IN (:...leadIds)', {
+        leadIds: leadsWithInvoices,
+      });
+    }
+
+    return query.getCount();
   }
 
   async getConversionRate(dealerId?: number): Promise<number> {
@@ -210,14 +271,14 @@ export class AnalyticsService {
       // Get count of leads tracked in pivot table
       let trackedLeadsQuery = this.dealerLeadRepo
         .createQueryBuilder('dealerLead')
-        .select('COUNT(DISTINCT dealerLead.leadId)', 'count')
+        .select('COUNT(DISTINCT "dealerLead"."leadId")', 'count')
         .innerJoin('dealerLead.lead', 'lead')
         .where('lead.is_deleted = false');
 
       if (dealerId) {
         trackedLeadsQuery = trackedLeadsQuery
           .innerJoin('dealerLead.dealer', 'dealer')
-          .andWhere('dealer.id = :dealerId', { dealerId });
+          .andWhere('"dealer"."id" = :dealerId', { dealerId });
       }
 
       const trackedResult = await trackedLeadsQuery.getRawOne();
@@ -290,7 +351,7 @@ export class AnalyticsService {
       if (dealerId) {
         query = query
           .innerJoin('lead.dealerLeads', 'dealerLead')
-          .andWhere('dealerLead.dealerId = :dealerId', { dealerId });
+          .andWhere('"dealerLead"."userId" = :dealerId', { dealerId });
       }
 
       const results = await query.getRawMany();
@@ -427,16 +488,23 @@ export class AnalyticsService {
   }
 
   async getRecentLeads(dealerId?: number, limit: number = 5): Promise<Lead[]> {
+    // Get recent NEW leads that are NOT tracked in dealer_leads table (by ANY dealer)
+    // These are leads that haven't been contacted/quoted/won/lost yet
+    const trackedLeadIds = await this.dealerLeadRepo
+      .createQueryBuilder('dealerLead')
+      .select('DISTINCT dealerLead.leadId')
+      .getRawMany();
+
+    const trackedIds = trackedLeadIds.map((row) => row.leadId);
+
     let query = this.leadRepo
       .createQueryBuilder('lead')
       .where('lead.is_deleted = false')
       .orderBy('lead.createdAt', 'DESC')
       .limit(limit);
 
-    if (dealerId) {
-      query = query
-        .innerJoin('lead.dealerLeads', 'dealerLead')
-        .andWhere('dealerLead.dealerId = :dealerId', { dealerId });
+    if (trackedIds.length > 0) {
+      query = query.andWhere('lead.id NOT IN (:...trackedIds)', { trackedIds });
     }
 
     return query.getMany();

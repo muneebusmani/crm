@@ -72,19 +72,22 @@ export class QuotationService {
     dealerId: number,
     companyUserId?: number,
   ): Promise<Quotation> {
-    // 🔍 1. Verify lead ownership
+    // 🔍 1. Verify lead ownership and availability
     const lead = await this.leadRepository.findOne({
       where: {
         id: createQuotationDto.leadId,
         is_deleted: false,
-        dealerLeads: { dealer: { id: dealerId } },
       },
-      relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
     if (!lead) {
-      throw new NotFoundException(
-        'Lead not found or does not belong to this dealer',
+      throw new NotFoundException('Lead not found');
+    }
+
+    // 🚫 Check if lead is won by another dealer
+    if (lead.wonByDealerId && lead.wonByDealerId !== dealerId) {
+      throw new ForbiddenException(
+        'This lead has already been won by another dealer',
       );
     }
 

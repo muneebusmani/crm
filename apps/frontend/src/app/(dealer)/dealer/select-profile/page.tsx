@@ -33,7 +33,9 @@ export default function SelectProfilePage() {
       const result = await selectProfileAction(profileId);
 
       if (result.success) {
-        router.push('/dealer');
+        // Force a full page reload to ensure cookies are properly set in middleware
+        // This is necessary in production builds where Next.js caching can cause issues
+        window.location.href = '/dealer';
       } else {
         setError(result.message || 'Failed to select profile');
         setSelecting(null);
