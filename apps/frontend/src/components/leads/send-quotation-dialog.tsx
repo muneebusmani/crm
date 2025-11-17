@@ -705,7 +705,7 @@ export default function SendQuotationDialog({
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="body2">
-                            ${lineTotal(it).toFixed(0)}
+                            £{lineTotal(it).toFixed(0)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -794,7 +794,7 @@ export default function SendQuotationDialog({
                       Total
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      ${grandTotal.toFixed(0)}
+                      £{grandTotal.toFixed(0)}
                     </Typography>
                   </Box>
                 </Box>

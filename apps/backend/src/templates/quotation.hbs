@@ -54,17 +54,17 @@
       {{#each items}}
       <tr style="background-color: {{#if @odd}}#ffffff{{else}}#f9f9f9{{/if}};">
         <td style="padding: 10px;">{{itemDescription}}</td>
-        <td style="padding: 10px;">${{rate}}</td>
+        <td style="padding: 10px;">£{{rate}}</td>
         <td style="padding: 10px;">{{quantity}}</td>
         <td style="padding: 10px;">{{discountPercent}}%</td>
         <td style="padding: 10px;">{{taxPercent}}%</td>
-        <td style="padding: 10px;">${{totalAmount}}</td>
+        <td style="padding: 10px;">£{{totalAmount}}</td>
       </tr>
       {{/each}}
     </tbody>
   </table>
 
-  <h3 style="text-align: right; margin-top: 15px; color:#007b8f;">Grand Total: ${{grandTotal}}</h3>
+  <h3 style="text-align: right; margin-top: 15px; color:#007b8f;">Grand Total: £{{grandTotal}}</h3>
 
   <hr style="margin: 25px 0; border: none; border-top: 1px solid #ccc;">
 
