@@ -209,10 +209,40 @@ const Dealers = ({ token }: { token: string }) => {
         password: "", // required by type, default empty
         logoFile: null, // required by type, default null
       };
-      setDealers([...dealers, flatDealer]);
-      setSelectedDealer(flatDealer);
+      // Refetch dealers to ensure consistent state and logo URLs
+      try {
+        const data = await get<Dealers[]>(`/dealers`);
+        const flatData: DealerFlatData[] = data
+          .filter((u) => u.type !== UserType.ADMIN)
+          .map(
+            (u): DealerFlatData => ({
+              id: u.id,
+              email: u.email,
+              username: u.username,
+              name: u.dealer?.name ?? "",
+              owner: u.dealer?.owner ?? "",
+              location: u.dealer?.location ?? "",
+              logo: u.dealer?.logo ?? "",
+              website: u.dealer?.website ?? "",
+              contactEmail: u.dealer?.contactEmail ?? "",
+              tierId: u.dealer?.tierId ?? undefined,
+              tierName: u.dealer?.tier?.name ?? undefined,
+              password: "", // required by type, default empty
+              logoFile: null, // required by type, default null
+            }),
+          );
+        setDealers(flatData);
+        const addedDealer = flatData.find((d) => d.id === flatDealer.id);
+        if (addedDealer) {
+          setSelectedDealer(addedDealer);
+        }
+      } catch (refreshErr) {
+        // Fallback to previous approach if refresh fails
+        setDealers([...dealers, flatDealer]);
+        setSelectedDealer(flatDealer);
+      }
+
       setOpen(false);
-      setSelectedDealer(newDealer);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add dealer");
     }
@@ -326,10 +356,41 @@ const Dealers = ({ token }: { token: string }) => {
 
       const updatedDealer = await response.json();
 
-      setDealers(
-        dealers.map((d) => (d.id === updatedDealer.id ? updatedDealer : d)),
-      );
-      setSelectedDealer(updatedDealer);
+      // Refetch dealers to ensure consistent state and logo URLs
+      try {
+        const data = await get<Dealers[]>(`/dealers`);
+        const flatData: DealerFlatData[] = data
+          .filter((u) => u.type !== UserType.ADMIN)
+          .map(
+            (u): DealerFlatData => ({
+              id: u.id,
+              email: u.email,
+              username: u.username,
+              name: u.dealer?.name ?? "",
+              owner: u.dealer?.owner ?? "",
+              location: u.dealer?.location ?? "",
+              logo: u.dealer?.logo ?? "",
+              website: u.dealer?.website ?? "",
+              contactEmail: u.dealer?.contactEmail ?? "",
+              tierId: u.dealer?.tierId ?? undefined,
+              tierName: u.dealer?.tier?.name ?? undefined,
+              password: "", // required by type, default empty
+              logoFile: null, // required by type, default null
+            }),
+          );
+        setDealers(flatData);
+        const editedDealer = flatData.find((d) => d.id === updatedDealer.id);
+        if (editedDealer) {
+          setSelectedDealer(editedDealer);
+        }
+      } catch (refreshErr) {
+        // Fallback to previous approach if refresh fails
+        setDealers(
+          dealers.map((d) => (d.id === updatedDealer.id ? updatedDealer : d)),
+        );
+        setSelectedDealer(updatedDealer);
+      }
+
       setIsEditing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update dealer");

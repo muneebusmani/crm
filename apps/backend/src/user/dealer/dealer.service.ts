@@ -834,14 +834,11 @@ export class DealerService {
     dealerId: number,
     status: string,
   ) {
-    // check if already exists
-
+    // check if any relationship already exists (regardless of status)
     const existing = await this.dealerLeadRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
       relations: ["dealer", "lead"],
     });
-
-    if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOneBy({ id: dealerId });
@@ -851,6 +848,18 @@ export class DealerService {
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
+    if (existing) {
+      // Update the existing entry's status instead of creating a new one
+      existing.status = status;
+      const updated = await this.dealerLeadRepository.save(existing);
+      console.log(
+        `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} with status ${status}`,
+      );
+      lead.status = status;
+      this.leadsGateway.emitUpdateLead(lead);
+      return updated; // return updated existing entry
+    }
+
     // create new pivot entry
     const dealerLead = this.dealerLeadRepository.create({
       dealer,
@@ -858,7 +867,7 @@ export class DealerService {
       status: status,
     });
 
-    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result = await this.dealerLeadRepository.save(dealerLead);
     lead.status = status;
     this.leadsGateway.emitUpdateLead(lead);
     return result;

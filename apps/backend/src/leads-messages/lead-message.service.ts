@@ -1,13 +1,22 @@
-import { LeadStatus, type CreateLeadMessageDto, type UpdateLeadMessageDto } from '@crm/types';
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MailerService } from '@nestjs-modules/mailer';
-import { CustomError } from 'src/common/custom-error';
-import { Lead } from 'src/leads/entities/lead.entity';
-import { User } from 'src/user/entities';
-import { Repository } from 'typeorm';
-import { LeadMessage } from './entities/lead-message.entity';
-import { DealerLead } from 'src/user/entities/dealer-lead.entity';
+import {
+  LeadStatus,
+  type CreateLeadMessageDto,
+  type UpdateLeadMessageDto,
+} from "@crm/types";
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { MailerService } from "@nestjs-modules/mailer";
+import { CustomError } from "src/common/custom-error";
+import { Lead } from "src/leads/entities/lead.entity";
+import { User } from "src/user/entities";
+import { Repository } from "typeorm";
+import { LeadMessage } from "./entities/lead-message.entity";
+import { DealerLead } from "src/user/entities/dealer-lead.entity";
 @Injectable()
 export class LeadMessageService {
   private readonly logger = new Logger(LeadMessageService.name);
@@ -21,7 +30,6 @@ export class LeadMessageService {
 
     @InjectRepository(DealerLead)
     private readonly dealerLeadRepository: Repository<DealerLead>,
-    
 
     private readonly mailService: MailerService,
   ) {}
@@ -32,15 +40,15 @@ export class LeadMessageService {
   ): Promise<LeadMessage> {
     try {
       const dealer = await this.dealerRepo.findOneBy({ id: delertId });
-      if (!dealer) throw new NotFoundException('Dealer not found');
+      if (!dealer) throw new NotFoundException("Dealer not found");
 
       const lead = await this.leadRepo.findOneBy({ id: dto.leadId });
-      if (!lead) throw new NotFoundException('Lead not found');
+      if (!lead) throw new NotFoundException("Lead not found");
 
       // 🚫 Check if lead is won by another dealer
       if (lead.wonByDealerId && lead.wonByDealerId !== delertId) {
         throw new ForbiddenException(
-          'This lead has already been won by another dealer',
+          "This lead has already been won by another dealer",
         );
       }
 
@@ -49,24 +57,24 @@ export class LeadMessageService {
         dealer,
         lead,
       });
-      console.log('message ===>', message);
+      console.log("message ===>", message);
 
       const emailtoSend = {
         to: lead.email, // 👈 you must have dealer.email field
-        subject: 'New Message',
-        template: 'dealer-message', // file: templates/quotation.hbs
+        subject: "New Message",
+        template: "dealer-message", // file: templates/quotation.hbs
         context: {
           dealershipName: dealer.email, // Changed from dealerName to match template
           message: dto.content,
         },
       };
       this.mailService.sendMail(emailtoSend);
-       await this.ensureDealerLead(lead.id, dealer.id!, LeadStatus.CONTACT);
+      await this.ensureDealerLead(lead.id, dealer.id!, LeadStatus.CONTACT);
       return await this.leadMessageRepo.save(message);
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      this.logger.error('Error creating lead message:', error);
+        error instanceof Error ? error.message : "Unknown error occurred";
+      this.logger.error("Error creating lead message:", error);
       throw new CustomError(`Unable to insert message: ${errorMessage}`);
     }
   }
@@ -75,7 +83,7 @@ export class LeadMessageService {
   findAll(): Promise<LeadMessage[]> {
     this.logger.log(`This is from Lead Message Service Find All`);
     return this.leadMessageRepo.find({
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
     // =======
     //  async findAll(dealerId: number): Promise<LeadMessage[]> {
@@ -105,16 +113,16 @@ export class LeadMessageService {
           lead: { id: leadId },
           dealer: { id: dealerId },
         },
-        relations: ['lead', 'dealer'], // load related entities if needed
+        relations: ["lead", "dealer"], // load related entities if needed
       });
-      this.logger.log('Lead Message ===>', leadMessage);
+      this.logger.log("Lead Message ===>", leadMessage);
       if (!leadMessage) {
         throw new NotFoundException(`LeadMessage with id ${leadId} not found`);
       }
       return leadMessage;
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+        error instanceof Error ? error.message : "Unknown error occurred";
       this.logger.error(
         `Error finding lead message (leadId: ${leadId}, dealerId: ${dealerId}):`,
         errorMessage,
@@ -133,7 +141,7 @@ export class LeadMessageService {
       return await this.leadMessageRepo.save(message);
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+        error instanceof Error ? error.message : "Unknown error occurred";
       this.logger.error(
         `Error updating lead message (id: ${id}):`,
         errorMessage,
@@ -150,7 +158,7 @@ export class LeadMessageService {
       }
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+        error instanceof Error ? error.message : "Unknown error occurred";
       this.logger.error(
         `Error removing lead message (id: ${id}):`,
         errorMessage,
@@ -163,11 +171,11 @@ export class LeadMessageService {
     try {
       return this.leadMessageRepo.find({
         where: { lead: { id: leadId } },
-        order: { createdAt: 'DESC' },
+        order: { createdAt: "DESC" },
       });
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+        error instanceof Error ? error.message : "Unknown error occurred";
       this.logger.error(
         `Error finding messages for lead (leadId: ${leadId}):`,
         errorMessage,
@@ -176,23 +184,34 @@ export class LeadMessageService {
     }
   }
 
-  private async ensureDealerLead(leadId: number, dealerId: number, status: string) {
-    // check if already exists
-
+  private async ensureDealerLead(
+    leadId: number,
+    dealerId: number,
+    status: string,
+  ) {
+    // check if any relationship already exists (regardless of status)
     const existing = await this.dealerLeadRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
-      relations: ['dealer', 'lead'],
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
+      relations: ["dealer", "lead"],
     });
-
-
-    if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.dealerRepo.findOneBy({ id: dealerId });
-    if (!dealer) throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
+    if (!dealer)
+      throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
 
     const lead = await this.leadRepo.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
+
+    if (existing) {
+      // Update the existing entry's status instead of creating a new one
+      existing.status = status;
+      const updated = await this.dealerLeadRepository.save(existing);
+      console.log(
+        `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} with status ${status}`,
+      );
+      return updated; // return updated existing entry
+    }
 
     // create new pivot entry
     const dealerLead = this.dealerLeadRepository.create({
@@ -201,6 +220,6 @@ export class LeadMessageService {
       status: status,
     });
 
-    return await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    return await this.dealerLeadRepository.save(dealerLead);
   }
 }
