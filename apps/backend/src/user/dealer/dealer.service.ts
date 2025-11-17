@@ -6,37 +6,37 @@ import {
   type CreateQuotationDto,
   type UpdateQuotationDto,
   UserType,
-} from '@crm/types';
+} from "@crm/types";
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
-import { DealerTier } from '../entities/dealer-tier.entity';
-import { User } from '../entities/user.entity';
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import * as bcrypt from "bcrypt";
+import { Repository } from "typeorm";
+import { DealerTier } from "../entities/dealer-tier.entity";
+import { User } from "../entities/user.entity";
 // import { Quotation } from '../../user/entities/quotation.entity';
-import { Dealer } from '../../user/entities/dealer.entity'; // 👈 direct import is fine, but relation must be wrapped
+import { Dealer } from "../../user/entities/dealer.entity"; // 👈 direct import is fine, but relation must be wrapped
 
-import { CustomError } from 'src/common/custom-error';
-import { MailerService } from '@nestjs-modules/mailer';
-import path, { join, extname, basename } from 'path';
-import * as crypto from 'crypto';
-import { ConfigService } from '@nestjs/config';
-import { Lead } from 'src/leads/entities/lead.entity';
-import { DealerLead } from '../entities/dealer-lead.entity';
-import type { Multer } from 'multer';
-import * as fs from 'fs';
-import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
-import { LeadsGateway } from 'src/leads/leads.gateway';
-import { DealerTierCredit } from '../entities/dealer-tier-credit.entity';
+import { CustomError } from "src/common/custom-error";
+import { MailerService } from "@nestjs-modules/mailer";
+import path, { join, extname, basename } from "path";
+import * as crypto from "crypto";
+import { ConfigService } from "@nestjs/config";
+import { Lead } from "src/leads/entities/lead.entity";
+import { DealerLead } from "../entities/dealer-lead.entity";
+import type { Multer } from "multer";
+import * as fs from "fs";
+import { LeadMessage } from "src/leads-messages/entities/lead-message.entity";
+import { LeadsGateway } from "src/leads/leads.gateway";
+import { DealerTierCredit } from "../entities/dealer-tier-credit.entity";
 // import { QuotationItem } from '../entities/quotation-item.entity';
-import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
-import { CompanyUserService } from 'src/company-user/company-user.service';
-import { Logger } from '@nestjs/common';
-import { SupabaseStorageService } from 'src/common/supabase-storage.service';
+import { BusinessSetting } from "src/business-setting/entities/business-setting.entity";
+import { CompanyUserService } from "src/company-user/company-user.service";
+import { Logger } from "@nestjs/common";
+import { SupabaseStorageService } from "src/common/supabase-storage.service";
 
 @Injectable()
 export class DealerService {
@@ -93,12 +93,12 @@ export class DealerService {
     if (!logoPath) return null;
 
     // If it's already a full URL (old format or already signed), return as is
-    if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+    if (logoPath.startsWith("http://") || logoPath.startsWith("https://")) {
       return logoPath;
     }
 
     // If it's a Supabase Storage path, generate signed URL
-    if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
+    if (logoPath.includes("dealer-uploads") || logoPath.startsWith("dealer/")) {
       try {
         return await this.supabaseStorageService.getSignedUrl(logoPath, 3600);
       } catch (error) {
@@ -176,7 +176,7 @@ export class DealerService {
   // }
 
   async createDealer(
-    dto: Omit<CreateDealerDto, 'logo'>,
+    dto: Omit<CreateDealerDto, "logo"> & { logo?: string },
     logoFile?: Multer.File,
   ) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -190,29 +190,33 @@ export class DealerService {
     });
     const savedUser = await this.userRepository.save(user);
 
-    // 2 Handle logo upload
-    let logoUrl = '';
+    // 2 Handle logo - support both file upload and logo path
+    let logoUrl = "";
     if (logoFile) {
+      // Handle traditional file upload
       const ext = extname(logoFile.originalname);
       const baseName = basename(logoFile.originalname, ext)
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-]/g, '');
+        .replace(/\s+/g, "-")
+        .replace(/[^\w\-]/g, "");
       const filename = `${Date.now()}-${baseName}${ext}`;
 
-      const uploadDir = join(process.cwd(), 'uploads');
+      const uploadDir = join(process.cwd(), "uploads");
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
       fs.writeFileSync(join(uploadDir, filename), logoFile.buffer);
       logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+    } else if (dto.logo) {
+      // Handle logo path (e.g., from Supabase storage)
+      logoUrl = dto.logo;
     }
 
     // 3 Find tier
     const dealerTier = await this.dealerTierRepository.findOne({
       where: { id: dto.tierId },
-      relations: ['dealerTierCredits'],
+      relations: ["dealerTierCredits"],
     });
-    if (!dealerTier) throw new BadRequestException('Invalid dealer tier');
+    if (!dealerTier) throw new BadRequestException("Invalid dealer tier");
 
     // 4 Determine starting credit
     let credit = dealerTier.creditLimit; // fallback
@@ -244,7 +248,7 @@ export class DealerService {
       // IMPORTANT: Need to fetch dealer with user relation for createDefaultProfile
       const dealerWithUser = await this.dealerRepository.findOne({
         where: { id: savedDealer.id },
-        relations: ['user'],
+        relations: ["user"],
       });
 
       if (!dealerWithUser) {
@@ -296,8 +300,8 @@ export class DealerService {
     const createdUser = await this.userRepository.findOne({
       where: { id: savedUser.id },
       relations: [
-        'dealer',
-        'dealer.dealerTierCredits', // ✅ belongs to Dealer, not User
+        "dealer",
+        "dealer.dealerTierCredits", // ✅ belongs to Dealer, not User
       ],
     });
 
@@ -318,7 +322,7 @@ export class DealerService {
           id: undefined, // Find users who have a dealer relationship
         },
       },
-      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
+      relations: ["dealer", "dealer.dealerTierCredits.tier"],
     });
 
     // Convert all logo paths to signed URLs
@@ -336,11 +340,11 @@ export class DealerService {
   async getDealerById(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
+      relations: ["dealer", "dealer.dealerTierCredits.tier"],
     });
 
     if (!user || !user.dealer) {
-      throw new NotFoundException('Dealer not found');
+      throw new NotFoundException("Dealer not found");
     }
 
     // Convert logo path to signed URL
@@ -354,11 +358,11 @@ export class DealerService {
   async getDealerCredits(userId: number) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['dealer', 'dealer.dealerTierCredits'],
+      relations: ["dealer", "dealer.dealerTierCredits"],
     });
 
     if (!user || !user.dealer) {
-      throw new NotFoundException('Dealer not found');
+      throw new NotFoundException("Dealer not found");
     }
 
     // Get credits from dealer_tier_credit table
@@ -371,15 +375,19 @@ export class DealerService {
     };
   }
 
-  async updateDealer(id: number, dto: UpdateDealerDto, logoFile?: Multer.File) {
+  async updateDealer(
+    id: number,
+    dto: UpdateDealerDto & { logo?: string },
+    logoFile?: Multer.File,
+  ) {
     // Check if user exists and has dealer
     const existingUser = await this.userRepository.findOne({
       where: { id },
-      relations: ['dealer'],
+      relations: ["dealer"],
     });
 
     if (!existingUser || !existingUser.dealer) {
-      throw new NotFoundException('Dealer not found');
+      throw new NotFoundException("Dealer not found");
     }
 
     // Update user fields
@@ -387,7 +395,7 @@ export class DealerService {
     if (dto.name !== undefined) updateUser.name = dto.name;
     if (dto.email !== undefined) updateUser.email = dto.email;
     if (dto.username !== undefined) updateUser.username = dto.username;
-    if (dto.password && dto.password.trim() !== '') {
+    if (dto.password && dto.password.trim() !== "") {
       updateUser.password = await bcrypt.hash(dto.password, 10);
     }
 
@@ -395,15 +403,16 @@ export class DealerService {
       await this.userRepository.update(id, updateUser);
     }
 
-    // Handle logo file upload
+    // Handle logo - support both file upload and logo path
     let logoUrl = existingUser.dealer.logo; // keep existing if no new file
     if (logoFile) {
+      // Handle traditional file upload
       const safeName = logoFile.originalname
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-\.]/g, '');
+        .replace(/\s+/g, "-")
+        .replace(/[^\w\-\.]/g, "");
       const filename = `${Date.now()}-${safeName}${extname(logoFile.originalname)}`;
 
-      const uploadDir = join(process.cwd(), 'uploads');
+      const uploadDir = join(process.cwd(), "uploads");
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
@@ -412,6 +421,9 @@ export class DealerService {
       fs.writeFileSync(uploadPath, logoFile.buffer);
 
       logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+    } else if (dto.logo) {
+      // Handle logo path (e.g., from Supabase storage)
+      logoUrl = dto.logo;
     }
 
     // Update dealer fields
@@ -423,7 +435,7 @@ export class DealerService {
     if (dto.contactEmail !== undefined)
       updateDealer.contactEmail = dto.contactEmail;
     if (dto.tierId !== undefined) updateDealer.tierId = dto.tierId;
-    updateDealer['logo'] = logoUrl;
+    updateDealer["logo"] = logoUrl;
 
     if (Object.keys(updateDealer).length > 0) {
       await this.dealerRepository.update(existingUser.dealer.id, updateDealer);
@@ -432,7 +444,7 @@ export class DealerService {
     // Return updated user with dealer relation
     const updatedUser = await this.userRepository.findOne({
       where: { id },
-      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
+      relations: ["dealer", "dealer.dealerTierCredits.tier"],
     });
 
     // Convert logo path to signed URL before returning
@@ -453,11 +465,11 @@ export class DealerService {
   async updateDealerLogoPath(userId: number, logoPath: string) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['dealer'],
+      relations: ["dealer"],
     });
 
     if (!user || !user.dealer) {
-      throw new NotFoundException('Dealer not found');
+      throw new NotFoundException("Dealer not found");
     }
 
     // Clear old logo cache if exists
@@ -469,7 +481,7 @@ export class DealerService {
 
     const updatedUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
+      relations: ["dealer", "dealer.dealerTierCredits.tier"],
     });
 
     // Convert logo path to signed URL before returning
@@ -485,11 +497,11 @@ export class DealerService {
   async deleteDealer(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['dealer'],
+      relations: ["dealer"],
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     const userId = user.id;
@@ -497,7 +509,8 @@ export class DealerService {
 
     // CASCADE DELETE: Remove all related records in correct order
     // Use QueryRunner for transaction to ensure atomicity
-    const queryRunner = this.userRepository.manager.connection.createQueryRunner();
+    const queryRunner =
+      this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
@@ -505,94 +518,88 @@ export class DealerService {
       // 1. Delete invoice items (child of invoices)
       await queryRunner.query(
         `DELETE FROM invoice_items WHERE "invoiceId" IN (SELECT id FROM invoices WHERE "userId" = $1)`,
-        [userId]
+        [userId],
       );
 
       // 2. Delete invoices
-      await queryRunner.query(
-        `DELETE FROM invoices WHERE "userId" = $1`,
-        [userId]
-      );
+      await queryRunner.query(`DELETE FROM invoices WHERE "userId" = $1`, [
+        userId,
+      ]);
 
       // 3. Delete quotation items (child of quotations)
       await queryRunner.query(
         `DELETE FROM quotation_items WHERE "quotationId" IN (SELECT id FROM quotations WHERE "userId" = $1)`,
-        [userId]
+        [userId],
       );
 
       // 4. Delete quotations
-      await queryRunner.query(
-        `DELETE FROM quotations WHERE "userId" = $1`,
-        [userId]
-      );
+      await queryRunner.query(`DELETE FROM quotations WHERE "userId" = $1`, [
+        userId,
+      ]);
 
       // 5. Delete dealer leads (pivot table) - uses userId
-      await queryRunner.query(
-        `DELETE FROM dealer_leads WHERE "userId" = $1`,
-        [userId]
-      );
+      await queryRunner.query(`DELETE FROM dealer_leads WHERE "userId" = $1`, [
+        userId,
+      ]);
 
       // 6. Delete bank details
-      await queryRunner.query(
-        `DELETE FROM bank_details WHERE "userId" = $1`,
-        [userId]
-      );
+      await queryRunner.query(`DELETE FROM bank_details WHERE "userId" = $1`, [
+        userId,
+      ]);
 
       // Only delete dealer-specific records if dealerId exists
       if (dealerId) {
         // 7. Delete lead messages
         await queryRunner.query(
           `DELETE FROM lead_messages WHERE "dealerId" = $1`,
-          [dealerId]
+          [dealerId],
         );
 
         // 8. Update leads: Remove wonByDealerId references
         await queryRunner.query(
           `UPDATE leads SET "wonByDealerId" = NULL WHERE "wonByDealerId" = $1`,
-          [dealerId]
+          [dealerId],
         );
 
         // 9. Delete business settings
         await queryRunner.query(
           `DELETE FROM business_settings WHERE "dealerId" = $1`,
-          [dealerId]
+          [dealerId],
         );
 
         // 10. Delete dealer tier credits
         await queryRunner.query(
           `DELETE FROM dealer_tier_credit WHERE "dealerId" = $1`,
-          [dealerId]
+          [dealerId],
         );
 
         // 11. Delete company users
         await queryRunner.query(
           `DELETE FROM company_users WHERE "dealer_id" = $1`,
-          [dealerId]
+          [dealerId],
         );
 
         // 12. Delete dealer record
-        await queryRunner.query(
-          `DELETE FROM dealer WHERE id = $1`,
-          [dealerId]
-        );
+        await queryRunner.query(`DELETE FROM dealer WHERE id = $1`, [dealerId]);
       }
 
       // 13. Finally delete user
-      await queryRunner.query(
-        `DELETE FROM "user" WHERE id = $1`,
-        [userId]
-      );
+      await queryRunner.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
 
       await queryRunner.commitTransaction();
-      
-      this.logger.log(`Successfully deleted user ${userId}${dealerId ? ` (dealer ${dealerId})` : ''} and all related records`);
-      return { success: true, message: 'Dealer and all related data deleted successfully' };
-      
+
+      this.logger.log(
+        `Successfully deleted user ${userId}${dealerId ? ` (dealer ${dealerId})` : ""} and all related records`,
+      );
+      return {
+        success: true,
+        message: "Dealer and all related data deleted successfully",
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`Failed to delete user ${userId}:`, error);
       throw new BadRequestException(
-        `Failed to delete dealer: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to delete dealer: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       await queryRunner.release();
@@ -753,18 +760,18 @@ export class DealerService {
     const dealer = await this.userRepository.findOne({
       where: { email: email, type: UserType.DEALER },
     });
-    if (!dealer) throw new NotFoundException('Dealer not found'); // don't reveal
+    if (!dealer) throw new NotFoundException("Dealer not found"); // don't reveal
     try {
-      const token = crypto.randomBytes(32).toString('hex');
+      const token = crypto.randomBytes(32).toString("hex");
       dealer.resetPasswordToken = token;
       dealer.resetPasswordExpires = new Date(Date.now() + 3600 * 1000); // 1h expiry
       await this.userRepository.save(dealer);
 
-      const resetLink = `${this.configService.get('FRONTEND_URL')}/reset-password/${token}`;
+      const resetLink = `${this.configService.get("FRONTEND_URL")}/reset-password/${token}`;
       this.mailService.sendMail({
         to: email,
-        subject: 'Reset your password',
-        template: 'forgot-password', // templates/forgot-password.hbs
+        subject: "Reset your password",
+        template: "forgot-password", // templates/forgot-password.hbs
         context: {
           dealershipName: dealer.name,
           resetLink,
@@ -772,7 +779,7 @@ export class DealerService {
       });
       return dealer;
     } catch (error: unknown) {
-      throw new CustomError('Unable to forgot password');
+      throw new CustomError("Unable to forgot password");
     }
   }
 
@@ -790,7 +797,7 @@ export class DealerService {
         !dealer.resetPasswordExpires ||
         dealer.resetPasswordExpires < new Date()
       ) {
-        throw new Error('Invalid or expired token');
+        throw new Error("Invalid or expired token");
       }
 
       dealer.password = await bcrypt.hash(newPassword, 10);
@@ -798,7 +805,7 @@ export class DealerService {
       dealer.resetPasswordExpires = null;
       return await this.userRepository.save(dealer);
     } catch (error: unknown) {
-      throw new CustomError('Unable to reset password');
+      throw new CustomError("Unable to reset password");
     }
   }
 
@@ -814,7 +821,7 @@ export class DealerService {
     } catch (error: unknown) {
       if (error instanceof CustomError) throw error;
       console.log(error);
-      throw new CustomError('Unable to fetch lead');
+      throw new CustomError("Unable to fetch lead");
     }
   }
 
@@ -831,7 +838,7 @@ export class DealerService {
 
     const existing = await this.dealerLeadRepository.findOne({
       where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
-      relations: ['dealer', 'lead'],
+      relations: ["dealer", "lead"],
     });
 
     if (existing) return existing; // already linked
@@ -862,7 +869,7 @@ export class DealerService {
 
     const existing = await this.leadMessageRepository.findOne({
       where: { dealer: { id: dealerId }, lead: { id: leadId } },
-      relations: ['dealer', 'lead'],
+      relations: ["dealer", "lead"],
     });
 
     if (existing) return existing; // already linked
