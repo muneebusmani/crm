@@ -3,13 +3,13 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
-} from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { Lead } from "src/leads/entities/lead.entity";
-import { QuotationItem } from "./entities/quotation-item.entity";
-import { Quotation } from "./entities/quotation.entity";
-import { BusinessSetting } from "src/business-setting/entities/business-setting.entity";
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Lead } from 'src/leads/entities/lead.entity';
+import { QuotationItem } from './entities/quotation-item.entity';
+import { Quotation } from './entities/quotation.entity';
+import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity';
 
 import {
   CreateQuotationDto,
@@ -17,19 +17,19 @@ import {
   QuotationStatus,
   LeadMessageType,
   LeadStatus,
-} from "@crm/types";
-import { Dealer, User } from "src/user/entities";
-import { CustomError } from "src/common/custom-error";
-import { DealerLead } from "src/user/entities/dealer-lead.entity";
-import { MailerService } from "@nestjs-modules/mailer";
-import * as fs from "fs";
-import * as path from "path";
-import * as Handlebars from "handlebars";
-import { PdfService } from "src/Pdf/pdf-service";
-import { BankDetails } from "src/bank-details/entities/bank-details.entity";
-import { LeadMessage } from "src/leads-messages/entities/lead-message.entity";
-import { LeadsGateway } from "src/leads/leads.gateway";
-import { DealerTierService } from "src/dealer-tier/dealer-tier.service";
+} from '@crm/types';
+import { Dealer, User } from 'src/user/entities';
+import { CustomError } from 'src/common/custom-error';
+import { DealerLead } from 'src/user/entities/dealer-lead.entity';
+import { MailerService } from '@nestjs-modules/mailer';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as Handlebars from 'handlebars';
+import { PdfService } from 'src/Pdf/pdf-service';
+import { BankDetails } from 'src/bank-details/entities/bank-details.entity';
+import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
+import { LeadsGateway } from 'src/leads/leads.gateway';
+import { DealerTierService } from 'src/dealer-tier/dealer-tier.service';
 
 @Injectable()
 export class QuotationService {
@@ -81,30 +81,31 @@ export class QuotationService {
     });
 
     if (!lead) {
-      throw new NotFoundException("Lead not found");
-    }
-
-    // 🚫 Check if lead is won by another dealer
-    if (lead.wonByDealerId && lead.wonByDealerId !== dealerId) {
-      throw new ForbiddenException(
-        "This lead has already been won by another dealer",
-      );
+      throw new NotFoundException('Lead not found');
     }
 
     // 🔍 2. Find dealer with profile
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
-      relations: ["dealer"],
+      relations: ['dealer'],
     });
 
     if (!dealer) {
-      throw new NotFoundException("Dealer not found");
+      throw new NotFoundException('Dealer not found');
+    }
+
+    // 🚫 Check if lead is won by another dealer
+    // Use dealer.dealer.id (Dealer Entity ID) for comparison
+    if (lead.wonByDealerId && lead.wonByDealerId !== dealer.dealer?.id) {
+      throw new ForbiddenException(
+        'This lead has already been won by another dealer',
+      );
     }
 
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
-    if (!setting) throw new NotFoundException("Business setting not found");
+    if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate unique quotation number
     const quotationNumber = await this.generateQuotationNumber();
@@ -151,7 +152,7 @@ export class QuotationService {
       this.quotationItemRepository.create({
         quotationId: savedQuotation.id,
         productName: item.productName,
-        productDetails: item.productDetails || "",
+        productDetails: item.productDetails || '',
         unitPrice: Math.round(item.unitPrice),
         quantity: item.quantity,
         discount: Math.round(item.discount || 0),
@@ -170,7 +171,7 @@ export class QuotationService {
     // 🏦 7. Get bank details
     const bankDetails = await this.bankDetailsRepository.findOne({
       where: { user: { id: dealerId } },
-      relations: ["user"],
+      relations: ['user'],
     });
 
     const quotationDate = new Date(savedQuotation.date).toLocaleDateString();
@@ -229,15 +230,15 @@ export class QuotationService {
       salesTerms: setting.salesTerms,
       grandTotal,
       bank: bankDetails || null,
-      recoveryLocation: createQuotationDto.recoveryLocation || "",
-      deliveryLocation: createQuotationDto.deliveryLocation || "",
+      recoveryLocation: createQuotationDto.recoveryLocation || '',
+      deliveryLocation: createQuotationDto.deliveryLocation || '',
     };
 
     // 📧 9. Send quotation mail
     await this.mailService.sendMail({
       to: lead.email,
       subject: `Quotation ${quotation.quotationNumber}`,
-      template: "quotation-pdf",
+      template: 'quotation-pdf',
       context: { quotationData },
     });
 
@@ -250,8 +251,8 @@ export class QuotationService {
   async findAll(dealerId: number): Promise<Quotation[]> {
     return this.quotationRepository.find({
       where: { dealer: { id: dealerId } },
-      relations: ["dealer", "lead", "items", "companyUser"], // ✅ added companyUser
-      order: { createdAt: "DESC" },
+      relations: ['dealer', 'lead', 'items', 'companyUser'], // ✅ added companyUser
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -263,13 +264,13 @@ export class QuotationService {
     // check if any relationship already exists (regardless of status)
     const existing = await this.dealerLeadRepository.findOne({
       where: { dealer: { id: dealerId }, lead: { id: leadId } },
-      relations: ["dealer", "lead"],
+      relations: ['dealer', 'lead'],
     });
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
-      relations: ["dealer"],
+      relations: ['dealer'],
     });
     if (!dealer)
       throw new CustomError(`Dealer with ID ${dealerId} not found`, 404);
@@ -309,11 +310,11 @@ export class QuotationService {
   async findOne(id: string, dealerId: string): Promise<Quotation> {
     const quotation = await this.quotationRepository.findOne({
       where: { dealer: { id: dealerId } },
-      relations: ["lead", "items", "dealer"],
+      relations: ['lead', 'items', 'dealer'],
     });
 
     if (!quotation) {
-      throw new NotFoundException("Quotation not found");
+      throw new NotFoundException('Quotation not found');
     }
 
     return quotation;
@@ -329,7 +330,7 @@ export class QuotationService {
     });
 
     if (!quotation) {
-      throw new NotFoundException("Quotation not found");
+      throw new NotFoundException('Quotation not found');
     }
 
     // Business logic for status transitions
@@ -338,7 +339,7 @@ export class QuotationService {
       status !== QuotationStatus.PENDING
     ) {
       throw new BadRequestException(
-        "Cannot change status of cancelled quotation",
+        'Cannot change status of cancelled quotation',
       );
     }
 
@@ -346,7 +347,7 @@ export class QuotationService {
       quotation.status === QuotationStatus.ACCEPTED &&
       status === QuotationStatus.CANCELLED
     ) {
-      throw new BadRequestException("Cannot cancel accepted quotation");
+      throw new BadRequestException('Cannot cancel accepted quotation');
     }
 
     quotation.status = status;
@@ -358,7 +359,7 @@ export class QuotationService {
   private async generateQuotationNumber(): Promise<string> {
     const count = await this.quotationRepository.count();
     const nextNumber = count + 1;
-    return `#VL${nextNumber.toString().padStart(7, "0")}`;
+    return `#VL${nextNumber.toString().padStart(7, '0')}`;
   }
 
   async generatePdf(
@@ -366,10 +367,10 @@ export class QuotationService {
     dealerId: number,
   ): Promise<Buffer> {
     console.log(
-      "🔍 generatePdf - Starting with previewData:",
+      '🔍 generatePdf - Starting with previewData:',
       JSON.stringify(previewData, null, 2),
     );
-    console.log("🔍 generatePdf - DealerId:", dealerId);
+    console.log('🔍 generatePdf - DealerId:', dealerId);
 
     // 🔍 1. Verify lead ownership
     const lead = await this.leadRepository.findOne({
@@ -378,45 +379,45 @@ export class QuotationService {
         is_deleted: false,
         dealerLeads: { dealer: { id: dealerId } },
       },
-      relations: ["dealerLeads", "dealerLeads.dealer"],
+      relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
     console.log(
-      "🔍 generatePdf - Lead found:",
-      lead ? `ID: ${lead.id}, Name: ${lead.name}` : "NULL",
+      '🔍 generatePdf - Lead found:',
+      lead ? `ID: ${lead.id}, Name: ${lead.name}` : 'NULL',
     );
 
     if (!lead) {
       throw new NotFoundException(
-        "Lead not found or does not belong to this dealer",
+        'Lead not found or does not belong to this dealer',
       );
     }
 
     // 🔍 2. Find dealer with profile
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
-      relations: ["dealer"],
+      relations: ['dealer'],
     });
 
     console.log(
-      "🔍 generatePdf - Dealer found:",
+      '🔍 generatePdf - Dealer found:',
       dealer
         ? `ID: ${dealer.id}, Name: ${dealer.name}, Has Profile: ${!!dealer.dealer}`
-        : "NULL",
+        : 'NULL',
     );
 
     if (!dealer) {
-      throw new NotFoundException("Dealer not found");
+      throw new NotFoundException('Dealer not found');
     }
 
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
     console.log(
-      "🔍 generatePdf - Business setting found:",
-      setting ? "YES" : "NO",
+      '🔍 generatePdf - Business setting found:',
+      setting ? 'YES' : 'NO',
     );
-    if (!setting) throw new NotFoundException("Business setting not found");
+    if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary quotation number for preview
     const quotationNumber = `QUO-PREVIEW-${Date.now()}`;
@@ -445,21 +446,21 @@ export class QuotationService {
     // 🏦 5. Get bank details
     const bankDetails = await this.bankDetailsRepository.findOne({
       where: { user: { id: dealerId } },
-      relations: ["user"],
+      relations: ['user'],
     });
 
     console.log(
-      "🔍 generatePdf - Bank details found:",
-      bankDetails ? `Account: ${bankDetails.accountNumber}` : "NULL",
+      '🔍 generatePdf - Bank details found:',
+      bankDetails ? `Account: ${bankDetails.accountNumber}` : 'NULL',
     );
     console.log(
-      "🔍 generatePdf - Calculated totals - subTotal:",
+      '🔍 generatePdf - Calculated totals - subTotal:',
       subTotal,
-      "totalTax:",
+      'totalTax:',
       totalTax,
-      "totalDiscount:",
+      'totalDiscount:',
       totalDiscount,
-      "grandTotal:",
+      'grandTotal:',
       grandTotal,
     );
 
@@ -467,9 +468,9 @@ export class QuotationService {
     const orderDate = new Date(lead.createdAt).toLocaleDateString();
 
     console.log(
-      "🔍 generatePdf - Dates - quotationDate:",
+      '🔍 generatePdf - Dates - quotationDate:',
       quotationDate,
-      "orderDate:",
+      'orderDate:',
       orderDate,
     );
 
@@ -517,7 +518,7 @@ export class QuotationService {
       },
       items: previewData.items.map((item) => ({
         productName: item.productName,
-        productDetails: item.productDetails || "",
+        productDetails: item.productDetails || '',
         unitPrice: Math.round(item.unitPrice),
         quantity: item.quantity,
         discount: Math.round(item.discount || 0),
@@ -539,13 +540,13 @@ export class QuotationService {
       salesTerms: setting.salesTerms,
       grandTotal,
       bank: bankDetails || null,
-      recoveryLocation: previewData.recoveryLocation || "",
-      deliveryLocation: previewData.deliveryLocation || "",
+      recoveryLocation: previewData.recoveryLocation || '',
+      deliveryLocation: previewData.deliveryLocation || '',
     };
 
     // 📄 7. Generate PDF using PdfService
     console.log(
-      "🔍 generatePdf - Sending data to PdfService:",
+      '🔍 generatePdf - Sending data to PdfService:',
       JSON.stringify(quotationData, null, 2),
     );
     const pdfBuffer = await this.pdfService.generateQuotationPdf(quotationData);
@@ -564,29 +565,29 @@ export class QuotationService {
         is_deleted: false,
         dealerLeads: { dealer: { id: dealerId } },
       },
-      relations: ["dealerLeads", "dealerLeads.dealer"],
+      relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
     if (!lead) {
       throw new NotFoundException(
-        "Lead not found or does not belong to this dealer",
+        'Lead not found or does not belong to this dealer',
       );
     }
 
     // 🔍 2. Find dealer with profile
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
-      relations: ["dealer"],
+      relations: ['dealer'],
     });
 
     if (!dealer) {
-      throw new NotFoundException("Dealer not found");
+      throw new NotFoundException('Dealer not found');
     }
 
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
-    if (!setting) throw new NotFoundException("Business setting not found");
+    if (!setting) throw new NotFoundException('Business setting not found');
 
     // 🧾 3. Generate temporary quotation number for preview
     const quotationNumber = `QUO-PREVIEW-${Date.now()}`;
@@ -615,7 +616,7 @@ export class QuotationService {
     // 🏦 5. Get bank details
     const bankDetails = await this.bankDetailsRepository.findOne({
       where: { user: { id: dealerId } },
-      relations: ["user"],
+      relations: ['user'],
     });
 
     const quotationDate = new Date(previewData.date).toLocaleDateString();
@@ -665,7 +666,7 @@ export class QuotationService {
       },
       items: previewData.items.map((item) => ({
         productName: item.productName,
-        productDetails: item.productDetails || "",
+        productDetails: item.productDetails || '',
         unitPrice: Math.round(item.unitPrice),
         quantity: item.quantity,
         subTotal: Math.round(item.unitPrice * item.quantity),
@@ -680,18 +681,18 @@ export class QuotationService {
       salesTerms: setting.salesTerms,
       grandTotal,
       bank: bankDetails || null,
-      recoveryLocation: previewData.recoveryLocation || "",
-      deliveryLocation: previewData.deliveryLocation || "",
+      recoveryLocation: previewData.recoveryLocation || '',
+      deliveryLocation: previewData.deliveryLocation || '',
     };
 
     // 📧 7. Render HTML using the template
     const templatePath = path.join(
       process.cwd(),
-      process.env.NODE_ENV !== "production"
-        ? "src/templates/quotation-pdf.hbs"
-        : "dist/templates/templates/quotation-pdf.hbs",
+      process.env.NODE_ENV !== 'production'
+        ? 'src/templates/quotation-pdf.hbs'
+        : 'dist/templates/templates/quotation-pdf.hbs',
     );
-    const templateSource = fs.readFileSync(templatePath, "utf8");
+    const templateSource = fs.readFileSync(templatePath, 'utf8');
     const template = Handlebars.compile(templateSource);
     const html = template({ quotationData });
 
@@ -708,7 +709,7 @@ export class QuotationService {
 
     const existing = await this.leadMessageRepository.findOne({
       where: { dealer: { id: dealerId }, lead: { id: leadId } },
-      relations: ["dealer", "lead"],
+      relations: ['dealer', 'lead'],
     });
 
     if (existing) return existing; // already linked

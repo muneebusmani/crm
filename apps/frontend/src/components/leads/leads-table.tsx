@@ -949,22 +949,6 @@ const LeadsTable: React.FC = () => {
                         color={getStatusColor(lead.status)}
                         size="small"
                       />
-                      {lead.wonByDealerId && (
-                        <Chip
-                          label={
-                            lead.wonByDealerId === currentDealerId
-                              ? '🏆 Won by You'
-                              : '🔒 Won by Other'
-                          }
-                          color={
-                            lead.wonByDealerId === currentDealerId
-                              ? 'success'
-                              : 'error'
-                          }
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
                     </Box>
                   </TableCell>
                   <TableCell
@@ -1087,13 +1071,27 @@ const LeadsTable: React.FC = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={() => handleMenuAction('edit')}>
+        <MenuItem
+          onClick={() => handleMenuAction('edit')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <EditIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('info')}>
+        <MenuItem
+          onClick={() => handleMenuAction('info')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <InfoIcon fontSize="small" />
           </ListItemIcon>
@@ -1101,7 +1099,12 @@ const LeadsTable: React.FC = () => {
         </MenuItem>
         <MenuItem
           onClick={() => handleMenuAction('fetch-info')}
-          disabled={currentMenuLead?.moreInfoFetched === true}
+          disabled={
+            currentMenuLead?.moreInfoFetched === true ||
+            (currentMenuLead?.wonByDealerId !== undefined &&
+              currentMenuLead?.wonByDealerId !== null &&
+              currentMenuLead?.wonByDealerId !== currentDealerId)
+          }
         >
           <ListItemIcon>
             <AutoFixHighIcon fontSize="small" />
@@ -1127,13 +1130,27 @@ const LeadsTable: React.FC = () => {
         {/*<ListItemText>Open Chat</ListItemText>*/}
         {/*</MenuItem>*/}
         {/* WARN: DO NOT REMOVE THIS */}
-        <MenuItem onClick={() => handleMenuAction('invoice')}>
+        <MenuItem
+          onClick={() => handleMenuAction('invoice')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <ReceiptLongIcon fontSize="small" color="warning" />
           </ListItemIcon>
           <ListItemText>Send Invoice</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('delete')}>
+        <MenuItem
+          onClick={() => handleMenuAction('delete')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />
           </ListItemIcon>

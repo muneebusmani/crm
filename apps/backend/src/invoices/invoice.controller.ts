@@ -42,7 +42,7 @@ export class InvoiceController {
     @Body() createInvoiceDto: CreateInvoiceDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<ApiResponse<InvoiceResponse>> {
-    const dealerId = req.user.id; // Extracted from JWT token
+    const dealerId = req.user.id;
     const companyUserId = createInvoiceDto.companyUserId; // Get from request body
     const invoice = (await this.invoiceService.create(
       createInvoiceDto,
@@ -131,8 +131,12 @@ export class InvoiceController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     try {
-      const dealerId = req.user.id;
-      console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createInvoiceDto, null, 2));
+      // Get the actual dealer ID from the user's dealer relationship
+      const dealerId = req.user.dealer?.id || req.user.id;
+      console.log(
+        '🔍 Controller.downloadPdf - Received DTO:',
+        JSON.stringify(createInvoiceDto, null, 2),
+      );
       console.log('🔍 Controller.downloadPdf - DealerId:', dealerId);
 
       const pdfBuffer = await this.invoiceService.generatePdf(
@@ -147,10 +151,16 @@ export class InvoiceController {
       });
 
       return new StreamableFile(pdfBuffer);
-    } catch (error:any) {
+    } catch (error: any) {
       // Very explicit logging
-      console.error('❌ Controller.downloadPdf - ERROR message:', (error && error?.message) || error);
-      console.error('❌ Controller.downloadPdf - ERROR stack:', (error && error?.stack) || 'no stack');
+      console.error(
+        '❌ Controller.downloadPdf - ERROR message:',
+        (error && error?.message) || error,
+      );
+      console.error(
+        '❌ Controller.downloadPdf - ERROR stack:',
+        (error && error?.stack) || 'no stack',
+      );
       // Optionally send more info in body for local debugging only
       throw error; // Nest will return 500; but logs will show stack
     }
