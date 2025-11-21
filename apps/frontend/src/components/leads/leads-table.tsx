@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <needed> */
-"use client";
+'use client';
 
-import type { Lead } from "@crm/types";
+import type { Lead } from '@crm/types';
 import {
   Delete as DeleteIcon,
   Edit as EditIcon,
@@ -11,8 +11,8 @@ import {
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
   AutoFixHigh as AutoFixHighIcon,
-} from "@mui/icons-material";
-import ChatIcon from "@mui/icons-material/Chat";
+} from '@mui/icons-material';
+import ChatIcon from '@mui/icons-material/Chat';
 
 import {
   Alert,
@@ -40,16 +40,16 @@ import {
   DialogContent,
   Select,
   Tooltip,
-} from "@mui/material";
-import { useRouter, useSearchParams } from "next/navigation"; // ✅ App Router hook
-import { useEffect, useState, useMemo } from "react";
-import { socketService } from "@/services/socket.service";
-import LeadEditDialog from "./lead-edit-dialog";
-import LeadEmailDialog from "./lead-email-dialog";
-import LeadInfoDialog from "./lead-info-dialog";
-import SendInvoiceDialog from "./send-invoice-dialog";
-import SendQuotationDialog from "./send-quotation-dialog";
-import LeadNotesPanel from "../LeadNotesPanel";
+} from '@mui/material';
+import { useRouter, useSearchParams } from 'next/navigation'; // ✅ App Router hook
+import { useEffect, useState, useMemo } from 'react';
+import { socketService } from '@/services/socket.service';
+import LeadEditDialog from './lead-edit-dialog';
+import LeadEmailDialog from './lead-email-dialog';
+import LeadInfoDialog from './lead-info-dialog';
+import SendInvoiceDialog from './send-invoice-dialog';
+import SendQuotationDialog from './send-quotation-dialog';
+import LeadNotesPanel from '../LeadNotesPanel';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -64,7 +64,7 @@ const LeadsTable: React.FC = () => {
   const NOTES_COL_WIDTH = 150;
   const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -85,6 +85,9 @@ const LeadsTable: React.FC = () => {
   const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(
     undefined,
   );
+  const [currentDealerId, setCurrentDealerId] = useState<number | undefined>(
+    undefined,
+  );
   const [notePreviews, setNotePreviews] = useState<Map<number, string>>(
     new Map(),
   );
@@ -97,19 +100,19 @@ const LeadsTable: React.FC = () => {
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: "",
-    severity: "success" as "success" | "error" | "warning" | "info",
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info',
   });
 
   // Fetch leads from API
   const fetchLeads = async () => {
     setLoading(true); // start loading
     try {
-      const res = await fetch("/api/leads");
+      const res = await fetch('/api/leads');
       // console.log('Why Response is not okay', res.status);
-      if (!res.ok) throw new Error("Failed to fetch leads");
+      if (!res.ok) throw new Error('Failed to fetch leads');
       const leadsData = (await res.json()) as Lead[];
-      console.log("Leads Data:", leadsData);
+      console.log('Leads Data:', leadsData);
       const sortedLeads = leadsData.sort(
         (a, b) =>
           new Date(b.createdAt as unknown as Date).getTime() -
@@ -123,8 +126,8 @@ const LeadsTable: React.FC = () => {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to fetch leads",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to fetch leads',
+        severity: 'error',
       });
     } finally {
       setLoading(false);
@@ -134,8 +137,8 @@ const LeadsTable: React.FC = () => {
   const fetchLeadById = async (id: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/leads/${id}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch lead info");
+      const res = await fetch(`/api/leads/${id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch lead info');
       const leadData = (await res.json()) as Lead;
       setSelectedLead(leadData);
       return leadData;
@@ -143,8 +146,8 @@ const LeadsTable: React.FC = () => {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to fetch lead info",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to fetch lead info',
+        severity: 'error',
       });
       return null;
     } finally {
@@ -160,8 +163,8 @@ const LeadsTable: React.FC = () => {
       setLeads((prev) => [...prev, newLead]);
       setSnackbar({
         open: true,
-        message: `New lead created: ${newLead.name || "Unknown"}`,
-        severity: "success",
+        message: `New lead created: ${newLead.name || 'Unknown'}`,
+        severity: 'success',
       });
     });
 
@@ -171,8 +174,8 @@ const LeadsTable: React.FC = () => {
       );
       setSnackbar({
         open: true,
-        message: `Lead updated: ${updatedLead.name || "Unknown"}`,
-        severity: "success",
+        message: `Lead updated: ${updatedLead.name || 'Unknown'}`,
+        severity: 'success',
       });
     });
 
@@ -181,8 +184,8 @@ const LeadsTable: React.FC = () => {
       setLeads((prev) => prev.filter((lead) => String(lead.id) !== String(id)));
       setSnackbar({
         open: true,
-        message: "Lead deleted successfully",
-        severity: "success",
+        message: 'Lead deleted successfully',
+        severity: 'success',
       });
     });
 
@@ -210,15 +213,15 @@ const LeadsTable: React.FC = () => {
 
   // Handle opening lead from URL query parameter
   useEffect(() => {
-    const leadId = searchParams.get("id");
+    const leadId = searchParams.get('id');
     if (leadId && leads.length > 0 && !openInfoDialog) {
       const lead = leads.find((l) => String(l.id) === leadId);
       if (lead) {
-        console.log("Opening lead from URL:", leadId);
-        handleActionClick("info", lead);
+        console.log('Opening lead from URL:', leadId);
+        handleActionClick('info', lead);
         // Clear the query parameter after a short delay
         setTimeout(() => {
-          router.replace("/dealer/leads", { scroll: false });
+          router.replace('/dealer/leads', { scroll: false });
         }, 100);
       }
     }
@@ -228,35 +231,53 @@ const LeadsTable: React.FC = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch("/api/selected-profile", {
-          credentials: "include",
+        const res = await fetch('/api/selected-profile', {
+          credentials: 'include',
         });
         if (res.ok) {
           const data = await res.json();
           setCurrentProfileId(data.id);
         }
       } catch (error) {
-        console.error("Failed to fetch profile:", error);
+        console.error('Failed to fetch profile:', error);
       }
     };
     fetchProfile();
+  }, []);
+  useEffect(() => {
+    const fetchDealer = async () => {
+      try {
+        const res = await fetch('/api/dealer-profile', {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentDealerId(data.dealerId);
+          window.alert(`Dealer id Set to: ${data.dealerId}`);
+        }
+      } catch (error) {
+        window.alert(`Unknown Error Occurred ${error}`);
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchDealer();
   }, []);
 
   // Reset page to 1 when rows per page changes
   useEffect(() => {
     setPage(1);
-  }, [rowsPerPage]);
+  }, []);
 
   // Calculate filtered leads
   const filteredLeads = useMemo(() => {
     return leads.filter(
       (lead) =>
-        (lead.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lead.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lead.vehicle_model || "")
+        (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.vehicle_model || '')
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        (lead.vehicle_reg || "")
+        (lead.vehicle_reg || '')
           .toLowerCase()
           .includes(searchTerm.toLowerCase()),
     );
@@ -288,7 +309,7 @@ const LeadsTable: React.FC = () => {
         leadsToFetch.map(async (lead) => {
           try {
             const res = await fetch(`/api/leads/${lead.id}/notes`, {
-              credentials: "include",
+              credentials: 'include',
             });
             if (res.ok) {
               const data = await res.json();
@@ -298,14 +319,14 @@ const LeadsTable: React.FC = () => {
                 const latestNote = notes[0];
                 previews.set(lead.id!, latestNote.content.substring(0, 5));
               } else {
-                previews.set(lead.id!, "...");
+                previews.set(lead.id!, '...');
               }
             } else {
-              previews.set(lead.id!, "...");
+              previews.set(lead.id!, '...');
             }
           } catch (error) {
             console.error(`Failed to fetch notes for lead ${lead.id}:`, error);
-            previews.set(lead.id!, "...");
+            previews.set(lead.id!, '...');
           }
         }),
       );
@@ -322,7 +343,7 @@ const LeadsTable: React.FC = () => {
 
     try {
       const res = await fetch(`/api/leads/${leadId}/notes`, {
-        credentials: "include",
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
@@ -332,7 +353,7 @@ const LeadsTable: React.FC = () => {
           const latestNote = notes[0];
           newPreviews.set(leadId, latestNote.content.substring(0, 5));
         } else {
-          newPreviews.set(leadId, "...");
+          newPreviews.set(leadId, '...');
         }
         setNotePreviews(newPreviews);
       }
@@ -363,12 +384,12 @@ const LeadsTable: React.FC = () => {
 
   const handleActionClick = async (action: string, lead: Lead) => {
     switch (action) {
-      case "edit":
+      case 'edit':
         setSelectedLead(lead);
         setOpenEditDialog(true);
         break;
 
-      case "info": {
+      case 'info': {
         // Set the selected lead with basic info
         setSelectedLead(lead);
         setOpenInfoDialog(true);
@@ -393,7 +414,7 @@ const LeadsTable: React.FC = () => {
               }));
             }
           } catch (error) {
-            console.error("Error fetching lead details:", error);
+            console.error('Error fetching lead details:', error);
           } finally {
             setIsInfoDialogLoading(false);
           }
@@ -408,24 +429,24 @@ const LeadsTable: React.FC = () => {
 
   const handleLeadSave = async (updatedLead: Lead) => {
     try {
-      const res = await fetch("/api/leads", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+      const res = await fetch('/api/leads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...updatedLead }),
       });
-      if (!res.ok) throw new Error("Failed to update lead");
+      if (!res.ok) throw new Error('Failed to update lead');
       setSnackbar({
         open: true,
         message: `Lead "${updatedLead.name}" updated successfully`,
-        severity: "success",
+        severity: 'success',
       });
     } catch (error) {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to update lead",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to update lead',
+        severity: 'error',
       });
     }
   };
@@ -435,17 +456,17 @@ const LeadsTable: React.FC = () => {
 
     try {
       const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(
-          errorData.error || "Failed to fetch additional lead info",
+          errorData.error || 'Failed to fetch additional lead info',
         );
       }
 
@@ -455,8 +476,8 @@ const LeadsTable: React.FC = () => {
         // Update the local lead data with the new info
         setSnackbar({
           open: true,
-          message: "Additional lead information fetched successfully",
-          severity: "success",
+          message: 'Additional lead information fetched successfully',
+          severity: 'success',
         });
 
         // Refresh the leads data to show the update
@@ -468,8 +489,8 @@ const LeadsTable: React.FC = () => {
         message:
           error instanceof Error
             ? error.message
-            : "Failed to fetch additional lead info",
-        severity: "error",
+            : 'Failed to fetch additional lead info',
+        severity: 'error',
       });
     }
   };
@@ -477,21 +498,21 @@ const LeadsTable: React.FC = () => {
   const handleLeadDelete = async (leadId: number) => {
     try {
       const res = await fetch(`/api/leads/${leadId}`, {
-        method: "DELETE",
-        credentials: "include",
+        method: 'DELETE',
+        credentials: 'include',
       });
-      if (!res.ok) throw new Error("Failed to delete lead");
+      if (!res.ok) throw new Error('Failed to delete lead');
       setSnackbar({
         open: true,
         message: `Lead #${leadId} deleted successfully`,
-        severity: "success",
+        severity: 'success',
       });
     } catch (error) {
       setSnackbar({
         open: true,
         message:
-          error instanceof Error ? error.message : "Failed to delete lead",
-        severity: "error",
+          error instanceof Error ? error.message : 'Failed to delete lead',
+        severity: 'error',
       });
     }
   };
@@ -507,7 +528,7 @@ const LeadsTable: React.FC = () => {
     setSnackbar({
       open: true,
       message: `Email sent to ${emailData.to}`,
-      severity: "success",
+      severity: 'success',
     });
   };
 
@@ -530,23 +551,23 @@ const LeadsTable: React.FC = () => {
     if (!currentMenuLead) return;
 
     switch (action) {
-      case "edit":
-        handleActionClick("edit", currentMenuLead);
+      case 'edit':
+        handleActionClick('edit', currentMenuLead);
         break;
-      case "info":
-        handleActionClick("info", currentMenuLead);
+      case 'info':
+        handleActionClick('info', currentMenuLead);
         break;
-      case "chat":
+      case 'chat':
         handleOpenChat(currentMenuLead.id!);
         break;
-      case "invoice":
+      case 'invoice':
         setSelectedLead(currentMenuLead);
         setOpenInvoiceDialog(true);
         break;
-      case "fetch-info":
+      case 'fetch-info':
         handleFetchMoreInfo(currentMenuLead);
         break;
-      case "delete":
+      case 'delete':
         handleLeadDelete(currentMenuLead.id!);
         break;
       default:
@@ -557,18 +578,18 @@ const LeadsTable: React.FC = () => {
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {
-      case "New":
-        return "primary";
-      case "Contacted":
-        return "info";
-      case "Qualified":
-        return "warning";
-      case "Converted":
-        return "success";
-      case "Lost":
-        return "error";
+      case 'New':
+        return 'primary';
+      case 'Contacted':
+        return 'info';
+      case 'Qualified':
+        return 'warning';
+      case 'Converted':
+        return 'success';
+      case 'Lost':
+        return 'error';
       default:
-        return "default";
+        return 'default';
     }
   };
 
@@ -577,20 +598,20 @@ const LeadsTable: React.FC = () => {
   }
 
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
-      <Paper elevation={2} sx={{ borderRadius: 2, overflow: "hidden" }}>
+    <Box sx={{ width: '100%', p: 2 }}>
+      <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
         {/* Header */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             p: 2,
             backgroundColor: theme.palette.grey[100],
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <InputBase
               placeholder="Search for..."
               value={searchTerm}
@@ -607,37 +628,37 @@ const LeadsTable: React.FC = () => {
                 borderRadius: 1,
                 px: 2,
                 py: 1,
-                "& input": { padding: "0 !important" },
+                '& input': { padding: '0 !important' },
               }}
             />
           </Box>
         </Box>
 
         {/* Table */}
-        <TableContainer sx={{ overflowX: "auto" }}>
+        <TableContainer sx={{ overflowX: 'auto' }}>
           <Table
             stickyHeader
             aria-label="leads table"
             sx={{
               minWidth: TABLE_MIN_WIDTH,
-              tableLayout: "auto",
-              "& th, & td": { whiteSpace: "nowrap" },
-              "& th:nth-of-type(1), & td:nth-of-type(1)": { minWidth: 180 }, // Name
-              "& th:nth-of-type(2), & td:nth-of-type(2)": { minWidth: 240 }, // Email
-              "& th:nth-of-type(3), & td:nth-of-type(3)": { minWidth: 160 }, // Phone
-              "& th:nth-of-type(4), & td:nth-of-type(4)": { minWidth: 140 }, // Make
-              "& th:nth-of-type(5), & td:nth-of-type(5)": { minWidth: 160 }, // Model
-              "& th:nth-of-type(6), & td:nth-of-type(6)": { minWidth: 140 }, // VRM
-              "& th:nth-of-type(7), & td:nth-of-type(7)": { minWidth: 160 }, // Year
-              "& th:nth-of-type(8), & td:nth-of-type(8)": { minWidth: 280 }, // Customer Notes
-              "& th:nth-of-type(9), & td:nth-of-type(9)": { minWidth: 140 }, // Fuel Type
-              "& th:nth-of-type(10), & td:nth-of-type(10)": { minWidth: 180 }, // Engine Title
-              "& th:nth-of-type(11), & td:nth-of-type(11)": { minWidth: 140 }, // Engine Capacity
-              "& th:nth-of-type(12), & td:nth-of-type(12)": { minWidth: 180 }, // Recieved at
-              "& th:nth-of-type(13), & td:nth-of-type(13)": {
+              tableLayout: 'auto',
+              '& th, & td': { whiteSpace: 'nowrap' },
+              '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
+              '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 240 }, // Email
+              '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
+              '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // Make
+              '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // Model
+              '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // VRM
+              '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Year
+              '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 280 }, // Customer Notes
+              '& th:nth-of-type(9), & td:nth-of-type(9)': { minWidth: 140 }, // Fuel Type
+              '& th:nth-of-type(10), & td:nth-of-type(10)': { minWidth: 180 }, // Engine Title
+              '& th:nth-of-type(11), & td:nth-of-type(11)': { minWidth: 140 }, // Engine Capacity
+              '& th:nth-of-type(12), & td:nth-of-type(12)': { minWidth: 180 }, // Recieved at
+              '& th:nth-of-type(13), & td:nth-of-type(13)': {
                 minWidth: STATUS_COL_WIDTH,
               }, // Status
-              "& th:nth-of-type(14), & td:nth-of-type(14)": {
+              '& th:nth-of-type(14), & td:nth-of-type(14)': {
                 minWidth: ACTION_COL_WIDTH,
               }, // Action
             }}
@@ -705,14 +726,14 @@ const LeadsTable: React.FC = () => {
                     Engine Capacity
                   </Typography>
                 </TableCell>
-                <TableCell sx={{ textAlign: "center" }}>
+                <TableCell sx={{ textAlign: 'center' }}>
                   <Typography variant="subtitle2" fontWeight="bold">
                     Recieved at
                   </Typography>
                 </TableCell>
                 <TableCell
                   sx={{
-                    position: "sticky",
+                    position: 'sticky',
                     right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
                     backgroundColor: theme.palette.background.paper,
                     zIndex: 4,
@@ -725,7 +746,7 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell
                   sx={{
-                    position: "sticky",
+                    position: 'sticky',
                     right: ACTION_COL_WIDTH,
                     backgroundColor: theme.palette.background.paper,
                     zIndex: 4,
@@ -738,7 +759,7 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell
                   sx={{
-                    position: "sticky",
+                    position: 'sticky',
                     right: 0,
                     backgroundColor: theme.palette.background.paper,
                     zIndex: 4,
@@ -755,7 +776,7 @@ const LeadsTable: React.FC = () => {
               {currentLeads.map((lead) => (
                 <TableRow key={lead.id}>
                   <TableCell>
-                    <Typography>{lead.name || "-"}</Typography>
+                    <Typography>{lead.name || '-'}</Typography>
                   </TableCell>
                   <TableCell>
                     {lead.email ? (
@@ -765,7 +786,7 @@ const LeadsTable: React.FC = () => {
                         componentsProps={{
                           tooltip: {
                             sx: {
-                              fontSize: "1.25rem", // Increase tooltip text size
+                              fontSize: '1.25rem', // Increase tooltip text size
                             },
                           },
                         }}
@@ -773,14 +794,14 @@ const LeadsTable: React.FC = () => {
                         <a
                           href={`mailto:${lead.email}`}
                           style={{
-                            textDecoration: "none",
-                            color: "#1976d2", // Primary blue color
+                            textDecoration: 'none',
+                            color: '#1976d2', // Primary blue color
                           }}
                           onMouseEnter={(e) =>
-                            (e.currentTarget.style.textDecoration = "underline")
+                            (e.currentTarget.style.textDecoration = 'underline')
                           }
                           onMouseLeave={(e) =>
-                            (e.currentTarget.style.textDecoration = "none")
+                            (e.currentTarget.style.textDecoration = 'none')
                           }
                         >
                           {lead.email.length > 19
@@ -789,7 +810,7 @@ const LeadsTable: React.FC = () => {
                         </a>
                       </Tooltip>
                     ) : (
-                      "-"
+                      '-'
                     )}
                   </TableCell>
                   <TableCell>
@@ -800,24 +821,24 @@ const LeadsTable: React.FC = () => {
                         componentsProps={{
                           tooltip: {
                             sx: {
-                              fontSize: "1.25rem", // Increase tooltip text size
+                              fontSize: '1.25rem', // Increase tooltip text size
                             },
                           },
                         }}
                       >
                         <a
-                          href={`https://wa.me/${lead.number.replace(/\D/g, "")}`}
+                          href={`https://wa.me/${lead.number.replace(/\D/g, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            textDecoration: "none",
-                            color: "#1976d2", // Primary blue color
+                            textDecoration: 'none',
+                            color: '#1976d2', // Primary blue color
                           }}
                           onMouseEnter={(e) =>
-                            (e.currentTarget.style.textDecoration = "underline")
+                            (e.currentTarget.style.textDecoration = 'underline')
                           }
                           onMouseLeave={(e) =>
-                            (e.currentTarget.style.textDecoration = "none")
+                            (e.currentTarget.style.textDecoration = 'none')
                           }
                         >
                           {lead.number.length > 11
@@ -826,25 +847,25 @@ const LeadsTable: React.FC = () => {
                         </a>
                       </Tooltip>
                     ) : (
-                      "-"
+                      '-'
                     )}
                   </TableCell>
                   <TableCell>
-                    {(lead.vehicle_vrm?.toUpperCase().trim() || "-").replace(
+                    {(lead.vehicle_vrm?.toUpperCase().trim() || '-').replace(
                       /\s+/g,
-                      "",
-                    ) || "-"}
+                      '',
+                    ) || '-'}
                   </TableCell>
 
                   <TableCell>
-                    {(lead.postcode?.toUpperCase().trim() || "-").replace(
+                    {(lead.postcode?.toUpperCase().trim() || '-').replace(
                       /\s+/g,
-                      "",
-                    ) || "-"}
+                      '',
+                    ) || '-'}
                   </TableCell>
-                  <TableCell>{lead.vehicle_brand || "-"}</TableCell>
-                  <TableCell>{lead.vehicle_model || "-"}</TableCell>
-                  <TableCell>{lead.vehicle_reg || "-"}</TableCell>
+                  <TableCell>{lead.vehicle_brand || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_model || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_reg || '-'}</TableCell>
                   <TableCell>
                     <Tooltip
                       title={lead.description}
@@ -852,7 +873,7 @@ const LeadsTable: React.FC = () => {
                       componentsProps={{
                         tooltip: {
                           sx: {
-                            fontSize: "1.25rem", // Increase tooltip text size
+                            fontSize: '1.25rem', // Increase tooltip text size
                           },
                         },
                       }}
@@ -862,30 +883,30 @@ const LeadsTable: React.FC = () => {
                           ? lead.description.length > 15
                             ? `${lead.description.slice(0, 15)}...`
                             : lead.description
-                          : "-"}
+                          : '-'}
                       </span>
                     </Tooltip>
                   </TableCell>
-                  <TableCell>{lead.fuelType || "-"}</TableCell>
-                  <TableCell>{lead.vehicle_title || "-"}</TableCell>
+                  <TableCell>{lead.fuelType || '-'}</TableCell>
+                  <TableCell>{lead.vehicle_title || '-'}</TableCell>
                   <TableCell>
-                    {lead.engin_capacity ? `${lead.engin_capacity}.0L` : "-"}
+                    {lead.engin_capacity ? `${lead.engin_capacity}.0L` : '-'}
                   </TableCell>
-                  <TableCell sx={{ textAlign: "center" }}>
+                  <TableCell sx={{ textAlign: 'center' }}>
                     {new Date(
                       lead.createdAt as unknown as string,
-                    ).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
+                    ).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
                     })}
                     <br />
                     {new Date(
                       lead.createdAt as unknown as string,
-                    ).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
+                    ).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
                     })}
                   </TableCell>
                   <TableCell
@@ -894,11 +915,11 @@ const LeadsTable: React.FC = () => {
                       setOpenNotesDialog(true);
                     }}
                     sx={{
-                      cursor: "pointer",
-                      "&:hover": {
+                      cursor: 'pointer',
+                      '&:hover': {
                         backgroundColor: theme.palette.action.hover,
                       },
-                      position: "sticky",
+                      position: 'sticky',
                       right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
                       backgroundColor: theme.palette.background.paper,
                       zIndex: 3,
@@ -906,12 +927,12 @@ const LeadsTable: React.FC = () => {
                     }}
                   >
                     <Typography variant="body2" color="primary">
-                      {notePreviews.get(lead.id!) || "..."}
+                      {notePreviews.get(lead.id!) || '...'}
                     </Typography>
                   </TableCell>
                   <TableCell
                     sx={{
-                      position: "sticky",
+                      position: 'sticky',
                       right: ACTION_COL_WIDTH,
                       backgroundColor: theme.palette.background.paper,
                       zIndex: 3,
@@ -920,27 +941,27 @@ const LeadsTable: React.FC = () => {
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        flexDirection: "column",
+                        display: 'flex',
+                        flexDirection: 'column',
                         gap: 0.5,
                       }}
                     >
                       <Chip
-                        label={lead.status || "Unknown"}
+                        label={lead.status || 'Unknown'}
                         color={getStatusColor(lead.status)}
                         size="small"
                       />
                       {lead.wonByDealerId && (
                         <Chip
                           label={
-                            lead.wonByDealerId === currentProfileId
-                              ? "🏆 Won by You"
-                              : "🔒 Won by Other"
+                            lead.wonByDealerId === currentDealerId
+                              ? '🏆 Won by You'
+                              : '🔒 Won by Other'
                           }
                           color={
-                            lead.wonByDealerId === currentProfileId
-                              ? "success"
-                              : "error"
+                            lead.wonByDealerId === currentDealerId
+                              ? 'success'
+                              : 'error'
                           }
                           size="small"
                           variant="outlined"
@@ -950,21 +971,21 @@ const LeadsTable: React.FC = () => {
                   </TableCell>
                   <TableCell
                     sx={{
-                      position: "sticky",
+                      position: 'sticky',
                       right: 0,
                       backgroundColor: theme.palette.background.paper,
                       zIndex: 3,
                       minWidth: ACTION_COL_WIDTH,
                     }}
                   >
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       {/* Check if lead is won by another dealer */}
                       {lead.wonByDealerId &&
                       lead.wonByDealerId !== currentProfileId ? (
                         <Typography
                           variant="caption"
                           color="error"
-                          sx={{ fontStyle: "italic" }}
+                          sx={{ fontStyle: 'italic' }}
                           title="This lead has been won by another dealer"
                         >
                           Won by other dealer
@@ -976,7 +997,7 @@ const LeadsTable: React.FC = () => {
                             size="small"
                             color="info"
                             onClick={() => {
-                              handleActionClick("info", lead);
+                              handleActionClick('info', lead);
                             }}
                             title="View Info"
                           >
@@ -1017,14 +1038,14 @@ const LeadsTable: React.FC = () => {
         {/* Pagination */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             p: 2,
             borderTop: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" color="text.secondary">
               Rows per page:
             </Typography>
@@ -1060,28 +1081,28 @@ const LeadsTable: React.FC = () => {
         open={menuOpen}
         onClose={handleMenuClose}
         anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
+          vertical: 'top',
+          horizontal: 'right',
         }}
         transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
+          vertical: 'top',
+          horizontal: 'right',
         }}
       >
-        <MenuItem onClick={() => handleMenuAction("edit")}>
+        <MenuItem onClick={() => handleMenuAction('edit')}>
           <ListItemIcon>
             <EditIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction("info")}>
+        <MenuItem onClick={() => handleMenuAction('info')}>
           <ListItemIcon>
             <InfoIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>View Info</ListItemText>
         </MenuItem>
         <MenuItem
-          onClick={() => handleMenuAction("fetch-info")}
+          onClick={() => handleMenuAction('fetch-info')}
           disabled={currentMenuLead?.moreInfoFetched === true}
         >
           <ListItemIcon>
@@ -1089,8 +1110,8 @@ const LeadsTable: React.FC = () => {
           </ListItemIcon>
           <ListItemText>
             {currentMenuLead?.moreInfoFetched
-              ? "Info Fetched"
-              : "Fetch More Info"}
+              ? 'Info Fetched'
+              : 'Fetch More Info'}
           </ListItemText>
         </MenuItem>
         {/* WARN: DO NOT REMOVE THIS */}
@@ -1108,17 +1129,17 @@ const LeadsTable: React.FC = () => {
         {/*<ListItemText>Open Chat</ListItemText>*/}
         {/*</MenuItem>*/}
         {/* WARN: DO NOT REMOVE THIS */}
-        <MenuItem onClick={() => handleMenuAction("invoice")}>
+        <MenuItem onClick={() => handleMenuAction('invoice')}>
           <ListItemIcon>
             <ReceiptLongIcon fontSize="small" color="warning" />
           </ListItemIcon>
           <ListItemText>Send Invoice</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction("delete")}>
+        <MenuItem onClick={() => handleMenuAction('delete')}>
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
+          <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -1130,7 +1151,7 @@ const LeadsTable: React.FC = () => {
             onClose={() => setOpenEmailDialog(false)}
             lead={{
               id: selectedLead.id!,
-              name: selectedLead.name || "",
+              name: selectedLead.name || '',
               email: selectedLead.email,
             }}
             onEmailSent={handleEmailSent}
@@ -1158,8 +1179,8 @@ const LeadsTable: React.FC = () => {
             onSuccess={() =>
               setSnackbar({
                 open: true,
-                message: "Quotation sent successfully",
-                severity: "success",
+                message: 'Quotation sent successfully',
+                severity: 'success',
               })
             }
           />
@@ -1171,8 +1192,8 @@ const LeadsTable: React.FC = () => {
             onSuccess={() =>
               setSnackbar({
                 open: true,
-                message: "Invoice sent successfully",
-                severity: "success",
+                message: 'Invoice sent successfully',
+                severity: 'success',
               })
             }
           />
@@ -1194,7 +1215,7 @@ const LeadsTable: React.FC = () => {
         <DialogTitle>
           Lead Notes
           {selectedLeadForNotes &&
-            ` - ${selectedLeadForNotes.name || "Unknown Lead"}`}
+            ` - ${selectedLeadForNotes.name || 'Unknown Lead'}`}
         </DialogTitle>
         <DialogContent>
           {selectedLeadForNotes && (
@@ -1211,12 +1232,12 @@ const LeadsTable: React.FC = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>

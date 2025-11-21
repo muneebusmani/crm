@@ -3,7 +3,7 @@ import {
   type CreateDealerDto,
   type UpdateDealerDto,
   User,
-} from "@crm/types";
+} from '@crm/types';
 import {
   Body,
   Controller,
@@ -17,17 +17,17 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import type { Multer } from "multer";
-import { DealerGuard } from "src/auth/guards/dealer.guard";
-import { JwtAuthGuard } from "src/auth/guards/jwt.guard";
-import { CustomError } from "src/common/custom-error";
-import type { AuthenticatedRequest } from "src/common/user.interface";
-import { Lead } from "src/leads/entities/lead.entity";
-import { DealerService } from "./dealer.service";
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Multer } from 'multer';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { CustomError } from 'src/common/custom-error';
+import type { AuthenticatedRequest } from 'src/common/user.interface';
+import { Lead } from 'src/leads/entities/lead.entity';
+import { DealerService } from './dealer.service';
 
-@Controller("dealers")
+@Controller('dealers')
 export class DealerController {
   constructor(private readonly dealerService: DealerService) {}
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
@@ -35,14 +35,14 @@ export class DealerController {
       return { success: true, data };
     } catch (error) {
       const message =
-        error instanceof CustomError ? error.message : "Internal server error";
+        error instanceof CustomError ? error.message : 'Internal server error';
       return { success: false, error: message };
     }
   }
   @Post()
-  @UseInterceptors(FileInterceptor("logoFile"))
+  @UseInterceptors(FileInterceptor('logoFile'))
   async create(
-    @Body() dto: Omit<CreateDealerDto, "logo"> & { logo?: string }, // include logo in body
+    @Body() dto: Omit<CreateDealerDto, 'logo'> & { logo?: string }, // include logo in body
     @UploadedFile() file: Multer.File, // ✅ Multer file type
   ) {
     return this.dealerService.createDealer(dto, file);
@@ -54,20 +54,21 @@ export class DealerController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("/profile/me")
+  @Get('/profile/me')
   getProfile(@Req() req: AuthenticatedRequest) {
+    console.log('Request Recieved for Dealer:', req.user.id);
     return this.dealerService.getDealerById(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("/credits")
+  @Get('/credits')
   async getCredits(@Req() req: AuthenticatedRequest) {
     return this.dealerService.getDealerCredits(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put("/profile/me")
-  @UseInterceptors(FileInterceptor("logoFile"))
+  @Put('/profile/me')
+  @UseInterceptors(FileInterceptor('logoFile'))
   async updateProfile(
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateDealerDto,
@@ -77,7 +78,7 @@ export class DealerController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put("/profile/logo-path")
+  @Put('/profile/logo-path')
   async updateLogoPath(
     @Req() req: AuthenticatedRequest,
     @Body() body: { logoPath: string },
@@ -85,28 +86,28 @@ export class DealerController {
     return this.dealerService.updateDealerLogoPath(req.user.id, body.logoPath);
   }
 
-  @Get(":id")
-  findOne(@Param("id", ParseIntPipe) id: number) {
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.dealerService.getDealerById(id);
   }
 
-  @Put(":id")
-  @UseInterceptors(FileInterceptor("logoFile"))
+  @Put(':id')
+  @UseInterceptors(FileInterceptor('logoFile'))
   async update(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDealerDto & { logo?: string },
     @UploadedFile() file?: Multer.File,
   ) {
     return this.dealerService.updateDealer(id, dto, file);
   }
 
-  @Delete(":id")
-  async remove(@Param("id", ParseIntPipe) id: number) {
+  @Delete(':id')
+  async remove(@Param('id', ParseIntPipe) id: number) {
     try {
       const result = await this.dealerService.deleteDealer(id);
       return result;
     } catch (error) {
-      console.error("Error deleting dealer:", error);
+      console.error('Error deleting dealer:', error);
       throw error;
     }
   }
@@ -153,18 +154,18 @@ export class DealerController {
   //   return this.buildResponse(result);
   // }
 
-  @Post("forgot-password")
+  @Post('forgot-password')
   async forgotPassword(
-    @Body("email") email: string,
+    @Body('email') email: string,
   ): Promise<ApiResponse<User>> {
     const result = await this.dealerService.forgotPassword(email);
     return this.buildResponse(result);
   }
 
   @UseGuards(JwtAuthGuard, DealerGuard)
-  @Get("/leads/:id")
+  @Get('/leads/:id')
   async findLeadById(
-    @Param("id") id: number,
+    @Param('id') id: number,
     @Req() req,
   ): Promise<ApiResponse<Lead>> {
     const dealerId = req.user.id; // dealer is the logged-in user
@@ -172,10 +173,10 @@ export class DealerController {
     return this.buildResponse(result);
   }
 
-  @Post("reset-password")
+  @Post('reset-password')
   async resetPassword(
-    @Body("token") token: string,
-    @Body("newPassword") newPassword: string,
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string,
   ): Promise<ApiResponse<User>> {
     const result = await this.dealerService.resetPassword(token, newPassword);
     return this.buildResponse(result);
