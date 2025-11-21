@@ -253,10 +253,8 @@ const LeadsTable: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           setCurrentDealerId(data.dealerId);
-          window.alert(`Dealer id Set to: ${data.dealerId}`);
         }
       } catch (error) {
-        window.alert(`Unknown Error Occurred ${error}`);
         console.error('Failed to fetch profile:', error);
       }
     };

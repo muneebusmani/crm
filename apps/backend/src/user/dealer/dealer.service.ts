@@ -840,7 +840,9 @@ export class DealerService {
 
   /**
    * Ensure dealer_leads pivot entry exists for dealer+lead.
-   * If not, create it with status=open.
+   * If not, create it with the given status.
+   * If exists, only update status if it's a valid progression (e.g., QUOTED -> WON).
+   * Never downgrade WON status back to OPEN.
    */
   private async ensureDealerLead(
     leadId: number,
@@ -862,15 +864,29 @@ export class DealerService {
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
     if (existing) {
-      // Update the existing entry's status instead of creating a new one
-      existing.status = status;
-      const updated = await this.dealerLeadRepository.save(existing);
+      // CRITICAL: Don't downgrade WON status
+      // Only allow status updates in these cases:
+      // 1. Current status is not WON
+      // 2. New status is WON (upgrading from QUOTED)
+      const shouldUpdate =
+        existing.status !== LeadStatus.WON || status === LeadStatus.WON;
+
+      if (shouldUpdate && existing.status !== status) {
+        existing.status = status;
+        const updated = await this.dealerLeadRepository.save(existing);
+        console.log(
+          `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} from ${existing.status} to ${status}`,
+        );
+        lead.status = status;
+        this.leadsGateway.emitUpdateLead(lead);
+        return updated;
+      }
+
+      // Status unchanged, return existing
       console.log(
-        `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} with status ${status}`,
+        `🔗 DealerLead relationship exists for dealer ${dealerId} and lead ${leadId} with status ${existing.status} (no update needed)`,
       );
-      lead.status = status;
-      this.leadsGateway.emitUpdateLead(lead);
-      return updated; // return updated existing entry
+      return existing;
     }
 
     // create new pivot entry
@@ -881,6 +897,9 @@ export class DealerService {
     });
 
     const result = await this.dealerLeadRepository.save(dealerLead);
+    console.log(
+      `🔗 DealerLead relationship created for dealer ${dealerId} and lead ${leadId} with status ${status}`,
+    );
     lead.status = status;
     this.leadsGateway.emitUpdateLead(lead);
     return result;
