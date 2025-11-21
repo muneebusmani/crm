@@ -981,7 +981,7 @@ const LeadsTable: React.FC = () => {
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       {/* Check if lead is won by another dealer */}
                       {lead.wonByDealerId &&
-                      lead.wonByDealerId !== currentProfileId ? (
+                      lead.wonByDealerId !== currentDealerId ? (
                         <Typography
                           variant="caption"
                           color="error"
