@@ -1,11 +1,11 @@
-import type { ApiResponse, CreateLeadDto, UpdateLeadDto } from '@crm/types';
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ActivityLogger } from 'src/common/activity-log.subscriber';
-import { Repository } from 'typeorm';
-import { CustomError } from '../common/custom-error';
-import { AppLogger } from '../common/logger.service';
-import { Lead } from './entities/lead.entity';
+import type { ApiResponse, CreateLeadDto, UpdateLeadDto } from "@crm/types";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ActivityLogger } from "src/common/activity-log.subscriber";
+import { Repository } from "typeorm";
+import { CustomError } from "../common/custom-error";
+import { AppLogger } from "../common/logger.service";
+import { Lead } from "./entities/lead.entity";
 
 @Injectable()
 export class LeadsService {
@@ -23,8 +23,8 @@ export class LeadsService {
 
       await this.activityLogger.log(
         0,
-        'CREATE_LEAD',
-        'Lead',
+        "CREATE_LEAD",
+        "Lead",
         result.id.toString(),
         `Created lead (${result.vehicle_model})`,
       );
@@ -32,11 +32,11 @@ export class LeadsService {
       return result; // return raw entity
     } catch (error: unknown) {
       this.logger.error(
-        'Failed to create lead',
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        "Failed to create lead",
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
-      throw new CustomError('Unable to create lead');
+      throw new CustomError("Unable to create lead");
     }
   }
 
@@ -44,7 +44,7 @@ export class LeadsService {
     try {
       const leads = await this.leadRepo.find({
         where: { is_deleted: false },
-        relations: ['dealerLeads', 'dealerLeads.dealer'],
+        relations: ["dealerLeads", "dealerLeads.dealer"],
       });
 
       return leads.map((lead) => {
@@ -53,17 +53,18 @@ export class LeadsService {
           .filter((dl) => dl.dealer.id === dealerId)
           .slice(-1)[0];
 
-        // check if any dealer has WON this lead
-        const wonBy = lead.dealerLeads.find((dl) => dl.status === 'WON');
+        // check if any dealer has WON this lead via wonByDealerId field
+        const leadWon =
+          lead.wonByDealerId !== null && lead.wonByDealerId !== undefined;
 
         let status: string;
 
-        if (wonBy) {
-          // someone won already
-          status = wonBy.dealer.id === dealerId ? 'WON' : 'LOST';
+        if (leadWon) {
+          // someone won already - check if it's this dealer
+          status = lead.wonByDealerId === dealerId ? "WON" : "LOST";
         } else {
           // nobody has WON yet → show dealer's own status
-          status = dealerLead ? dealerLead.status : 'NEW';
+          status = dealerLead ? dealerLead.status : "NEW";
         }
 
         return {
@@ -73,18 +74,18 @@ export class LeadsService {
       });
     } catch (error: unknown) {
       this.logger.error(
-        'Failed to fetch leads',
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        "Failed to fetch leads",
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
-      throw new CustomError('Unable to fetch leads');
+      throw new CustomError("Unable to fetch leads");
     }
   }
 
   async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {
       return await this.leadRepo.find({
-        relations: ['dealerLeads', 'dealerLeads.dealer'],
+        relations: ["dealerLeads", "dealerLeads.dealer"],
         where: {
           dealerLeads: {
             dealer: { id: dealerId },
@@ -93,18 +94,18 @@ export class LeadsService {
       });
     } catch (error: unknown) {
       this.logger.error(
-        'Failed to fetch leads',
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        "Failed to fetch leads",
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
-      throw new CustomError('Unable to fetch leads');
+      throw new CustomError("Unable to fetch leads");
     }
   }
 
   async getLeadById(id: number, dealerId: number): Promise<Lead> {
     try {
       const lead = await this.leadRepo.findOne({
-        relations: ['dealerLeads', 'dealerLeads.dealer', 'dealerLeads.lead'],
+        relations: ["dealerLeads", "dealerLeads.dealer", "dealerLeads.lead"],
         where: {
           dealerLeads: {
             dealer: { id: dealerId },
@@ -117,11 +118,11 @@ export class LeadsService {
     } catch (error: unknown) {
       this.logger.error(
         `Failed to fetch lead ${id}`,
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
       if (error instanceof CustomError) throw error;
-      throw new CustomError('Unable to fetch lead');
+      throw new CustomError("Unable to fetch lead");
     }
   }
 
@@ -133,11 +134,11 @@ export class LeadsService {
     } catch (error: unknown) {
       this.logger.error(
         `Failed to fetch lead ${id}`,
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
       if (error instanceof CustomError) throw error;
-      throw new CustomError('Unable to fetch lead');
+      throw new CustomError("Unable to fetch lead");
     }
   }
 
@@ -149,11 +150,11 @@ export class LeadsService {
     } catch (error: unknown) {
       this.logger.error(
         `Failed to update lead ${id}`,
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
       if (error instanceof CustomError) throw error;
-      throw new CustomError('Unable to update lead');
+      throw new CustomError("Unable to update lead");
     }
   }
 
@@ -161,18 +162,82 @@ export class LeadsService {
     try {
       const lead = await this.leadRepo.findOneBy({ id });
       if (!lead) {
-        throw new CustomError('Lead not found!', 404);
+        throw new CustomError("Lead not found!", 404);
       }
       lead.is_deleted = true;
       this.leadRepo.save(lead); // better than lead.save()
     } catch (error: unknown) {
       this.logger.error(
         `Failed to delete lead ${id}`,
-        error instanceof Error ? error.stack : '',
-        'LeadsService',
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
       );
       if (error instanceof CustomError) throw error;
-      throw new CustomError('Unable to delete lead');
+      throw new CustomError("Unable to delete lead");
+    }
+  }
+
+  async fetchMoreInfo(id: number, dealerId: number) {
+    try {
+      // First, get the lead
+      const lead = await this.leadRepo.findOne({
+        where: { id },
+        relations: ["dealerLeads", "dealerLeads.dealer"],
+      });
+
+      if (!lead) {
+        throw new CustomError(`Lead with ID ${id} not found`, 404);
+      }
+
+      // Check if lead has already been fetched for more info
+      if (lead.moreInfoFetched) {
+        throw new CustomError(
+          "Additional lead info has already been fetched for this lead",
+          400,
+        );
+      }
+
+      // Check if another dealer has already won this lead
+      if (lead.wonByDealerId && lead.wonByDealerId !== dealerId) {
+        throw new CustomError(
+          "This lead has already been won by another dealer",
+          403,
+        );
+      }
+
+      // Simulate API call to fetch more info (replace with actual API call)
+      // For now, this is a placeholder for the actual implementation
+      // You would typically call an external API here to get more vehicle info, etc.
+
+      // In a real implementation, you would make an external API call here
+      // For example: const externalData = await fetch('https://api.example.com/vehicle-info', {...});
+
+      // Update the lead with the fetched information (simulated for now)
+      // You would update with the actual data received from the external API
+      lead.moreInfoFetched = true;
+      lead.updatedAt = new Date();
+
+      // Save the updated lead to persist the changes to the database
+      const updatedLead = await this.leadRepo.save(lead);
+
+      // Log the activity
+      await this.activityLogger.log(
+        dealerId,
+        "FETCH_MORE_INFO",
+        "Lead",
+        lead.id.toString(),
+        `Fetched additional information for lead ${lead.id}`,
+      );
+
+      return updatedLead;
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to fetch more info for lead ${id}`,
+        error instanceof Error ? error.stack : "",
+        "LeadsService",
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError("Unable to fetch additional lead information");
     }
   }
 }

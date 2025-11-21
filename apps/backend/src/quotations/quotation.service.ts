@@ -241,8 +241,8 @@ export class QuotationService {
       context: { quotationData },
     });
 
-    // 🔒 10. Close lead
-    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+    // 🔒 10. Mark lead as quoted
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.QUOTED);
 
     return savedQuotation;
   }

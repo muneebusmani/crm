@@ -241,8 +241,8 @@ export class InvoiceService {
       context: { invoiceData },
     });
 
-    // 🔒 10. Close lead and lock to dealer (first invoice wins)
-    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+    // 🔒 10. Mark lead as won (first invoice wins the lead)
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.WON);
 
     // 🏆 Set wonByDealerId if this is the first invoice for this lead
     if (!lead.wonByDealerId) {
@@ -255,8 +255,15 @@ export class InvoiceService {
       if (dealerEntity && dealerEntity.dealer) {
         lead.wonByDealerId = dealerEntity.dealer.id;
         await this.leadRepository.save(lead);
+
+        // ✅ CREDIT DEDUCTION: Deduct 1 credit when dealer wins the lead (first invoice to this lead across ALL dealers)
+        // This ensures that no matter how many invoices are sent to the same lead, only ONE credit is ever deducted for that lead
+        await this.dealerTierService.subtractCredits(dealerEntity.dealer.id, 1);
         console.log(
           `🏆 Lead ${lead.id} won by dealer ${dealerEntity.dealer.id} (user ${dealerId})`,
+        );
+        console.log(
+          `💰 Credit deducted for dealer ${dealerEntity.dealer.id} winning lead ${lead.id} (one-time charge per lead)`,
         );
       } else {
         console.error(
@@ -287,7 +294,7 @@ export class InvoiceService {
       relations: ["dealer", "lead"],
     });
 
-    // fetch dealer + lead (needed for credit deduction even if exists)
+    // fetch dealer + lead
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
       relations: ["dealer"],
@@ -297,12 +304,6 @@ export class InvoiceService {
 
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
-
-    // ✅ CREDIT DEDUCTION: Deduct 1 credit for every invoice sent (even if lead already linked)
-    await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
-    console.log(
-      `💰 Credit deducted for dealer ${dealerId} sending invoice to lead ${leadId}`,
-    );
 
     if (existing) {
       // Update the existing entry's status instead of creating a new one

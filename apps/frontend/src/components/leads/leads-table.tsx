@@ -10,6 +10,7 @@ import {
   RequestQuote as RequestQuoteIcon,
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
+  AutoFixHigh as AutoFixHighIcon,
 } from "@mui/icons-material";
 import ChatIcon from "@mui/icons-material/Chat";
 
@@ -429,6 +430,50 @@ const LeadsTable: React.FC = () => {
     }
   };
 
+  const handleFetchMoreInfo = async (lead: Lead) => {
+    if (!lead.id) return;
+
+    try {
+      const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData.error || "Failed to fetch additional lead info",
+        );
+      }
+
+      const result = await res.json();
+
+      if (result.success) {
+        // Update the local lead data with the new info
+        setSnackbar({
+          open: true,
+          message: "Additional lead information fetched successfully",
+          severity: "success",
+        });
+
+        // Refresh the leads data to show the update
+        fetchLeads();
+      }
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch additional lead info",
+        severity: "error",
+      });
+    }
+  };
+
   const handleLeadDelete = async (leadId: number) => {
     try {
       const res = await fetch(`/api/leads/${leadId}`, {
@@ -493,6 +538,13 @@ const LeadsTable: React.FC = () => {
         break;
       case "chat":
         handleOpenChat(currentMenuLead.id!);
+        break;
+      case "invoice":
+        setSelectedLead(currentMenuLead);
+        setOpenInvoiceDialog(true);
+        break;
+      case "fetch-info":
+        handleFetchMoreInfo(currentMenuLead);
         break;
       case "delete":
         handleLeadDelete(currentMenuLead.id!);
@@ -919,6 +971,18 @@ const LeadsTable: React.FC = () => {
                         </Typography>
                       ) : (
                         <>
+                          {/* Info Icon - Outside Menu */}
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => {
+                              handleActionClick("info", lead);
+                            }}
+                            title="View Info"
+                          >
+                            <InfoIcon fontSize="small" />
+                          </IconButton>
+
                           {/* Quotation Icon - Outside Menu */}
                           <IconButton
                             size="small"
@@ -930,19 +994,6 @@ const LeadsTable: React.FC = () => {
                             title="Send Quotation"
                           >
                             <RequestQuoteIcon fontSize="small" />
-                          </IconButton>
-
-                          {/* Invoice Icon - Outside Menu */}
-                          <IconButton
-                            size="small"
-                            color="warning"
-                            onClick={() => {
-                              setSelectedLead(lead);
-                              setOpenInvoiceDialog(true);
-                            }}
-                            title="Send Invoice"
-                          >
-                            <ReceiptLongIcon fontSize="small" />
                           </IconButton>
                         </>
                       )}
@@ -1030,17 +1081,38 @@ const LeadsTable: React.FC = () => {
           <ListItemText>View Info</ListItemText>
         </MenuItem>
         <MenuItem
-          onClick={() => handleMenuAction("chat")}
-          disabled={
-            currentMenuLead?.wonByDealerId !== undefined &&
-            currentMenuLead?.wonByDealerId !== null &&
-            currentMenuLead?.wonByDealerId !== currentProfileId
-          }
+          onClick={() => handleMenuAction("fetch-info")}
+          disabled={currentMenuLead?.moreInfoFetched === true}
         >
           <ListItemIcon>
-            <ChatIcon fontSize="small" />
+            <AutoFixHighIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open Chat</ListItemText>
+          <ListItemText>
+            {currentMenuLead?.moreInfoFetched
+              ? "Info Fetched"
+              : "Fetch More Info"}
+          </ListItemText>
+        </MenuItem>
+        {/* WARN: DO NOT REMOVE THIS */}
+        {/*<MenuItem
+            onClick={() => handleMenuAction("chat")}
+            disabled={
+              currentMenuLead?.wonByDealerId !== undefined &&
+              currentMenuLead?.wonByDealerId !== null &&
+              currentMenuLead?.wonByDealerId !== currentProfileId
+            }
+          >*/}
+        {/*<ListItemIcon>
+              <ChatIcon fontSize="small" />
+            </ListItemIcon>*/}
+        {/*<ListItemText>Open Chat</ListItemText>*/}
+        {/*</MenuItem>*/}
+        {/* WARN: DO NOT REMOVE THIS */}
+        <MenuItem onClick={() => handleMenuAction("invoice")}>
+          <ListItemIcon>
+            <ReceiptLongIcon fontSize="small" color="warning" />
+          </ListItemIcon>
+          <ListItemText>Send Invoice</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleMenuAction("delete")}>
           <ListItemIcon>

@@ -83,9 +83,10 @@ export class DealerService {
   ) {}
 
   /**
-   * Helper method to convert Supabase Storage paths to signed URLs
+   * Helper method to convert Supabase Storage paths to public URLs when possible,
+   * or generate signed URLs for private access
    * @param logoPath The logo path from database
-   * @returns Signed URL if it's a Supabase path, or original URL
+   * @returns Public URL for long-term access, or signed URL for private access
    */
   private async convertLogoToSignedUrl(
     logoPath: string | null,
@@ -97,13 +98,25 @@ export class DealerService {
       return logoPath;
     }
 
-    // If it's a Supabase Storage path, generate signed URL
+    // If it's a Supabase Storage path, try to generate public URL first, then fallback to signed URL
     if (logoPath.includes("dealer-uploads") || logoPath.startsWith("dealer/")) {
       try {
-        return await this.supabaseStorageService.getSignedUrl(logoPath, 3600);
+        // Try to generate a public URL - this will work if the bucket is public
+        const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
+
+        // If the public URL is different from a placeholder and seems valid, use it
+        if (publicUrl && !publicUrl.includes("undefined")) {
+          return publicUrl;
+        }
+
+        // If public URL isn't available, generate a signed URL with longer expiry (24 hours instead of 1 hour)
+        // and let the caching mechanism in the storage service handle the longevity
+        return await this.supabaseStorageService.getSignedUrl(logoPath, 86400); // 24 hours = 86400 seconds
       } catch (error) {
-        this.logger.warn(`Failed to generate signed URL for path: ${logoPath}`);
-        return logoPath; // Return original path if signing fails
+        this.logger.warn(
+          `Failed to generate URL for path: ${logoPath}, error: ${error}`,
+        );
+        return logoPath; // Return original path if all methods fail
       }
     }
 

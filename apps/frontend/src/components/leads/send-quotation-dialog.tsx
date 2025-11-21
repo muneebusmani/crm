@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
-import type { Lead } from '@crm/types';
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import type { Lead } from "@crm/types";
 import {
   Box,
   Button,
@@ -17,9 +17,9 @@ import {
   TableHead,
   TableRow,
   Divider,
-} from '@mui/material';
-import { get } from '@/lib/api';
-import QuotationPreviewDialog from './quotation-preview-dialog';
+} from "@mui/material";
+import { get } from "@/lib/api";
+import QuotationPreviewDialog from "./quotation-preview-dialog";
 
 interface SendQuotationDialogProps {
   open: boolean;
@@ -82,21 +82,21 @@ export default function SendQuotationDialog({
   );
 
   const [items, setItems] = useState<ItemRow[]>([]);
-  const [sellerNote, setSellerNote] = useState('');
+  const [sellerNote, setSellerNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lead, setLead] = useState<Lead | null>(null);
   const [bank, setBank] = useState<BankDetails | null>(null);
-  const [quotationTerms, setQuotationTerms] = useState<string>('');
-  const [salesTerms, setSalesTerms] = useState<string>('');
+  const [quotationTerms, setQuotationTerms] = useState<string>("");
+  const [salesTerms, setSalesTerms] = useState<string>("");
   const [dealerProfile, setDealerProfile] = useState<DealerProfile | null>(
     null,
   );
-  const [quotationNumber, setQuotationNumber] = useState<string>('');
-  const [recoveryLocation, setRecoveryLocation] = useState<string>('');
-  const [deliveryLocation, setDeliveryLocation] = useState<string>('');
+  const [quotationNumber, setQuotationNumber] = useState<string>("");
+  const [recoveryLocation, setRecoveryLocation] = useState<string>("");
+  const [deliveryLocation, setDeliveryLocation] = useState<string>("");
   const [vatPercentage, setVatPercentage] = useState<number>(10);
   const [discountPercentage, setDiscountPercentage] = useState<number>(10);
-  const [previewHtml, setPreviewHtml] = useState<string>('');
+  const [previewHtml, setPreviewHtml] = useState<string>("");
   const [openPreview, setOpenPreview] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -127,7 +127,7 @@ export default function SendQuotationDialog({
       ...prev,
       {
         id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        productName: '',
+        productName: "",
         // productDetails: '',
         unitPrice: 0,
         quantity: 1,
@@ -147,14 +147,14 @@ export default function SendQuotationDialog({
       prev.map((it) => {
         if (it.id !== id) return it;
         if (
-          field === 'productName'
+          field === "productName"
           // || field === 'productDetails'
         ) {
           return { ...it, [field]: String(value) } as ItemRow;
         }
-        let num = value === '' ? 0 : Number(value);
+        let num = value === "" ? 0 : Number(value);
         if (!Number.isFinite(num) || num < 0) num = 0;
-        if (field === 'quantity') num = Math.max(1, Math.trunc(num));
+        if (field === "quantity") num = Math.max(1, Math.trunc(num));
         return { ...it, [field]: num } as ItemRow;
       }),
     );
@@ -164,11 +164,11 @@ export default function SendQuotationDialog({
     setQuotationDate(new Date().toISOString().slice(0, 10));
     setOrderDate(new Date().toISOString().slice(0, 10));
     setItems([]);
-    setSellerNote('');
+    setSellerNote("");
     setLead(null);
-    setRecoveryLocation('');
-    setDeliveryLocation('');
-    setPreviewHtml('');
+    setRecoveryLocation("");
+    setDeliveryLocation("");
+    setPreviewHtml("");
     setOpenPreview(false);
   };
 
@@ -192,8 +192,8 @@ export default function SendQuotationDialog({
       sellerNote: sellerNote,
       items: itemsWithCalculatedValues,
       taxAmount: Number(totalVAT) || 0,
-      recoveryLocation: recoveryLocation || '',
-      deliveryLocation: deliveryLocation || '',
+      recoveryLocation: recoveryLocation || "",
+      deliveryLocation: deliveryLocation || "",
     };
   };
 
@@ -210,19 +210,19 @@ export default function SendQuotationDialog({
       setIsLoadingPreview(true);
       const payload = buildQuotationPayload();
 
-      const res = await fetch('/api/quotations/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch("/api/quotations/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error('Failed to generate preview');
+      if (!res.ok) throw new Error("Failed to generate preview");
       const html = await res.text();
       setPreviewHtml(html);
       setOpenPreview(true);
     } catch (error) {
-      console.error('Failed to generate preview:', error);
+      console.error("Failed to generate preview:", error);
     } finally {
       setIsLoadingPreview(false);
     }
@@ -241,21 +241,21 @@ export default function SendQuotationDialog({
       setIsDownloadingPdf(true);
       const payload = buildQuotationPayload();
 
-      const res = await fetch('/api/quotations/download-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch("/api/quotations/download-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error('Failed to download PDF');
+      if (!res.ok) throw new Error("Failed to download PDF");
 
       // Create a blob from the response
       const blob = await res.blob();
 
       // Create a download link and trigger it
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `quotation-${quotationNumber || Date.now()}.pdf`;
       document.body.appendChild(a);
@@ -265,7 +265,7 @@ export default function SendQuotationDialog({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Failed to download PDF:', error);
+      console.error("Failed to download PDF:", error);
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -303,13 +303,13 @@ export default function SendQuotationDialog({
         sellerNote: sellerNote,
         items: itemsWithCalculatedValues,
         taxAmount: Number(totalVAT) || 0,
-        recoveryLocation: recoveryLocation || '',
-        deliveryLocation: deliveryLocation || '',
+        recoveryLocation: recoveryLocation || "",
+        deliveryLocation: deliveryLocation || "",
       };
-      const res = await fetch('/api/quotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch("/api/quotations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
       // if (!res.ok) throw new Error('Failed to create quotation');
@@ -317,7 +317,7 @@ export default function SendQuotationDialog({
       reset();
       onClose();
     } catch (error) {
-      console.error('Failed to send quotation:', error);
+      console.error("Failed to send quotation:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -335,9 +335,9 @@ export default function SendQuotationDialog({
       if (!open || !leadId) return;
       try {
         const resp = await fetch(`/api/dealers/leads/${leadId}`, {
-          credentials: 'include',
+          credentials: "include",
         });
-        if (!resp.ok) throw new Error('Failed to load lead');
+        if (!resp.ok) throw new Error("Failed to load lead");
         const data = await resp.json();
         if (!cancelled) setLead(data);
       } catch (e) {
@@ -354,10 +354,10 @@ export default function SendQuotationDialog({
     let cancelled = false;
     async function loadBank() {
       try {
-        const resp = await fetch('/api/bank-details', {
-          credentials: 'include',
+        const resp = await fetch("/api/bank-details", {
+          credentials: "include",
         });
-        if (!resp.ok) throw new Error('Failed to load bank details');
+        if (!resp.ok) throw new Error("Failed to load bank details");
         const data = await resp.json();
         // In profile, API returns array; normalize to first
         const bankData = Array.isArray(data)
@@ -378,14 +378,14 @@ export default function SendQuotationDialog({
     let cancelled = false;
     async function loadTerms() {
       try {
-        const resp = await fetch('/api/business-setting', {
-          credentials: 'include',
+        const resp = await fetch("/api/business-setting", {
+          credentials: "include",
         });
-        if (!resp.ok) throw new Error('Failed to load business settings');
+        if (!resp.ok) throw new Error("Failed to load business settings");
         const data = await resp.json();
         if (!cancelled) {
-          setQuotationTerms(data?.quotation ?? '');
-          setSalesTerms(data?.salesTerms ?? '');
+          setQuotationTerms(data?.quotation ?? "");
+          setSalesTerms(data?.salesTerms ?? "");
         }
       } catch (e) {
         console.error(e);
@@ -401,8 +401,8 @@ export default function SendQuotationDialog({
     let cancelled = false;
     async function loadDealerProfile() {
       try {
-        const data = await get('/dealers/profile/me');
-        console.log('Response Dealer Profile:', data);
+        const data = await get("/dealers/profile/me");
+        console.log("Response Dealer Profile:", data);
         // if (!resp.ok) throw new Error('Failed to load dealer profile');
         // const data = await resp.json();
         if (!cancelled) {
@@ -435,46 +435,46 @@ export default function SendQuotationDialog({
       PaperProps={{
         sx: {
           m: 0,
-          maxHeight: '100vh',
-          maxWidth: '100vw',
+          maxHeight: "100vh",
+          maxWidth: "100vw",
           borderRadius: 0,
         },
       }}
     >
-      <DialogContent sx={{ p: 3, px: 15, height: '100vh', overflow: 'auto' }}>
+      <DialogContent sx={{ p: 3, px: 15, height: "100vh", overflow: "auto" }}>
         <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', gap: 3 }}>
+          <Box sx={{ display: "flex", gap: 3 }}>
             {/* Left: Quotation Preview */}
             <Box
               sx={{
                 flex: 1,
-                borderTop: '8px solid #007b8f',
-                borderLeft: '8px solid #666',
-                borderRight: '2px solid #007b8f',
-                borderBottom: '2px solid #007b8f',
+                borderTop: "8px solid #007b8f",
+                borderLeft: "8px solid #666",
+                borderRight: "2px solid #007b8f",
+                borderBottom: "2px solid #007b8f",
                 borderRadius: 2,
                 p: 3,
-                bgcolor: 'background.paper',
+                bgcolor: "background.paper",
               }}
             >
               {/* Header */}
               <Box
-                sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}
+                sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}
               >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   <Box
                     sx={{
                       width: 80,
                       height: 60,
-                      border: '1px solid #ddd',
+                      border: "1px solid #ddd",
                       borderRadius: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       fontSize: 10,
-                      color: 'text.secondary',
-                      overflow: 'hidden',
-                      position: 'relative',
+                      color: "text.secondary",
+                      overflow: "hidden",
+                      position: "relative",
                     }}
                   >
                     {dealerProfile?.dealer?.logo ? (
@@ -483,29 +483,29 @@ export default function SendQuotationDialog({
                         alt="Company Logo"
                         fill
                         style={{
-                          objectFit: 'contain',
+                          objectFit: "contain",
                         }}
                       />
                     ) : (
-                      'Logo'
+                      "Logo"
                     )}
                   </Box>
                   <Typography
                     variant="body2"
-                    sx={{ fontWeight: 600, color: '#007b8f' }}
+                    sx={{ fontWeight: 600, color: "#007b8f" }}
                   >
-                    {dealerProfile?.dealer?.name || 'Company Name'}
+                    {dealerProfile?.dealer?.name || "Company Name"}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {dealerProfile?.dealer?.location ||
-                      'Plot 145, street 1, london'}
+                      "Plot 145, street 1, london"}
                   </Typography>
                 </Box>
 
-                <Box sx={{ textAlign: 'right' }}>
+                <Box sx={{ textAlign: "right" }}>
                   <Typography
                     variant="h5"
-                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                    sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
                   >
                     Quotation
                   </Typography>
@@ -516,7 +516,7 @@ export default function SendQuotationDialog({
                     Quotation Date: {quotationDate}
                   </Typography>
                   <Typography variant="caption" display="block">
-                    Order Date:{' '}
+                    Order Date:{" "}
                     {new Date(lead?.createdAt as string).toLocaleDateString()}
                   </Typography>
                 </Box>
@@ -525,30 +525,30 @@ export default function SendQuotationDialog({
               {/* Vehicle Info */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
               >
                 Vehicle Info:
               </Typography>
               <Box
                 sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr 1fr',
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
                   gap: 1,
                   mb: 2,
                 }}
               >
                 <Typography variant="body2">
-                  Reg No: {lead?.vehicle_reg || lead?.vehicle_vrm || '23A13'}
+                  Reg No: {lead?.vehicle_reg || lead?.vehicle_vrm || "23A13"}
                 </Typography>
                 <Typography variant="body2">
-                  Make: {lead?.vehicle_brand || 'Audi'}
+                  Make: {lead?.vehicle_brand || "Audi"}
                 </Typography>
                 <Typography variant="body2">
-                  Model: {lead?.vehicle_model || 'm3'}
+                  Model: {lead?.vehicle_model || "m3"}
                 </Typography>
                 <Typography variant="body2">Reg Year: 2016</Typography>
                 <Typography variant="body2">
-                  Fuel Type: {lead?.fuelType || 'Petrol'}
+                  Fuel Type: {lead?.fuelType || "Petrol"}
                 </Typography>
                 <Typography variant="body2">Car Type: Engine</Typography>
               </Box>
@@ -556,8 +556,8 @@ export default function SendQuotationDialog({
               {/* Buyer Info & Recovery & Collection - Side by Side */}
               <Box
                 sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
                   gap: 3,
                   mb: 2,
                 }}
@@ -566,21 +566,21 @@ export default function SendQuotationDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                    sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
                   >
                     Buyer Info:
                   </Typography>
                   <Typography variant="body2">
-                    Name: {lead?.name || 'John'}
+                    Name: {lead?.name || "John"}
                   </Typography>
                   <Typography variant="body2">
-                    Phone: {lead?.number || '+129730283'}
+                    Phone: {lead?.number || "+129730283"}
                   </Typography>
                   <Typography variant="body2">
-                    Email: {lead?.email || 'john@gmail.com'}
+                    Email: {lead?.email || "john@gmail.com"}
                   </Typography>
                   <Typography variant="body2">
-                    Post: {lead?.postcode || '3251'}
+                    Post: {lead?.postcode || "3251"}
                   </Typography>
                 </Box>
 
@@ -588,7 +588,7 @@ export default function SendQuotationDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                    sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
                   >
                     Recovery & Collection:
                   </Typography>
@@ -620,44 +620,59 @@ export default function SendQuotationDialog({
               <TableContainer sx={{ mb: 2 }}>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ bgcolor: '#007b8f' }}>
-                      <TableCell sx={{ color: '#fff', fontWeight: 600 }}>
+                    <TableRow sx={{ bgcolor: "#007b8f" }}>
+                      <TableCell
+                        sx={{ color: "#fff", fontWeight: 600, width: "50px" }}
+                      >
+                        #
+                      </TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 600 }}>
                         Name
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ color: '#fff', fontWeight: 600 }}
+                        sx={{ color: "#fff", fontWeight: 600 }}
                       >
                         Rate
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ color: '#fff', fontWeight: 600 }}
+                        sx={{ color: "#fff", fontWeight: 600 }}
                       >
                         Qty
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ color: '#fff', fontWeight: 600 }}
+                        sx={{ color: "#fff", fontWeight: 600 }}
                       >
                         Total
                       </TableCell>
-                      <TableCell sx={{ color: '#fff' }}></TableCell>
+                      <TableCell sx={{ color: "#fff" }}></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {items.map((it) => (
+                    {items.map((it, index) => (
                       <TableRow
                         key={it.id}
-                        sx={{ borderBottom: '1px solid #007b8f' }}
+                        sx={{ borderBottom: "1px solid #007b8f" }}
                       >
+                        <TableCell
+                          align="center"
+                          sx={{
+                            verticalAlign: "middle",
+                            color: "#666",
+                            fontWeight: "medium",
+                          }}
+                        >
+                          {index + 1}
+                        </TableCell>
                         <TableCell>
                           <TextField
                             fullWidth
                             size="small"
                             value={it.productName}
                             onChange={(e) =>
-                              updateItem(it.id, 'productName', e.target.value)
+                              updateItem(it.id, "productName", e.target.value)
                             }
                             variant="standard"
                           />
@@ -683,9 +698,9 @@ export default function SendQuotationDialog({
                             size="small"
                             value={it.unitPrice}
                             onChange={(e) =>
-                              updateItem(it.id, 'unitPrice', e.target.value)
+                              updateItem(it.id, "unitPrice", e.target.value)
                             }
-                            slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
+                            slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
                             variant="standard"
                             sx={{ width: 80 }}
                           />
@@ -696,7 +711,7 @@ export default function SendQuotationDialog({
                             size="small"
                             value={it.quantity}
                             onChange={(e) =>
-                              updateItem(it.id, 'quantity', e.target.value)
+                              updateItem(it.id, "quantity", e.target.value)
                             }
                             slotProps={{ htmlInput: { min: 1, step: 1 } }}
                             variant="standard"
@@ -730,25 +745,25 @@ export default function SendQuotationDialog({
                 variant="contained"
                 sx={{
                   mb: 2,
-                  bgcolor: '#007b8f',
-                  '&:hover': { bgcolor: '#006070' },
+                  bgcolor: "#007b8f",
+                  "&:hover": { bgcolor: "#006070" },
                 }}
               >
                 Add More
               </Button>
 
               {/* Totals */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
                 <Box sx={{ minWidth: 200 }}>
                   <Box
                     sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
+                      display: "flex",
+                      justifyContent: "space-between",
                       mb: 0.5,
                     }}
                   >
                     <Typography variant="body2">VAT</Typography>
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       <TextField
                         type="number"
                         size="small"
@@ -765,13 +780,13 @@ export default function SendQuotationDialog({
                   </Box>
                   <Box
                     sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
+                      display: "flex",
+                      justifyContent: "space-between",
                       mb: 0.5,
                     }}
                   >
                     <Typography variant="body2">Discount</Typography>
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       <TextField
                         type="number"
                         size="small"
@@ -786,9 +801,9 @@ export default function SendQuotationDialog({
                       <Typography variant="body2">%</Typography>
                     </Box>
                   </Box>
-                  <Divider sx={{ my: 1, borderColor: '#007b8f' }} />
+                  <Divider sx={{ my: 1, borderColor: "#007b8f" }} />
                   <Box
-                    sx={{ display: 'flex', justifyContent: 'space-between' }}
+                    sx={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       Total
@@ -803,13 +818,13 @@ export default function SendQuotationDialog({
               {/* Bank Details */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
               >
                 Bank Details:
               </Typography>
               <Box
                 sx={{
-                  border: '1px solid #007b8f',
+                  border: "1px solid #007b8f",
                   borderRadius: 1,
                   p: 2,
                   mb: 2,
@@ -818,8 +833,8 @@ export default function SendQuotationDialog({
                 {bank ? (
                   <Box
                     sx={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
                       gap: 1,
                     }}
                   >
@@ -827,22 +842,22 @@ export default function SendQuotationDialog({
                       Account Holder: {bank.accountHolderName}
                     </Typography>
                     <Typography variant="body2">
-                      IFSC: {bank.ifscCode || 'EXMP123456'}
+                      IFSC: {bank.ifscCode || "EXMP123456"}
                     </Typography>
                     <Typography variant="body2">
                       Account Number: {bank.accountNumber}
                     </Typography>
                     <Typography variant="body2">
-                      IBAN: {bank.iban || 'EXMP123456780'}
+                      IBAN: {bank.iban || "EXMP123456780"}
                     </Typography>
                     <Typography variant="body2">
                       Bank Name: {bank.bankName}
                     </Typography>
                     <Typography variant="body2">
-                      SWIFT: {bank.swiftCode || 'EXMP1512345'}
+                      SWIFT: {bank.swiftCode || "EXMP1512345"}
                     </Typography>
                     <Typography variant="body2">
-                      Branch Name: {bank.branchName || 'Main Branch'}
+                      Branch Name: {bank.branchName || "Main Branch"}
                     </Typography>
                   </Box>
                 ) : (
@@ -855,7 +870,7 @@ export default function SendQuotationDialog({
               {/* Seller Note */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
               >
                 Seller Note:
               </Typography>
@@ -872,14 +887,14 @@ export default function SendQuotationDialog({
               {/* Quotation Terms */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
               >
                 Quotation Terms:
               </Typography>
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ display: 'block', mb: 2 }}
+                sx={{ display: "block", mb: 2 }}
               >
                 {quotationTerms ||
                   "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of"}
@@ -888,14 +903,14 @@ export default function SendQuotationDialog({
               {/* Sales Terms */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                sx={{ fontWeight: 600, mb: 1, color: "#007b8f" }}
               >
                 Sales Terms:
               </Typography>
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ display: 'block' }}
+                sx={{ display: "block" }}
               >
                 {salesTerms ||
                   "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of"}
@@ -906,21 +921,21 @@ export default function SendQuotationDialog({
             <Box
               sx={{
                 width: 280,
-                border: '2px solid #000',
+                border: "2px solid #000",
                 borderRadius: 2,
                 p: 2,
-                height: 'fit-content',
+                height: "fit-content",
               }}
             >
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {lead?.name || 'John doe'}
+                {lead?.name || "John doe"}
               </Typography>
               <Typography
                 variant="caption"
                 color="text.secondary"
                 display="block"
               >
-                {lead?.email || 'john@gmail.com'}
+                {lead?.email || "john@gmail.com"}
               </Typography>
               <Typography
                 variant="caption"
@@ -928,23 +943,23 @@ export default function SendQuotationDialog({
                 display="block"
                 sx={{ mb: 1 }}
               >
-                {lead?.number || '0401234012'}
+                {lead?.number || "0401234012"}
               </Typography>
 
               <Typography variant="caption" display="block">
-                Received:{' '}
+                Received:{" "}
                 {lead?.createdAt
-                  ? new Date(lead.createdAt).toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
+                  ? new Date(lead.createdAt).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })
-                  : '24 May 2025 at 10:00am'}
+                  : "24 May 2025 at 10:00am"}
               </Typography>
               <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-                Inquiry: #{lead?.id || '12234'}
+                Inquiry: #{lead?.id || "12234"}
               </Typography>
 
               <Typography
@@ -952,16 +967,16 @@ export default function SendQuotationDialog({
                 display="block"
                 sx={{ fontWeight: 600 }}
               >
-                VRM: {lead?.vehicle_vrm || 'ERFH349'}
+                VRM: {lead?.vehicle_vrm || "ERFH349"}
               </Typography>
               <Typography variant="caption" display="block">
-                VM: {lead?.vehicle_model || 'Ford Focus'}
+                VM: {lead?.vehicle_model || "Ford Focus"}
               </Typography>
               <Typography variant="caption" display="block">
-                Engine Code: {lead?.engine_code || 'X20XEV'}
+                Engine Code: {lead?.engine_code || "X20XEV"}
               </Typography>
               <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-                Engine Size: {lead?.engin_capacity || '2.0'}
+                Engine Size: {lead?.engin_capacity || "2.0"}
               </Typography>
 
               <Typography
@@ -978,14 +993,14 @@ export default function SendQuotationDialog({
               >
                 {lead?.description ||
                   lead?.notes ||
-                  'Looking for a replacement engine for Ford Focus'}
+                  "Looking for a replacement engine for Ford Focus"}
               </Typography>
             </Box>
           </Box>
 
           {/* Footer Actions */}
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <Button
                 variant="contained"
                 onClick={handleDownloadPdf}
@@ -996,7 +1011,7 @@ export default function SendQuotationDialog({
                   grandTotal <= 0
                 }
               >
-                {isDownloadingPdf ? 'Downloading...' : 'Download PDF'}
+                {isDownloadingPdf ? "Downloading..." : "Download PDF"}
               </Button>
               <Button
                 variant="contained"
@@ -1008,10 +1023,10 @@ export default function SendQuotationDialog({
                   grandTotal <= 0
                 }
               >
-                {isLoadingPreview ? 'Loading...' : 'Preview'}
+                {isLoadingPreview ? "Loading..." : "Preview"}
               </Button>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <Button onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
@@ -1025,7 +1040,7 @@ export default function SendQuotationDialog({
                   grandTotal <= 0
                 }
               >
-                {isSubmitting ? 'Sending...' : 'Send Quotation'}
+                {isSubmitting ? "Sending..." : "Send Quotation"}
               </Button>
             </Box>
           </Box>

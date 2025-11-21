@@ -5,9 +5,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from "typeorm";
 
-@Entity('leads')
+@Entity("leads")
 export class Lead {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -78,7 +78,7 @@ export class Lead {
   @Column({ nullable: true })
   name!: string;
 
-  @Column({ nullable: true, type: 'text' })
+  @Column({ nullable: true, type: "text" })
   description!: string;
 
   @Column({ nullable: true })
@@ -93,41 +93,44 @@ export class Lead {
   @Column({ nullable: true })
   assigned_to!: string;
 
-  @Column({ nullable: true, type: 'timestamp' })
+  @Column({ nullable: true, type: "timestamp" })
   follow_up_date!: Date;
 
-  @Column({ nullable: true, type: 'text' })
+  @Column({ nullable: true, type: "text" })
   notes!: string;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: "boolean", default: false })
   is_deleted!: boolean;
 
   @Column({ nullable: true })
   wonByDealerId!: number;
 
-  @OneToMany('DealerLead', 'lead')
+  @Column({ type: "boolean", default: false })
+  moreInfoFetched!: boolean;
+
+  @OneToMany("DealerLead", "lead")
   dealerLeads!: any[];
 
-  @OneToMany('Quotation', 'lead')
+  @OneToMany("Quotation", "lead")
   quotations!: any[];
 
-  @OneToMany('invoices', 'lead') // 'Quotation' is the target, 'dealer' is property in Quotation
+  @OneToMany("invoices", "lead") // 'Quotation' is the target, 'dealer' is property in Quotation
   invoices!: any[];
 
   @Column({
-    name: 'createdAt',
-    type: 'timestamptz',
-    default: () => 'CURRENT_TIMESTAMP',
+    name: "createdAt",
+    type: "timestamptz",
+    default: () => "CURRENT_TIMESTAMP",
   })
   createdAt!: Date;
 
   @Column({
-    name: 'updatedAt',
-    type: 'timestamptz',
-    default: () => 'CURRENT_TIMESTAMP',
+    name: "updatedAt",
+    type: "timestamptz",
+    default: () => "CURRENT_TIMESTAMP",
   })
   updatedAt!: Date;
 
-  @OneToMany('LeadMessage', 'lead')
+  @OneToMany("LeadMessage", "lead")
   messages!: any[];
 }

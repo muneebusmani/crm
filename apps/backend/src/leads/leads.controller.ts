@@ -5,7 +5,7 @@ import {
   type Lead,
   type UpdateLeadDto,
   UpdateLeadSchema,
-} from '@crm/types';
+} from "@crm/types";
 import {
   Body,
   Controller,
@@ -19,15 +19,15 @@ import {
   Req,
   UseGuards,
   UsePipes,
-} from '@nestjs/common';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { CustomError } from '../common/custom-error';
-import { LeadsGateway } from './leads.gateway';
-import { LeadsService } from './leads.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { DealerGuard } from 'src/auth/guards/dealer.guard';
+} from "@nestjs/common";
+import { ZodValidationPipe } from "nestjs-zod";
+import { CustomError } from "../common/custom-error";
+import { LeadsGateway } from "./leads.gateway";
+import { LeadsService } from "./leads.service";
+import { JwtAuthGuard } from "src/auth/guards/jwt.guard";
+import { DealerGuard } from "src/auth/guards/dealer.guard";
 
-@Controller('leads')
+@Controller("leads")
 export class LeadsController {
   constructor(
     private readonly leadsService: LeadsService,
@@ -39,7 +39,7 @@ export class LeadsController {
       return { data, success: true };
     } catch (error) {
       const message =
-        error instanceof CustomError ? error.message : 'Internal server error';
+        error instanceof CustomError ? error.message : "Internal server error";
       return { error: message, success: false };
     }
   }
@@ -62,17 +62,17 @@ export class LeadsController {
   }
 
   @UseGuards(JwtAuthGuard, DealerGuard)
-  @Get('dealer')
+  @Get("dealer")
   async findAllForDealer(@Req() req): Promise<ApiResponse<Lead[]>> {
     const dealerId = req.user.id; // dealer is the logged-in user
     const result = await this.leadsService.findAllForDealer(dealerId);
     return this.buildResponse(result);
   }
 
-  @Get(':id')
+  @Get(":id")
   @UseGuards(JwtAuthGuard, DealerGuard)
   async getLeadById(
-    @Param('id') id: number,
+    @Param("id") id: number,
     @Req() req,
   ): Promise<ApiResponse<Lead>> {
     const dealerId = req.user.id;
@@ -92,8 +92,20 @@ export class LeadsController {
     return this.buildResponse(result);
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: number): Promise<ApiResponse<any>> {
+  @Post(":id/fetch-more-info")
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  async fetchMoreInfo(
+    @Param("id") id: number,
+    @Req() req,
+  ): Promise<ApiResponse<Lead>> {
+    const dealerId = req.user.id;
+    const result = await this.leadsService.fetchMoreInfo(id, dealerId);
+    this.leadsGateway.emitUpdateLead(result); // Emit via gateway if needed
+    return this.buildResponse(result);
+  }
+
+  @Delete(":id")
+  async remove(@Param("id") id: number): Promise<ApiResponse<any>> {
     const result = await this.leadsService.remove(id);
     this.leadsGateway.emitRemoveLead(id); // Emit via gateway
     return this.buildResponse(result);
