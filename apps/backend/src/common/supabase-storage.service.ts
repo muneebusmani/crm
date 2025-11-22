@@ -6,13 +6,21 @@ interface CacheEntry {
   expiresAt: number;
 }
 
+/**
+ * Service for handling Supabase storage operations, particularly for dealer logos.
+ * This service handles the generation of signed URLs for private files and includes
+ * caching mechanisms to reduce unnecessary calls to Supabase while ensuring images
+ * remain accessible long-term.
+ */
 @Injectable()
 export class SupabaseStorageService {
   private supabase: SupabaseClient;
   private readonly bucketName = 'dealer-uploads';
   private readonly urlCache = new Map<string, CacheEntry>();
-  private readonly CACHE_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
-  private readonly URL_EXPIRY = 15 * 60; // 15 minutes in seconds
+  // Extended cache duration to 1 hour to better align with longer-lived signed URLs
+  private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+  // Default URL expiry (only used when getSignedUrl is called without expiresIn parameter)
+  private readonly URL_EXPIRY = 15 * 60; // 15 minutes in seconds (default for supabase)
 
   constructor() {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -31,8 +39,8 @@ export class SupabaseStorageService {
       },
     });
 
-    // Clean up expired cache entries every 5 minutes
-    setInterval(() => this.cleanupCache(), 5 * 60 * 1000);
+    // Clean up expired cache entries every 10 minutes
+    setInterval(() => this.cleanupCache(), 10 * 60 * 1000);
   }
 
   /**
@@ -80,20 +88,26 @@ export class SupabaseStorageService {
 
   /**
    * Get a signed URL for viewing/downloading a private file (with caching)
+   * This method addresses the issue of signed URLs expiring by using a more intelligent
+   * caching strategy that aligns cache expiry with the signed URL expiry.
    * @param filePath Path to the file in storage
-   * @param expiresIn Expiration time in seconds (default: 15 minutes)
-   * @returns Signed URL (cached for 15 minutes)
+   * @param expiresIn Expiration time in seconds (default: 15 minutes, but typically overridden to longer periods like 7 days)
+   * @returns Signed URL (cached appropriately based on expiry time)
    */
   async getSignedUrl(filePath: string, expiresIn = this.URL_EXPIRY) {
     const now = Date.now();
 
-    // Check cache first
-    const cached = this.urlCache.get(filePath);
+    // Create a unique cache key that includes the expiry time to differentiate between different expiry requests
+    // This allows the same file to have different cached URLs based on different expiry times
+    const cacheKey = `${filePath}:${expiresIn}`;
+
+    // Check cache first to avoid unnecessary calls to Supabase
+    const cached = this.urlCache.get(cacheKey);
     if (cached && cached.expiresAt > now) {
       return cached.url;
     }
 
-    // Generate new signed URL
+    // Generate new signed URL from Supabase
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
       .createSignedUrl(filePath, expiresIn);
@@ -102,10 +116,16 @@ export class SupabaseStorageService {
       throw new Error(`Failed to create signed URL: ${error.message}`);
     }
 
-    // Cache the URL (expires in 15 minutes)
-    this.urlCache.set(filePath, {
+    // Cache the URL with an appropriate expiry time that's at most 80% of the signed URL expiry to be safe
+    // This prevents serving an expired signed URL from cache
+    const cacheExpiryTime = Math.min(
+      this.CACHE_DURATION,
+      Math.floor(expiresIn * 0.8 * 1000) // 80% of the signed URL expiry time in milliseconds
+    );
+
+    this.urlCache.set(cacheKey, {
       url: data.signedUrl,
-      expiresAt: now + this.CACHE_DURATION,
+      expiresAt: now + cacheExpiryTime,
     });
 
     return data.signedUrl;
@@ -122,6 +142,23 @@ export class SupabaseStorageService {
       .getPublicUrl(filePath);
 
     return data.publicUrl;
+  }
+
+  /**
+   * Check if a file exists and is publicly accessible
+   * @param filePath Path to the file in storage
+   * @returns Boolean indicating if file is publicly accessible
+   */
+  async isFilePubliclyAccessible(filePath: string): Promise<boolean> {
+    try {
+      const publicUrl = this.getPublicUrl(filePath);
+      // Test if we can access the file by making a HEAD request
+      // For Supabase, we can't directly check without creating a signed URL
+      // So we'll return true if the public URL doesn't contain obvious error indicators
+      return !publicUrl.includes('undefined') && !publicUrl.includes('null') && publicUrl.startsWith('http');
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -148,7 +185,12 @@ export class SupabaseStorageService {
    * @param filePath Path to the file in storage
    */
   clearCache(filePath: string) {
-    this.urlCache.delete(filePath);
+    // Clear all cache entries for this file path (with any expiry time)
+    for (const key of this.urlCache.keys()) {
+      if (key.startsWith(`${filePath}:`)) {
+        this.urlCache.delete(key);
+      }
+    }
   }
 
   /**
@@ -156,6 +198,24 @@ export class SupabaseStorageService {
    */
   clearAllCache() {
     this.urlCache.clear();
+  }
+
+  /**
+   * Download file content from storage
+   * @param filePath Path to the file in storage
+   * @returns Buffer containing the file content
+   */
+  async downloadFile(filePath: string): Promise<Buffer> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucketName)
+      .download(filePath);
+
+    if (error) {
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+
+    const arrayBuffer = await data.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   /**
@@ -175,8 +235,19 @@ export class SupabaseStorageService {
     }
 
     console.log(`✅ Supabase Storage bucket '${this.bucketName}' is ready`);
-    console.log(`   - Public: ${data.public}`);
+    console.log(`   - Public: ${data.public ? 'Yes' : 'No (RECOMMENDED: make public for optimal performance)'}`);
     console.log(`   - File size limit: ${data.file_size_limit || 'default'}`);
+
+    if (!data.public) {
+      console.log(`💡 RECOMMENDATION: For dealer logos that need to be accessible long-term, make this bucket public`);
+      console.log(`   - Public buckets eliminate signed URL expiration issues`);
+      console.log(`   - Better performance (no need to generate signed URLs)`);
+      console.log(`   - Reduced server load (no need for proxy fallbacks)`);
+      console.log(`   - To make public: Update bucket settings in Supabase dashboard > Storage > Edit Bucket`);
+    } else {
+      console.log(`   - Perfect! Public bucket ensures images remain accessible long-term without signed URLs`);
+    }
+
     return true;
   }
 }

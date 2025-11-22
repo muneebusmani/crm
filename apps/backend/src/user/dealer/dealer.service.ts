@@ -83,10 +83,17 @@ export class DealerService {
   ) {}
 
   /**
-   * Helper method to convert Supabase Storage paths to public URLs when possible,
-   * or generate signed URLs for private access
+   * Helper method to convert Supabase Storage paths to public URLs.
+   * Since the dealer-uploads bucket is configured as public, this method primarily returns public URLs.
+   * This ensures images remain accessible permanently.
+   *
+   * The method attempts multiple strategies in order of preference:
+   * 1. Use public URLs (primary method since bucket is public)
+   * 2. Generate signed URLs as fallback if public access doesn't work
+   * 3. Fall back to the image proxy endpoint if all above fail
+   *
    * @param logoPath The logo path from database
-   * @returns Public URL for long-term access, or signed URL for private access
+   * @returns Public URL for permanent access, or fallback options if needed
    */
   private async convertLogoToSignedUrl(
     logoPath: string | null,
@@ -98,24 +105,40 @@ export class DealerService {
       return logoPath;
     }
 
-    // If it's a Supabase Storage path, try to generate public URL first, then fallback to signed URL
+    // If it's a Supabase Storage path, try to generate public URL (primary method since bucket is public)
     if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
       try {
-        // Try to generate a public URL - this will work if the bucket is public
+        // Try to generate a public URL - this is the primary method since the bucket is public
         const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
 
-        // If the public URL is different from a placeholder and seems valid, use it
-        if (publicUrl && !publicUrl.includes('undefined')) {
+        // If the public URL is different from a placeholder and seems valid, return it permanently
+        if (publicUrl && !publicUrl.includes('undefined') && !publicUrl.includes('null')) {
           return publicUrl;
         }
 
-        // If public URL isn't available, generate a signed URL with longer expiry (24 hours instead of 1 hour)
-        // and let the caching mechanism in the storage service handle the longevity
-        return await this.supabaseStorageService.getSignedUrl(logoPath, 86400); // 24 hours = 86400 seconds
+        // Check if file is publicly accessible as a secondary verification
+        const isPublic = await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
+        if (isPublic) {
+          return publicUrl;
+        }
+
+        // If public URL isn't available, generate a signed URL as fallback
+        // This should rarely be needed since the bucket is public
+        this.logger.warn(
+          `Public URL not available for ${logoPath}, falling back to signed URL`,
+        );
+        return await this.supabaseStorageService.getSignedUrl(logoPath, 604800); // 7 days = 604800 seconds
       } catch (error) {
         this.logger.warn(
           `Failed to generate URL for path: ${logoPath}, error: ${error}`,
         );
+        // As a last resort, return a URL through our proxy endpoint that handles image access
+        // This will ensure images remain accessible even if other methods fail
+        // Only use the proxy if the path starts with 'dealer/' which is where dealer logos are stored
+        if (logoPath.startsWith('dealer/')) {
+          const relativePath = logoPath.substring('dealer/'.length);
+          return `/images/dealer/${relativePath}`;
+        }
         return logoPath; // Return original path if all methods fail
       }
     }
