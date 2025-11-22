@@ -15,9 +15,7 @@ const GlobalLayout = async ({ children }: { children: ReactNode }) => {
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeProvider theme={theme}>
         <CssBaseline enableColorScheme />
-        <StoreProvider>
-          {children}
-        </StoreProvider>
+        <StoreProvider>{children}</StoreProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

@@ -145,9 +145,8 @@ export const leadMessagesApi = {
   // Get all messages (admin function)
   getAll: async (): Promise<LeadMessage[]> => {
     try {
-      const response = await get<ApiResponse<LeadMessage[]>>(
-        LEAD_MESSAGES_BASE,
-      );
+      const response =
+        await get<ApiResponse<LeadMessage[]>>(LEAD_MESSAGES_BASE);
 
       // If the response is already an array, return it directly
       if (Array.isArray(response)) {

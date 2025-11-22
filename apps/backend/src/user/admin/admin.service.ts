@@ -157,32 +157,13 @@ export class AdminService {
     return user;
   }
 
-  async DealerStatus(userId: number) {
+  async updateDealerStatus(userId: number, status: UserStatus): Promise<User> {
     const user = await this.findDealer(userId);
     try {
-      if (user.status === UserStatus.ACTIVE) {
-        console.log(UserStatus.IN_ACTIVE);
-        user.status = UserStatus.IN_ACTIVE;
-      } else {
-        user.status = UserStatus.ACTIVE;
-      }
+      user.status = status;
       return await this.userRepository.save(user);
     } catch (error: unknown) {
-      throw new CustomError('Unable to update dealer status');
-    }
-  }
-
-  async suspendDealer(userId: number) {
-    try {
-      const user = await this.findDealer(userId);
-      user.status =
-        user.status === UserStatus.SUSPENDED
-          ? UserStatus.ACTIVE
-          : UserStatus.SUSPENDED;
-
-      return await this.userRepository.save(user);
-    } catch (error: unknown) {
-      throw new CustomError('Unable to suspend leads');
+      throw new CustomError("Unable to update dealer status");
     }
   }
 }

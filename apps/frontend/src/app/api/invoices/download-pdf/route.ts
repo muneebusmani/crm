@@ -12,9 +12,15 @@ export async function POST(request: NextRequest) {
     const backendUrl =
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-    console.log('🔍 Next API route /api/invoices/download-pdf - forwarding to:', `${backendUrl}/invoices/download-pdf`);
+    console.log(
+      '🔍 Next API route /api/invoices/download-pdf - forwarding to:',
+      `${backendUrl}/invoices/download-pdf`,
+    );
     console.log('🔍 Next API route - token present?', !!token);
-    console.log('🔍 Next API route - payload preview:', JSON.stringify(body).slice(0, 1000));
+    console.log(
+      '🔍 Next API route - payload preview:',
+      JSON.stringify(body).slice(0, 1000),
+    );
 
     const response = await fetch(`${backendUrl}/invoices/download-pdf`, {
       method: 'POST',
@@ -25,9 +31,15 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    console.log('🔍 Next API route - backend response status:', response.status);
+    console.log(
+      '🔍 Next API route - backend response status:',
+      response.status,
+    );
     const responseText = await response.text();
-    console.log('🔍 Next API route - backend response body (truncated):', responseText.slice(0, 2000));
+    console.log(
+      '🔍 Next API route - backend response body (truncated):',
+      responseText.slice(0, 2000),
+    );
 
     if (!response.ok) {
       return NextResponse.json(
@@ -36,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const pdfBuffer = await (new Response(responseText).arrayBuffer()); // response.text() already consumed; adjust below
+    const pdfBuffer = await new Response(responseText).arrayBuffer(); // response.text() already consumed; adjust below
     // NOTE: above line is only placeholder; if backend returned binary, we need response.arrayBuffer() not response.text().
     // Prefer to re-fetch properly for binary case - to be safe, re-request here using fetch with keepalive flag.
     // But for diagnostics the earlier logs already showed response body/status.

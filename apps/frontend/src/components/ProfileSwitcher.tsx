@@ -11,7 +11,12 @@ import {
   Typography,
   Box,
 } from '@mui/material';
-import { AccountCircle, Person, SwapHoriz, Settings } from '@mui/icons-material';
+import {
+  AccountCircle,
+  Person,
+  SwapHoriz,
+  Settings,
+} from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { selectProfileAction } from '@/actions/selectProfileAction';
 
@@ -20,9 +25,9 @@ interface ProfileSwitcherProps {
   currentProfileEmail?: string;
 }
 
-export default function ProfileSwitcher({ 
-  currentProfileName, 
-  currentProfileEmail 
+export default function ProfileSwitcher({
+  currentProfileName,
+  currentProfileEmail,
 }: ProfileSwitcherProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const router = useRouter();

@@ -57,7 +57,11 @@ export default function QuotationDialog({
           chatId,
           message: {
             id: `q-temp-${Date.now()}`,
-            content: JSON.stringify({ subject, message, price: parseFloat(price) }),
+            content: JSON.stringify({
+              subject,
+              message,
+              price: parseFloat(price),
+            }),
             type: 'quotation',
             createdAt,
           },

@@ -2,8 +2,9 @@ import type {
   ApiResponse,
   CreateAdminDto,
   UpdateAdminDto,
+  UpdateDealerStatusDto,
   User,
-} from '@crm/types';
+} from "@crm/types";
 import {
   Body,
   Controller,
@@ -57,15 +58,12 @@ export class AdminController {
     return this.adminService.deleteAdmin(id);
   }
 
-  @Patch('dealer/:id/status')
-  async dealerStatus(@Param('id') id: number) {
-    const user = this.adminService.DealerStatus(id);
-    return this.buildResponse(user);
-  }
-
-  @Patch('dealer/:id/suspend')
-  async suspendDealer(@Param('id') id: number): Promise<ApiResponse<User>> {
-    const user = await this.adminService.suspendDealer(id);
+  @Patch("dealer/:id/status")
+  async updateDealerStatus(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateDealerStatusDto,
+  ) {
+    const user = this.adminService.updateDealerStatus(id, dto.status);
     return this.buildResponse(user);
   }
 

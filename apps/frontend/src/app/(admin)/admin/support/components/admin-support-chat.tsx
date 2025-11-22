@@ -149,7 +149,8 @@ export default function AdminSupportChat() {
 
         convos.push({
           dealerId,
-          dealerName: dealer?.dealer?.name || dealer?.username || `Dealer ${dealerId}`,
+          dealerName:
+            dealer?.dealer?.name || dealer?.username || `Dealer ${dealerId}`,
           lastMessage: lastMsg.body,
           lastMessageTime: lastMsg.createdAt,
           unreadCount: 0, // Can be enhanced later
@@ -321,7 +322,14 @@ export default function AdminSupportChat() {
             color: 'white',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 1,
+            }}
+          >
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Support Tickets
             </Typography>
@@ -331,11 +339,16 @@ export default function AdminSupportChat() {
               disabled={refreshing}
               sx={{ color: 'white' }}
             >
-              <RefreshIcon sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+              <RefreshIcon
+                sx={{
+                  animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                }}
+              />
             </IconButton>
           </Box>
           <Typography variant="caption" sx={{ opacity: 0.9 }}>
-            {conversations.length} active conversation{conversations.length !== 1 ? 's' : ''}
+            {conversations.length} active conversation
+            {conversations.length !== 1 ? 's' : ''}
           </Typography>
         </Box>
 
@@ -362,7 +375,9 @@ export default function AdminSupportChat() {
           {filteredConversations.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
-                {searchQuery ? 'No conversations found' : 'No support requests yet'}
+                {searchQuery
+                  ? 'No conversations found'
+                  : 'No support requests yet'}
               </Typography>
             </Box>
           ) : (

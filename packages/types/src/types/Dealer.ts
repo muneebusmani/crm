@@ -1,3 +1,4 @@
+import { UserStatus } from './UserStatus';
 import { File } from 'zod/v4/core/schemas.cjs';
 
 export interface Dealer {
@@ -28,6 +29,7 @@ export interface DealerFlatData {
   contactEmail: string;
   tierId?: number;
   tierName?: string;
+  status: UserStatus;
 }
 
 export interface Tier {

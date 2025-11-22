@@ -7,7 +7,9 @@ import type { CompanyUser } from '@crm/types';
 export async function selectProfileAction(profileId: number) {
   try {
     // Call the backend to verify profile ownership and get profile data
-    const response = await get<CompanyUser>(`/company-users/select/${profileId}`);
+    const response = await get<CompanyUser>(
+      `/company-users/select/${profileId}`,
+    );
 
     if (!response) {
       return { success: false, message: 'Failed to select profile' };
@@ -27,16 +29,17 @@ export async function selectProfileAction(profileId: number) {
     cookieStore.set('selected_profile_name', response.name, commonOptions);
     cookieStore.set('selected_profile_email', response.email, commonOptions);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Profile selected successfully',
-      profile: response
+      profile: response,
     };
   } catch (error) {
     console.error('Profile selection error:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Failed to select profile' 
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : 'Failed to select profile',
     };
   }
 }
