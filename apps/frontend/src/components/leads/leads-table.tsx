@@ -391,32 +391,6 @@ const LeadsTable: React.FC = () => {
         // Set the selected lead with basic info
         setSelectedLead(lead);
         setOpenInfoDialog(true);
-
-        // Load detailed info in the background
-        if (!lead.email || !lead.vehicle_brand) {
-          // Only fetch if we don't have basic details
-          try {
-            setIsInfoDialogLoading(true);
-            const detailedLead = await fetchLeadById(lead.id!);
-            if (detailedLead) {
-              setSelectedLead((prev) => ({
-                ...prev,
-                ...detailedLead,
-                // Preserve any existing fields that might be missing in the detailed response
-                ...(prev?.name && !detailedLead.name
-                  ? { name: prev.name }
-                  : {}),
-                ...(prev?.email && !detailedLead.email
-                  ? { email: prev.email }
-                  : {}),
-              }));
-            }
-          } catch (error) {
-            console.error('Error fetching lead details:', error);
-          } finally {
-            setIsInfoDialogLoading(false);
-          }
-        }
         break;
       }
 

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Lead } from "@crm/types";
+import { Lead } from '@crm/types';
 import {
   Build,
   CalendarToday,
@@ -17,7 +17,7 @@ import {
   Speed,
   Title as TitleIcon,
   Update,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -35,38 +35,38 @@ import {
   Typography,
   TypographyVariant,
   useTheme,
-} from "@mui/material";
-import { useEffect, useState } from "react";
+} from '@mui/material';
+import { useEffect, useState, useRef } from 'react';
 
 // Helper component for consistent info display
 const InfoItem = ({
   icon: Icon,
   label,
   value,
-  valueVariant = "body1" as const,
+  valueVariant = 'body1' as const,
 }: {
   icon: React.ElementType;
   label: string;
   value: React.ReactNode;
   valueVariant?:
-    | "body1"
-    | "body2"
-    | "subtitle1"
-    | "subtitle2"
-    | "caption"
-    | "button"
-    | "h1"
-    | "h2"
-    | "h3"
-    | "h4"
-    | "h5"
-    | "h6"
-    | "inherit"
-    | "overline"
-    | "srOnly";
+    | 'body1'
+    | 'body2'
+    | 'subtitle1'
+    | 'subtitle2'
+    | 'caption'
+    | 'button'
+    | 'h1'
+    | 'h2'
+    | 'h3'
+    | 'h4'
+    | 'h5'
+    | 'h6'
+    | 'inherit'
+    | 'overline'
+    | 'srOnly';
 }) => (
-  <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-    <Box sx={{ mt: 0.5, color: "primary.main" }}>
+  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+    <Box sx={{ mt: 0.5, color: 'primary.main' }}>
       <Icon fontSize="small" />
     </Box>
     <Box>
@@ -74,7 +74,7 @@ const InfoItem = ({
         {label}
       </Typography>
       <Typography variant={valueVariant as TypographyVariant}>
-        {value || "-"}
+        {value || '-'}
       </Typography>
     </Box>
   </Box>
@@ -99,6 +99,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
   const [localLead, setLocalLead] = useState<Lead | null>(lead);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const hasMadeApiCall = useRef(false); // Track if API call has been made
   const theme = useTheme();
 
   // Reset local state when dialog closes
@@ -107,6 +108,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
       // Reset on close to prepare for next open
       setLocalLead(lead);
       setIsInitialLoad(true);
+      hasMadeApiCall.current = false; // Reset the API call flag when dialog closes
     }
   }, [open]);
 
@@ -115,25 +117,27 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
     let cancelled = false;
 
     const loadLead = async () => {
-      // Only proceed if dialog is open, lead exists, and it's the initial load for this dialog instance
-      if (open && lead?.id && isInitialLoad) {
+      // Only proceed if dialog is open, lead exists, it's the initial load for this dialog instance, and API hasn't been called yet
+      if (open && lead?.id && isInitialLoad && !hasMadeApiCall.current) {
+        hasMadeApiCall.current = true; // Set the flag to prevent duplicate calls
         setIsLoading(true);
 
         try {
           const resp = await fetch(`/api/dealers/leads/${lead.id}`, {
-            credentials: "include",
+            credentials: 'include',
           });
-          if (!resp.ok) throw new Error("Failed to load lead");
+          if (!resp.ok) throw new Error('Failed to load lead');
           const data = await resp.json();
           if (!cancelled) {
             setLocalLead(data);
-            setIsInitialLoad(false); // Set this AFTER updating the lead data to prevent re-running
+            setIsInitialLoad(false);
           }
         } catch (e) {
-          console.error("Error loading lead:", e);
+          console.error('Error loading lead:', e);
           // If API call fails, continue with original lead data
           setLocalLead(lead);
-          setIsInitialLoad(false); // Set this even on error so we stop trying
+          setIsInitialLoad(false);
+          hasMadeApiCall.current = false; // Reset flag on error to allow retry
         } finally {
           if (!cancelled) {
             setIsLoading(false);
@@ -185,14 +189,14 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
 
   // Format date for display
   const formatDate = (dateString?: string | Date) => {
-    if (!dateString) return "-";
+    if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -200,20 +204,20 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
   const getConditionStatus = () => {
     if (!localLead) return null;
     const conditions = [];
-    if (localLead.reconditioned_condition === "Yes")
-      conditions.push("Reconditioned");
-    if (localLead.used_condition === "Yes") conditions.push("Used");
-    if (localLead.new_condition === "Yes") conditions.push("New");
-    if (conditions.length === 0) return "Not specified";
-    return conditions.join(", ");
+    if (localLead.reconditioned_condition === 'Yes')
+      conditions.push('Reconditioned');
+    if (localLead.used_condition === 'Yes') conditions.push('Used');
+    if (localLead.new_condition === 'Yes') conditions.push('New');
+    if (conditions.length === 0) return 'Not specified';
+    return conditions.join(', ');
   };
 
   // Get supply preference
   const getSupplyPreference = () => {
-    if (localLead.part_supplied === "No") return "Not supplying parts";
-    if (localLead.supply_only === "Yes") return "Supply only";
-    if (localLead.consider_both === "Yes") return "Open to both";
-    return "Not specified";
+    if (localLead.part_supplied === 'No') return 'Not supplying parts';
+    if (localLead.supply_only === 'Yes') return 'Supply only';
+    if (localLead.consider_both === 'Yes') return 'Open to both';
+    return 'Not specified';
   };
 
   return (
@@ -221,12 +225,12 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
       <DialogTitle>
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Info color="primary" />
             <Typography variant="h6">
               Lead Information: {localLead.name || `#${localLead.id}`}
@@ -245,7 +249,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
           {/* Lead Header */}
           <Paper sx={{ p: 3, mb: 3, backgroundColor: theme.palette.grey[50] }}>
             <Typography variant="h5" gutterBottom>
-              {localLead.name || "Unnamed Lead"}
+              {localLead.name || 'Unnamed Lead'}
             </Typography>
 
             <Grid container spacing={2}>
@@ -264,7 +268,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                   icon={CalendarToday}
                   label="Created"
                   value={
-                    localLead.createdAt ? formatDate(localLead.createdAt) : "-"
+                    localLead.createdAt ? formatDate(localLead.createdAt) : '-'
                   }
                 />
               </GridItem>
@@ -273,7 +277,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                   icon={Update}
                   label="Last Updated"
                   value={
-                    localLead.updatedAt ? formatDate(localLead.updatedAt) : "-"
+                    localLead.updatedAt ? formatDate(localLead.updatedAt) : '-'
                   }
                 />
               </GridItem>
@@ -282,11 +286,11 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                   <Chip
                     label={localLead.status}
                     color={
-                      localLead.status === "Converted"
-                        ? "success"
-                        : localLead.status === "Lost"
-                          ? "error"
-                          : "default"
+                      localLead.status === 'Converted'
+                        ? 'success'
+                        : localLead.status === 'Lost'
+                          ? 'error'
+                          : 'default'
                     }
                     size="small"
                     sx={{ mt: 1 }}
@@ -301,7 +305,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
             <Typography
               variant="h6"
               gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
             >
               <DirectionsCar color="primary" />
               Vehicle Information
@@ -312,8 +316,8 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                 <InfoItem
                   icon={TitleIcon}
                   label="Make & Model"
-                  value={`${localLead.vehicle_brand || ""} ${
-                    localLead.vehicle_model || ""
+                  value={`${localLead.vehicle_brand || ''} ${
+                    localLead.vehicle_model || ''
                   }`.trim()}
                 />
               </GridItem>
@@ -321,8 +325,8 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                 <InfoItem
                   icon={Speed}
                   label="Engine"
-                  value={`${localLead.engin_capacity || ""} ${
-                    localLead.engine_code ? `(${localLead.engine_code})` : ""
+                  value={`${localLead.engin_capacity || ''} ${
+                    localLead.engine_code ? `(${localLead.engine_code})` : ''
                   }`.trim()}
                 />
               </GridItem>
@@ -376,7 +380,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
             <Typography
               variant="h6"
               gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
             >
               <Build color="primary" />
               Part Requirements
@@ -394,10 +398,10 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                 <InfoItem
                   icon={LocalShipping}
                   label="Collection Required"
-                  value={localLead.collection_required || "Not specified"}
+                  value={localLead.collection_required || 'Not specified'}
                 />
               </GridItem>
-              {localLead.consider_all_condition === "Yes" && (
+              {localLead.consider_all_condition === 'Yes' && (
                 <GridItem size={{ xs: 12 }}>
                   <Chip
                     label="Considers all conditions"
@@ -415,11 +419,11 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
             {/* Description */}
             {localLead.description && (
               <GridItem size={{ xs: 12, md: 6 }}>
-                <Paper sx={{ p: 3, height: "100%" }}>
+                <Paper sx={{ p: 3, height: '100%' }}>
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                   >
                     <Note color="primary" />
                     Description
@@ -434,11 +438,11 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
             {/* Notes */}
             {localLead.notes && (
               <GridItem size={{ xs: 12, md: 6 }}>
-                <Paper sx={{ p: 3, height: "100%" }}>
+                <Paper sx={{ p: 3, height: '100%' }}>
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                   >
                     <Note color="primary" />
                     Notes
@@ -462,7 +466,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                   icon={CalendarToday}
                   label="Created"
                   value={
-                    localLead.createdAt ? formatDate(localLead.createdAt) : "-"
+                    localLead.createdAt ? formatDate(localLead.createdAt) : '-'
                   }
                   valueVariant="body2"
                 />
@@ -472,7 +476,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
                   icon={Update}
                   label="Last Updated"
                   value={
-                    localLead.updatedAt ? formatDate(localLead.updatedAt) : "-"
+                    localLead.updatedAt ? formatDate(localLead.updatedAt) : '-'
                   }
                   valueVariant="body2"
                 />
@@ -499,7 +503,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
           color="primary"
           sx={{
             minWidth: 120,
-            "&:hover": { backgroundColor: theme.palette.primary.dark },
+            '&:hover': { backgroundColor: theme.palette.primary.dark },
           }}
         >
           Close
