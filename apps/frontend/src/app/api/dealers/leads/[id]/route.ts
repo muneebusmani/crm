@@ -3,7 +3,7 @@ import { get } from '@/lib/api';
 
 export async function GET(_req: Request, context: { params: { id: string } }) {
   try {
-    const idParam = context.params?.id;
+    const idParam = (await context.params)?.id;
     const id = Number(idParam);
     if (!idParam || Number.isNaN(id)) {
       return NextResponse.json({ error: 'Invalid lead id' }, { status: 400 });
@@ -17,7 +17,10 @@ export async function GET(_req: Request, context: { params: { id: string } }) {
         if (anyResp.success) {
           return NextResponse.json(anyResp.data ?? anyResp);
         }
-        return NextResponse.json({ error: anyResp.error || 'Failed to fetch lead' }, { status: 500 });
+        return NextResponse.json(
+          { error: anyResp.error || 'Failed to fetch lead' },
+          { status: 500 },
+        );
       }
     }
     // Fallback

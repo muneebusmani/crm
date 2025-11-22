@@ -72,20 +72,16 @@ export class InvoiceService {
     dealerId: number,
     companyUserId?: number,
   ): Promise<Invoice> {
-    // 🔍 1. Verify lead ownership
+    // 🔍 1. Verify lead ownership and availability
     const lead = await this.leadRepository.findOne({
       where: {
         id: createInvoiceDto.leadId,
         is_deleted: false,
-        dealerLeads: { dealer: { id: dealerId } },
       },
-      relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
     if (!lead) {
-      throw new NotFoundException(
-        'Lead not found or does not belong to this dealer',
-      );
+      throw new NotFoundException('Lead not found');
     }
 
     // 🔍 2. Find dealer with profile
@@ -96,6 +92,27 @@ export class InvoiceService {
 
     if (!dealer) {
       throw new NotFoundException('Dealer not found');
+    }
+
+    // 🚫 Check if lead is won by another dealer (but allow same dealer to send more invoices)
+    if (lead.wonByDealerId && lead.wonByDealerId !== dealer.dealer?.id) {
+      throw new ForbiddenException(
+        'This lead has already been won by another dealer',
+      );
+    }
+
+    // 🔒 Check if the current dealer already won this lead (in dealer_leads table)
+    const dealerLead = await this.dealerLeadRepository.findOne({
+      where: {
+        dealer: { id: dealerId },
+        lead: { id: createInvoiceDto.leadId }
+      }
+    });
+
+    if (dealerLead && dealerLead.status === LeadStatus.WON) {
+      throw new ForbiddenException(
+        'Cannot create invoice for a lead that you have already won',
+      );
     }
 
     const setting = await this.businessSettingRepository.findOne({
@@ -238,8 +255,31 @@ export class InvoiceService {
       context: { invoiceData },
     });
 
-    // 🔒 10. Close lead
-    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+    // 🔒 10. Mark lead as won (first invoice wins the lead)
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.WON);
+
+    // 🏆 Set wonByDealerId if this is the first invoice for this lead
+    if (!lead.wonByDealerId) {
+      // Use the already fetched dealer entity
+      if (dealer && dealer.dealer) {
+        lead.wonByDealerId = dealer.dealer.id;
+        await this.leadRepository.save(lead);
+
+        // ✅ CREDIT DEDUCTION: Deduct 1 credit when dealer wins the lead (first invoice to this lead across ALL dealers)
+        // This ensures that no matter how many invoices are sent to the same lead, only ONE credit is ever deducted for that lead
+        await this.dealerTierService.subtractCredits(dealer.dealer.id, 1);
+        console.log(
+          `🏆 Lead ${lead.id} won by dealer ${dealer.dealer.id} (user ${dealerId})`,
+        );
+        console.log(
+          `💰 Credit deducted for dealer ${dealer.dealer.id} winning lead ${lead.id} (one-time charge per lead)`,
+        );
+      } else {
+        console.error(
+          `❌ Dealer not found for user ID ${dealerId}, skipping wonByDealerId update`,
+        );
+      }
+    }
 
     return savedInvoice;
   }
@@ -257,14 +297,13 @@ export class InvoiceService {
     dealerId: number,
     status: string,
   ) {
-    // check if already exists
-
+    // check if any relationship already exists (regardless of status)
     const existing = await this.dealerLeadRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
       relations: ['dealer', 'lead'],
     });
 
-    // fetch dealer + lead (needed for credit deduction even if exists)
+    // fetch dealer + lead
     const dealer = await this.userRepository.findOne({
       where: { id: dealerId },
       relations: ['dealer'],
@@ -275,17 +314,16 @@ export class InvoiceService {
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
-    // ✅ CREDIT DEDUCTION: Deduct 1 credit for every invoice sent (even if lead already linked)
-    await this.dealerTierService.subtractCredits(dealer?.dealer.id, 1);
-    console.log(
-      `💰 Credit deducted for dealer ${dealerId} sending invoice to lead ${leadId}`,
-    );
-
     if (existing) {
+      // Update the existing entry's status instead of creating a new one
+      existing.status = status;
+      const updated = await this.dealerLeadRepository.save(existing);
       console.log(
-        `🔗 DealerLead relationship already exists for dealer ${dealerId} and lead ${leadId}`,
+        `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} with status ${status}`,
       );
-      return existing; // already linked
+      lead.status = status;
+      this.leadsGateway.emitUpdateLead(lead);
+      return updated; // return updated existing entry
     }
 
     // create new pivot entry

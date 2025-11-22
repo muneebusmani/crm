@@ -131,7 +131,10 @@ export class QuotationController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const dealerId = req.user.id;
-    console.log('🔍 Controller.downloadPdf - Received DTO:', JSON.stringify(createQuotationDto, null, 2));
+    console.log(
+      '🔍 Controller.downloadPdf - Received DTO:',
+      JSON.stringify(createQuotationDto, null, 2),
+    );
     console.log('🔍 Controller.downloadPdf - DealerId:', dealerId);
     const pdfBuffer = await this.quotationService.generatePdf(
       createQuotationDto,

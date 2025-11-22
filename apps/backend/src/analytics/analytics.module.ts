@@ -8,10 +8,11 @@ import { Quotation } from 'src/quotations/entities/quotation.entity';
 import { Invoice } from 'src/invoices/entities/invoice.entity';
 import { User } from 'src/user/entities/user.entity';
 import { DealerLead } from 'src/user/entities/dealer-lead.entity';
+import { DealerTier } from 'src/user/entities/dealer-tier.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Lead, Quotation, Invoice, User, DealerLead]),
+    TypeOrmModule.forFeature([Lead, Quotation, Invoice, User, DealerLead, DealerTier]),
     LeadsModule,
   ],
   controllers: [AnalyticsController],

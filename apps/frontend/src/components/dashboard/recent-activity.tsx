@@ -37,7 +37,8 @@ export default function RecentActivity({
     });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
+    if (!status) return 'default';
     const statusLower = status.toLowerCase();
     if (statusLower === 'new') return 'primary';
     if (statusLower === 'contacted' || statusLower === 'sent') return 'info';
@@ -87,7 +88,7 @@ export default function RecentActivity({
                             {lead.name || 'Unnamed Lead'}
                           </Typography>
                           <Chip
-                            label={lead.status}
+                            label={lead.status || 'NEW'}
                             size="small"
                             color={getStatusColor(lead.status) as any}
                           />

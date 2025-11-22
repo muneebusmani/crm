@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import Image from 'next/image';
 import type { Lead } from '@crm/types';
 import {
@@ -84,6 +84,7 @@ export default function SendQuotationDialog({
   const [items, setItems] = useState<ItemRow[]>([]);
   const [sellerNote, setSellerNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasAddedInitialItem = useRef(false);
   const [lead, setLead] = useState<Lead | null>(null);
   const [bank, setBank] = useState<BankDetails | null>(null);
   const [quotationTerms, setQuotationTerms] = useState<string>('');
@@ -325,9 +326,16 @@ export default function SendQuotationDialog({
 
   // Load initial data
   useEffect(() => {
-    if (!open) return;
-    if (items.length === 0) addItem();
-  }, [open]);
+    if (!open) {
+      // Reset the flag when dialog closes, so it adds initial item next time it opens
+      hasAddedInitialItem.current = false;
+      return;
+    }
+    if (items.length === 0 && !hasAddedInitialItem.current) {
+      addItem();
+      hasAddedInitialItem.current = true;
+    }
+  }, [open, items.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -646,7 +654,7 @@ export default function SendQuotationDialog({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {items.map((it) => (
+                    {items.map((it, index) => (
                       <TableRow
                         key={it.id}
                         sx={{ borderBottom: '1px solid #007b8f' }}
@@ -705,7 +713,7 @@ export default function SendQuotationDialog({
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="body2">
-                            ${lineTotal(it).toFixed(0)}
+                            £{lineTotal(it).toFixed(0)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -794,7 +802,7 @@ export default function SendQuotationDialog({
                       Total
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      ${grandTotal.toFixed(0)}
+                      £{grandTotal.toFixed(0)}
                     </Typography>
                   </Box>
                 </Box>

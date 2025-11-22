@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Box,
   Chip,
@@ -30,6 +31,8 @@ import InvoiceDetailDialog from './invoice-detail-dialog';
 
 const InvoicesTable: React.FC = () => {
   const theme = useTheme();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -68,6 +71,23 @@ const InvoicesTable: React.FC = () => {
 
     fetchInvoices();
   }, []);
+
+  // Handle opening invoice from URL query parameter
+  useEffect(() => {
+    const invoiceId = searchParams.get('id');
+    if (invoiceId && invoices.length > 0 && !openDetailDialog) {
+      const invoice = invoices.find((inv) => inv.id === invoiceId);
+      if (invoice) {
+        console.log('Opening invoice from URL:', invoiceId);
+        setSelectedInvoice(invoice);
+        setOpenDetailDialog(true);
+        // Clear the query parameter after a short delay
+        setTimeout(() => {
+          router.replace('/dealer/invoices', { scroll: false });
+        }, 100);
+      }
+    }
+  }, [searchParams, invoices, openDetailDialog, router]);
 
   // Filter and paginate
   const filteredInvoices = invoices.filter((invoice) =>

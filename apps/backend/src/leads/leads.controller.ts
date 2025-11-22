@@ -56,7 +56,7 @@ export class LeadsController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async find(@Req() req): Promise<ApiResponse<Lead[]>> {
-    const dealerId = req.user.id; // dealer is the logged-in user
+    const dealerId = req.user.id;
     const result = await this.leadsService.findAll(dealerId);
     return this.buildResponse(result);
   }
@@ -64,7 +64,7 @@ export class LeadsController {
   @UseGuards(JwtAuthGuard, DealerGuard)
   @Get('dealer')
   async findAllForDealer(@Req() req): Promise<ApiResponse<Lead[]>> {
-    const dealerId = req.user.id; // dealer is the logged-in user
+    const dealerId = req.user.id;
     const result = await this.leadsService.findAllForDealer(dealerId);
     return this.buildResponse(result);
   }
@@ -89,6 +89,18 @@ export class LeadsController {
     const { id, ...updateFields } = dto;
     const result = await this.leadsService.update(id, updateFields);
     this.leadsGateway.emitUpdateLead(result); // Emit via gateway
+    return this.buildResponse(result);
+  }
+
+  @Post(':id/fetch-more-info')
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  async fetchMoreInfo(
+    @Param('id') id: number,
+    @Req() req,
+  ): Promise<ApiResponse<Lead>> {
+    const dealerId = req.user.id;
+    const result = await this.leadsService.fetchMoreInfo(id, dealerId);
+    this.leadsGateway.emitUpdateLead(result); // Emit via gateway if needed
     return this.buildResponse(result);
   }
 

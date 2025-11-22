@@ -83,9 +83,10 @@ export class DealerService {
   ) {}
 
   /**
-   * Helper method to convert Supabase Storage paths to signed URLs
+   * Helper method to convert Supabase Storage paths to public URLs when possible,
+   * or generate signed URLs for private access
    * @param logoPath The logo path from database
-   * @returns Signed URL if it's a Supabase path, or original URL
+   * @returns Public URL for long-term access, or signed URL for private access
    */
   private async convertLogoToSignedUrl(
     logoPath: string | null,
@@ -97,13 +98,25 @@ export class DealerService {
       return logoPath;
     }
 
-    // If it's a Supabase Storage path, generate signed URL
+    // If it's a Supabase Storage path, try to generate public URL first, then fallback to signed URL
     if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
       try {
-        return await this.supabaseStorageService.getSignedUrl(logoPath, 3600);
+        // Try to generate a public URL - this will work if the bucket is public
+        const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
+
+        // If the public URL is different from a placeholder and seems valid, use it
+        if (publicUrl && !publicUrl.includes('undefined')) {
+          return publicUrl;
+        }
+
+        // If public URL isn't available, generate a signed URL with longer expiry (24 hours instead of 1 hour)
+        // and let the caching mechanism in the storage service handle the longevity
+        return await this.supabaseStorageService.getSignedUrl(logoPath, 86400); // 24 hours = 86400 seconds
       } catch (error) {
-        this.logger.warn(`Failed to generate signed URL for path: ${logoPath}`);
-        return logoPath; // Return original path if signing fails
+        this.logger.warn(
+          `Failed to generate URL for path: ${logoPath}, error: ${error}`,
+        );
+        return logoPath; // Return original path if all methods fail
       }
     }
 
@@ -176,7 +189,7 @@ export class DealerService {
   // }
 
   async createDealer(
-    dto: Omit<CreateDealerDto, 'logo'>,
+    dto: Omit<CreateDealerDto, 'logo'> & { logo?: string },
     logoFile?: Multer.File,
   ) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -190,9 +203,10 @@ export class DealerService {
     });
     const savedUser = await this.userRepository.save(user);
 
-    // 2 Handle logo upload
+    // 2 Handle logo - support both file upload and logo path
     let logoUrl = '';
     if (logoFile) {
+      // Handle traditional file upload
       const ext = extname(logoFile.originalname);
       const baseName = basename(logoFile.originalname, ext)
         .replace(/\s+/g, '-')
@@ -205,6 +219,9 @@ export class DealerService {
       }
       fs.writeFileSync(join(uploadDir, filename), logoFile.buffer);
       logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+    } else if (dto.logo) {
+      // Handle logo path (e.g., from Supabase storage)
+      logoUrl = dto.logo;
     }
 
     // 3 Find tier
@@ -347,7 +364,7 @@ export class DealerService {
     if (user.dealer.logo) {
       user.dealer.logo = await this.convertLogoToSignedUrl(user.dealer.logo);
     }
-
+    this.logger.log(`Returning Dealer Profile: ${JSON.stringify(user)}`);
     return user;
   }
 
@@ -371,7 +388,11 @@ export class DealerService {
     };
   }
 
-  async updateDealer(id: number, dto: UpdateDealerDto, logoFile?: Multer.File) {
+  async updateDealer(
+    id: number,
+    dto: UpdateDealerDto & { logo?: string },
+    logoFile?: Multer.File,
+  ) {
     // Check if user exists and has dealer
     const existingUser = await this.userRepository.findOne({
       where: { id },
@@ -395,9 +416,10 @@ export class DealerService {
       await this.userRepository.update(id, updateUser);
     }
 
-    // Handle logo file upload
+    // Handle logo - support both file upload and logo path
     let logoUrl = existingUser.dealer.logo; // keep existing if no new file
     if (logoFile) {
+      // Handle traditional file upload
       const safeName = logoFile.originalname
         .replace(/\s+/g, '-')
         .replace(/[^\w\-\.]/g, '');
@@ -412,6 +434,9 @@ export class DealerService {
       fs.writeFileSync(uploadPath, logoFile.buffer);
 
       logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+    } else if (dto.logo) {
+      // Handle logo path (e.g., from Supabase storage)
+      logoUrl = dto.logo;
     }
 
     // Update dealer fields
@@ -488,15 +513,110 @@ export class DealerService {
       relations: ['dealer'],
     });
 
-    if (!user || !user.dealer) {
-      throw new NotFoundException('Dealer not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    // Delete dealer record first (due to foreign key constraint)
-    await this.dealerRepository.delete(user.dealer.id);
+    const userId = user.id;
+    const dealerId = user.dealer?.id; // May be null if dealer entry is already deleted
 
-    // Then delete user
-    return await this.userRepository.delete(id);
+    // CASCADE DELETE: Remove all related records in correct order
+    // Use QueryRunner for transaction to ensure atomicity
+    const queryRunner =
+      this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Delete invoice items (child of invoices)
+      await queryRunner.query(
+        `DELETE FROM invoice_items WHERE "invoiceId" IN (SELECT id FROM invoices WHERE "userId" = $1)`,
+        [userId],
+      );
+
+      // 2. Delete invoices
+      await queryRunner.query(`DELETE FROM invoices WHERE "userId" = $1`, [
+        userId,
+      ]);
+
+      // 3. Delete quotation items (child of quotations)
+      await queryRunner.query(
+        `DELETE FROM quotation_items WHERE "quotationId" IN (SELECT id FROM quotations WHERE "userId" = $1)`,
+        [userId],
+      );
+
+      // 4. Delete quotations
+      await queryRunner.query(`DELETE FROM quotations WHERE "userId" = $1`, [
+        userId,
+      ]);
+
+      // 5. Delete dealer leads (pivot table) - uses userId
+      await queryRunner.query(`DELETE FROM dealer_leads WHERE "userId" = $1`, [
+        userId,
+      ]);
+
+      // 6. Delete bank details
+      await queryRunner.query(`DELETE FROM bank_details WHERE "userId" = $1`, [
+        userId,
+      ]);
+
+      // Only delete dealer-specific records if dealerId exists
+      if (dealerId) {
+        // 7. Delete lead messages
+        await queryRunner.query(
+          `DELETE FROM lead_messages WHERE "dealerId" = $1`,
+          [dealerId],
+        );
+
+        // 8. Update leads: Remove wonByDealerId references
+        await queryRunner.query(
+          `UPDATE leads SET "wonByDealerId" = NULL WHERE "wonByDealerId" = $1`,
+          [dealerId],
+        );
+
+        // 9. Delete business settings
+        await queryRunner.query(
+          `DELETE FROM business_settings WHERE "dealerId" = $1`,
+          [dealerId],
+        );
+
+        // 10. Delete dealer tier credits
+        await queryRunner.query(
+          `DELETE FROM dealer_tier_credit WHERE "dealerId" = $1`,
+          [dealerId],
+        );
+
+        // 11. Delete company users
+        await queryRunner.query(
+          `DELETE FROM company_users WHERE "dealer_id" = $1`,
+          [dealerId],
+        );
+
+        // 12. Delete dealer record
+        await queryRunner.query(`DELETE FROM dealer WHERE id = $1`, [dealerId]);
+      }
+
+      // 13. Finally delete user
+      await queryRunner.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
+
+      await queryRunner.commitTransaction();
+
+      this.logger.log(
+        `Successfully deleted user ${userId}${dealerId ? ` (dealer ${dealerId})` : ''} and all related records`,
+      );
+      return {
+        success: true,
+        message: 'Dealer and all related data deleted successfully',
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Failed to delete user ${userId}:`, error);
+      throw new BadRequestException(
+        `Failed to delete dealer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // async createQuotation(dto: CreateQuotationDto, dealerId: number) {
@@ -707,7 +827,8 @@ export class DealerService {
       const lead = await this.leadRepository.findOneBy({ id: leadId });
       if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
-      // Call pivot helper function
+      // Call pivot helper function - the ensureDealerLead method now properly handles
+      // status transitions to prevent downgrades
       await this.ensureDealerLead(leadId, dealerId, LeadStatus.OPEN);
 
       return lead;
@@ -720,21 +841,20 @@ export class DealerService {
 
   /**
    * Ensure dealer_leads pivot entry exists for dealer+lead.
-   * If not, create it with status=open.
+   * If not, create it with the given status.
+   * If exists, only update status if it's a valid progression (e.g., OPEN -> QUOTED, QUOTED -> WON).
+   * Never downgrade status (e.g., WON -> QUOTED, QUOTED -> OPEN).
    */
   private async ensureDealerLead(
     leadId: number,
     dealerId: number,
     status: string,
   ) {
-    // check if already exists
-
+    // check if any relationship already exists (regardless of status)
     const existing = await this.dealerLeadRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
       relations: ['dealer', 'lead'],
     });
-
-    if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOneBy({ id: dealerId });
@@ -744,6 +864,29 @@ export class DealerService {
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
+    if (existing) {
+      // Only allow status updates that follow the progression: OPEN -> QUOTED -> WON
+      // Prevent any downgrades like QUOTED -> OPEN, WON -> QUOTED, etc.
+      const shouldUpdate = this.isValidStatusTransition(existing.status, status);
+
+      if (shouldUpdate && existing.status !== status) {
+        existing.status = status;
+        const updated = await this.dealerLeadRepository.save(existing);
+        console.log(
+          `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} from ${existing.status} to ${status}`,
+        );
+        lead.status = status;
+        this.leadsGateway.emitUpdateLead(lead);
+        return updated;
+      }
+
+      // Status unchanged, return existing
+      console.log(
+        `🔗 DealerLead relationship exists for dealer ${dealerId} and lead ${leadId} with status ${existing.status} (no update needed)`,
+      );
+      return existing;
+    }
+
     // create new pivot entry
     const dealerLead = this.dealerLeadRepository.create({
       dealer,
@@ -751,10 +894,39 @@ export class DealerService {
       status: status,
     });
 
-    const result = await this.dealerLeadRepository.save(dealerLead); // 👈 FIXED
+    const result = await this.dealerLeadRepository.save(dealerLead);
+    console.log(
+      `🔗 DealerLead relationship created for dealer ${dealerId} and lead ${leadId} with status ${status}`,
+    );
     lead.status = status;
     this.leadsGateway.emitUpdateLead(lead);
     return result;
+  }
+
+  /**
+   * Checks if a status transition is valid based on the progression:
+   * OPEN -> QUOTED -> WON
+   * Valid transitions: OPEN -> QUOTED, OPEN -> WON, QUOTED -> WON
+   * Invalid transitions: QUOTED -> OPEN, WON -> QUOTED, WON -> OPEN
+   */
+  private isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
+    if (currentStatus === newStatus) {
+      return false; // No need to update if status is the same
+    }
+
+    // Define status progression hierarchy: OPEN < QUOTED < WON
+    const statusOrder = {
+      [LeadStatus.OPEN]: 0,
+      [LeadStatus.QUOTED]: 1,
+      [LeadStatus.WON]: 2,
+      [LeadStatus.CONTACT]: 0, // Assuming CONTACT is at same level as OPEN
+    };
+
+    const currentOrder = statusOrder[currentStatus as keyof typeof statusOrder] ?? -1;
+    const newOrder = statusOrder[newStatus as keyof typeof statusOrder] ?? -1;
+
+    // Only allow transitions to higher or same status levels
+    return newOrder > currentOrder;
   }
 
   private async leadMessage(leadId: number, dealerId: number, content: string) {

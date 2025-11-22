@@ -72,20 +72,16 @@ export class QuotationService {
     dealerId: number,
     companyUserId?: number,
   ): Promise<Quotation> {
-    // 🔍 1. Verify lead ownership
+    // 🔍 1. Verify lead ownership and availability
     const lead = await this.leadRepository.findOne({
       where: {
         id: createQuotationDto.leadId,
         is_deleted: false,
-        dealerLeads: { dealer: { id: dealerId } },
       },
-      relations: ['dealerLeads', 'dealerLeads.dealer'],
     });
 
     if (!lead) {
-      throw new NotFoundException(
-        'Lead not found or does not belong to this dealer',
-      );
+      throw new NotFoundException('Lead not found');
     }
 
     // 🔍 2. Find dealer with profile
@@ -98,13 +94,32 @@ export class QuotationService {
       throw new NotFoundException('Dealer not found');
     }
 
+    // 🚫 Check if lead is won by another dealer
+    // Use dealer.dealer.id (Dealer Entity ID) for comparison
+    if (lead.wonByDealerId && lead.wonByDealerId !== dealer.dealer?.id) {
+      throw new ForbiddenException(
+        'This lead has already been won by another dealer',
+      );
+    }
+
+    // 🔒 Check if the current dealer already won this lead (in dealer_leads table)
+    const dealerLead = await this.dealerLeadRepository.findOne({
+      where: {
+        dealer: { id: dealerId },
+        lead: { id: createQuotationDto.leadId }
+      }
+    });
+
+    if (dealerLead && dealerLead.status === LeadStatus.WON) {
+      throw new ForbiddenException(
+        'Cannot create quotation for a lead that you have already won',
+      );
+    }
+
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
     if (!setting) throw new NotFoundException('Business setting not found');
-
-    // 🧾 3. Generate unique quotation number
-    const quotationNumber = await this.generateQuotationNumber();
 
     // 💰 4. Calculate totals
     let subTotal = 0;
@@ -127,21 +142,46 @@ export class QuotationService {
     totalDiscount = Math.round(totalDiscount);
     const grandTotal = Math.round(subTotal - totalDiscount + totalTax);
 
-    // 🧾 5. Create quotation
-    const quotation = this.quotationRepository.create({
-      quotationNumber,
-      date: createQuotationDto.date,
-      lead,
-      dealer,
-      company_user_id: companyUserId || null,
-      sellerNote: createQuotationDto.sellerNote,
-      subTotal,
-      taxAmount: totalTax,
-      grandTotal,
-      status: QuotationStatus.PENDING,
-    });
+    // 🧾 5. Create quotation with retry mechanism for unique quotation number
+    let savedQuotation;
+    const maxRetries = 5;
 
-    const savedQuotation = await this.quotationRepository.save(quotation);
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Generate quotation number for this attempt
+        const quotationNumber = await this.generateQuotationNumber();
+
+        // Create quotation
+        const quotation = this.quotationRepository.create({
+          quotationNumber,
+          date: createQuotationDto.date,
+          lead,
+          dealer,
+          company_user_id: companyUserId || null,
+          sellerNote: createQuotationDto.sellerNote,
+          subTotal,
+          taxAmount: totalTax,
+          grandTotal,
+          status: QuotationStatus.PENDING,
+        });
+
+        savedQuotation = await this.quotationRepository.save(quotation);
+        break; // Success, exit retry loop
+      } catch (error) {
+        if (error.code === '23505' && error.detail && error.detail.includes('quotationNumber')) {
+          // Duplicate key error for quotationNumber, retry
+          console.log(`Duplicate quotation number on attempt ${attempt + 1}, retrying...`);
+          continue;
+        } else {
+          // Some other error, re-throw
+          throw error;
+        }
+      }
+    }
+
+    if (!savedQuotation) {
+      throw new BadRequestException('Failed to create quotation after multiple attempts');
+    }
 
     // 📦 6. Create quotation items
     const quotationItems = createQuotationDto.items.map((item) =>
@@ -233,13 +273,13 @@ export class QuotationService {
     // 📧 9. Send quotation mail
     await this.mailService.sendMail({
       to: lead.email,
-      subject: `Quotation ${quotation.quotationNumber}`,
+      subject: `Quotation ${savedQuotation.quotationNumber}`,
       template: 'quotation-pdf',
       context: { quotationData },
     });
 
-    // 🔒 10. Close lead
-    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.CLOSE);
+    // 🔒 10. Mark lead as quoted
+    await this.ensureDealerLead(lead.id, dealerId!, LeadStatus.QUOTED);
 
     return savedQuotation;
   }
@@ -257,14 +297,11 @@ export class QuotationService {
     dealerId: number,
     status: string,
   ) {
-    // check if already exists
-
+    // check if any relationship already exists (regardless of status)
     const existing = await this.dealerLeadRepository.findOne({
-      where: { dealer: { id: dealerId }, lead: { id: leadId }, status: status },
+      where: { dealer: { id: dealerId }, lead: { id: leadId } },
       relations: ['dealer', 'lead'],
     });
-
-    if (existing) return existing; // already linked
 
     // fetch dealer + lead (only ids needed)
     const dealer = await this.userRepository.findOne({
@@ -277,14 +314,26 @@ export class QuotationService {
     const lead = await this.leadRepository.findOneBy({ id: leadId });
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
+    if (existing) {
+      // Update the existing entry's status instead of creating a new one
+      existing.status = status;
+      const updated = await this.dealerLeadRepository.save(existing);
+      console.log(
+        `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} with status ${status}`,
+      );
+      // Only emit the lead with updated dealer status, but don't update the main leads table status
+      this.leadsGateway.emitUpdateLead(lead);
+      return updated; // return updated existing entry
+    }
+
     // create new pivot entry
-    const dealerLead = await this.dealerLeadRepository.create({
+    const dealerLead = this.dealerLeadRepository.create({
       dealer,
       lead,
       status: status,
     });
-    lead.status = status;
     const result = await this.dealerLeadRepository.save(dealerLead);
+    // Only emit the lead, but don't update the main leads table status
     this.leadsGateway.emitUpdateLead(lead);
 
     // ❌ REMOVED: Credits should NOT be deducted for quotations
@@ -344,8 +393,21 @@ export class QuotationService {
   }
 
   private async generateQuotationNumber(): Promise<string> {
-    const count = await this.quotationRepository.count();
-    const nextNumber = count + 1;
+    // Use database locking to ensure uniqueness
+    const latestQuotation = await this.quotationRepository
+      .createQueryBuilder('quotation')
+      .select('MAX(quotation.quotationNumber)', 'maxNumber')
+      .where("quotation.quotationNumber LIKE '#VL%'")
+      .getRawOne();
+
+    let nextNumber = 1;
+    if (latestQuotation && latestQuotation.maxNumber) {
+      const lastNumber = parseInt(latestQuotation.maxNumber.replace('#VL', ''), 10);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
     return `#VL${nextNumber.toString().padStart(7, '0')}`;
   }
 

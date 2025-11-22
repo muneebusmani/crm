@@ -28,7 +28,8 @@ export class AnalyticsController {
     try {
       console.log('🎯 Dashboard endpoint hit');
       console.log('👤 User:', req.user);
-      const userType = req.user.type; // 'admin' or 'dealer'
+      const userType = req.user.role; // 'admin' or 'dealer'
+      console.log('🔍 Logging Request', req);
       const dealerId = userType === 'dealer' ? req.user.id : undefined;
       console.log('🔍 User type:', userType, 'Dealer ID:', dealerId);
 

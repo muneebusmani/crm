@@ -36,6 +36,7 @@ const DealerTopbarWrapper = () => {
 
   // Routes where topbar should be hidden
   const excludedRoutes = [
+    '/dealer',
     '/dealer/profile',
     '/dealer/profiles',
     '/dealer/select-profile',

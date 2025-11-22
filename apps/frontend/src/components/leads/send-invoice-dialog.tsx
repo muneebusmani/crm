@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import Image from 'next/image';
 import type { Lead } from '@crm/types';
 import {
@@ -75,15 +75,16 @@ export default function SendInvoiceDialog({
   onSuccess,
 }: SendInvoiceDialogProps) {
   const [invoiceDate, setInvoiceDate] = useState<string>(
-  new Date().toISOString().slice(0, 10),
-);
-const [orderDate, setOrderDate] = useState<string>(
-  new Date().toISOString().slice(0, 10),
-);
+    new Date().toISOString().slice(0, 10),
+  );
+  const [orderDate, setOrderDate] = useState<string>(
+    new Date().toISOString().slice(0, 10),
+  );
 
   const [items, setItems] = useState<ItemRow[]>([]);
   const [sellerNote, setSellerNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasAddedInitialItem = useRef(false);
   const [lead, setLead] = useState<Lead | null>(null);
   const [bank, setBank] = useState<BankDetails | null>(null);
   const [quotationTerms, setQuotationTerms] = useState<string>('');
@@ -249,10 +250,10 @@ const [orderDate, setOrderDate] = useState<string>(
       });
 
       if (!res.ok) throw new Error('Failed to download PDF');
-      
+
       // Create a blob from the response
       const blob = await res.blob();
-      
+
       // Create a download link and trigger it
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -260,7 +261,7 @@ const [orderDate, setOrderDate] = useState<string>(
       a.download = `invoice-${invoiceNumber || Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
-      
+
       // Cleanup
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
@@ -325,9 +326,16 @@ const [orderDate, setOrderDate] = useState<string>(
 
   // Load initial data
   useEffect(() => {
-    if (!open) return;
-    if (items.length === 0) addItem();
-  }, [open]);
+    if (!open) {
+      // Reset the flag when dialog closes, so it adds initial item next time it opens
+      hasAddedInitialItem.current = false;
+      return;
+    }
+    if (items.length === 0 && !hasAddedInitialItem.current) {
+      addItem();
+      hasAddedInitialItem.current = true;
+    }
+  }, [open, items.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -427,9 +435,9 @@ const [orderDate, setOrderDate] = useState<string>(
   }, [open, invoiceNumber]);
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
+    <Dialog
+      open={open}
+      onClose={onClose}
       maxWidth={false}
       fullScreen
       PaperProps={{
@@ -438,7 +446,7 @@ const [orderDate, setOrderDate] = useState<string>(
           maxHeight: '100vh',
           maxWidth: '100vw',
           borderRadius: 0,
-        }
+        },
       }}
     >
       <DialogContent sx={{ p: 3, px: 15, height: '100vh', overflow: 'auto' }}>
@@ -490,7 +498,10 @@ const [orderDate, setOrderDate] = useState<string>(
                       'Logo'
                     )}
                   </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#007b8f' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: '#007b8f' }}
+                  >
                     {dealerProfile?.dealer?.name || 'Company Name'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -500,7 +511,10 @@ const [orderDate, setOrderDate] = useState<string>(
                 </Box>
 
                 <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+                  >
                     Invoice
                   </Typography>
                   <Typography variant="caption" display="block">
@@ -517,7 +531,10 @@ const [orderDate, setOrderDate] = useState<string>(
               </Box>
 
               {/* Vehicle Info */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+              >
                 Vehicle Info:
               </Typography>
               <Box
@@ -612,16 +629,36 @@ const [orderDate, setOrderDate] = useState<string>(
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: '#007b8f' }}>
-                      <TableCell sx={{ color: '#fff', fontWeight: 600 }}>Name</TableCell>
-                      <TableCell align="right" sx={{ color: '#fff', fontWeight: 600 }}>Rate</TableCell>
-                      <TableCell align="right" sx={{ color: '#fff', fontWeight: 600 }}>Qty</TableCell>
-                      <TableCell align="right" sx={{ color: '#fff', fontWeight: 600 }}>Price</TableCell>
+                      <TableCell sx={{ color: '#fff', fontWeight: 600 }}>
+                        Name
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ color: '#fff', fontWeight: 600 }}
+                      >
+                        Rate
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ color: '#fff', fontWeight: 600 }}
+                      >
+                        Qty
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ color: '#fff', fontWeight: 600 }}
+                      >
+                        Price
+                      </TableCell>
                       <TableCell sx={{ color: '#fff' }}></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {items.map((it) => (
-                      <TableRow key={it.id} sx={{ borderBottom: '1px solid #007b8f' }}>
+                    {items.map((it, index) => (
+                      <TableRow
+                        key={it.id}
+                        sx={{ borderBottom: '1px solid #007b8f' }}
+                      >
                         <TableCell>
                           <TextField
                             fullWidth
@@ -676,7 +713,7 @@ const [orderDate, setOrderDate] = useState<string>(
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="body2">
-                            ${lineTotal(it).toFixed(0)}
+                            £{lineTotal(it).toFixed(0)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -699,7 +736,11 @@ const [orderDate, setOrderDate] = useState<string>(
                 onClick={addItem}
                 size="small"
                 variant="contained"
-                sx={{ mb: 2, bgcolor: '#007b8f', '&:hover': { bgcolor: '#006070' } }}
+                sx={{
+                  mb: 2,
+                  bgcolor: '#007b8f',
+                  '&:hover': { bgcolor: '#006070' },
+                }}
               >
                 Add More
               </Button>
@@ -761,18 +802,26 @@ const [orderDate, setOrderDate] = useState<string>(
                       Total
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      ${grandTotal.toFixed(0)}
+                      £{grandTotal.toFixed(0)}
                     </Typography>
                   </Box>
                 </Box>
               </Box>
 
               {/* Bank Details */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+              >
                 Bank Details:
               </Typography>
               <Box
-                sx={{ border: '1px solid #007b8f', borderRadius: 1, p: 2, mb: 2 }}
+                sx={{
+                  border: '1px solid #007b8f',
+                  borderRadius: 1,
+                  p: 2,
+                  mb: 2,
+                }}
               >
                 {bank ? (
                   <Box
@@ -812,7 +861,10 @@ const [orderDate, setOrderDate] = useState<string>(
               </Box>
 
               {/* Seller Note */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+              >
                 Seller Note:
               </Typography>
               <TextField
@@ -826,7 +878,10 @@ const [orderDate, setOrderDate] = useState<string>(
               />
 
               {/* Quotation Terms */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+              >
                 Quotation Terms:
               </Typography>
               <Typography
@@ -839,7 +894,10 @@ const [orderDate, setOrderDate] = useState<string>(
               </Typography>
 
               {/* Sales Terms */}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
+              >
                 Sales Terms:
               </Typography>
               <Typography
@@ -936,8 +994,8 @@ const [orderDate, setOrderDate] = useState<string>(
           {/* Footer Actions */}
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 onClick={handleDownloadPdf}
                 disabled={
                   isDownloadingPdf ||

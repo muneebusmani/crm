@@ -69,17 +69,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: { sub: number; email: string; role: string }) {
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
+      relations: ['dealer'], // Load dealer relationship
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    // Attach role also from DB if you want stronger trust
+    // Return minimal data needed for authentication and authorization
+    // Maintain backward compatibility with existing code that expects id, email, role
     return {
       id: user.id,
       email: user.email,
-      role: user.type,
+      role: user.type, // Backward compatible: role field
+      dealer: user.dealer ? { id: user.dealer.id } : null, // Only include dealer ID, not the entire object
     };
   }
 }

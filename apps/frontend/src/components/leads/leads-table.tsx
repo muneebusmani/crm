@@ -10,6 +10,7 @@ import {
   RequestQuote as RequestQuoteIcon,
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
+  AutoFixHigh as AutoFixHighIcon,
 } from '@mui/icons-material';
 import ChatIcon from '@mui/icons-material/Chat';
 
@@ -38,8 +39,9 @@ import {
   DialogTitle,
   DialogContent,
   Select,
+  Tooltip,
 } from '@mui/material';
-import { useRouter } from 'next/navigation'; // ✅ App Router hook
+import { useRouter, useSearchParams } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState, useMemo } from 'react';
 import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
@@ -51,6 +53,7 @@ import LeadNotesPanel from '../LeadNotesPanel';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const handleOpenChat = (leadId: number) => {
     router.push(`/dealer/messages?leadId=${leadId}`);
   };
@@ -80,6 +83,9 @@ const LeadsTable: React.FC = () => {
     null,
   );
   const [currentProfileId, setCurrentProfileId] = useState<number | undefined>(
+    undefined,
+  );
+  const [currentDealerId, setCurrentDealerId] = useState<number | undefined>(
     undefined,
   );
   const [notePreviews, setNotePreviews] = useState<Map<number, string>>(
@@ -205,6 +211,22 @@ const LeadsTable: React.FC = () => {
     fetchLeads();
   }, []);
 
+  // Handle opening lead from URL query parameter
+  useEffect(() => {
+    const leadId = searchParams.get('id');
+    if (leadId && leads.length > 0 && !openInfoDialog) {
+      const lead = leads.find((l) => String(l.id) === leadId);
+      if (lead) {
+        console.log('Opening lead from URL:', leadId);
+        handleActionClick('info', lead);
+        // Clear the query parameter after a short delay
+        setTimeout(() => {
+          router.replace('/dealer/leads', { scroll: false });
+        }, 100);
+      }
+    }
+  }, [searchParams, leads, openInfoDialog, router]);
+
   // Fetch current profile ID
   useEffect(() => {
     const fetchProfile = async () => {
@@ -222,11 +244,27 @@ const LeadsTable: React.FC = () => {
     };
     fetchProfile();
   }, []);
+  useEffect(() => {
+    const fetchDealer = async () => {
+      try {
+        const res = await fetch('/api/dealer-profile', {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentDealerId(data.dealerId);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchDealer();
+  }, []);
 
   // Reset page to 1 when rows per page changes
   useEffect(() => {
     setPage(1);
-  }, [rowsPerPage]);
+  }, []);
 
   // Calculate filtered leads
   const filteredLeads = useMemo(() => {
@@ -353,32 +391,6 @@ const LeadsTable: React.FC = () => {
         // Set the selected lead with basic info
         setSelectedLead(lead);
         setOpenInfoDialog(true);
-
-        // Load detailed info in the background
-        if (!lead.email || !lead.vehicle_brand) {
-          // Only fetch if we don't have basic details
-          try {
-            setIsInfoDialogLoading(true);
-            const detailedLead = await fetchLeadById(lead.id!);
-            if (detailedLead) {
-              setSelectedLead((prev) => ({
-                ...prev,
-                ...detailedLead,
-                // Preserve any existing fields that might be missing in the detailed response
-                ...(prev?.name && !detailedLead.name
-                  ? { name: prev.name }
-                  : {}),
-                ...(prev?.email && !detailedLead.email
-                  ? { email: prev.email }
-                  : {}),
-              }));
-            }
-          } catch (error) {
-            console.error('Error fetching lead details:', error);
-          } finally {
-            setIsInfoDialogLoading(false);
-          }
-        }
         break;
       }
 
@@ -406,6 +418,50 @@ const LeadsTable: React.FC = () => {
         open: true,
         message:
           error instanceof Error ? error.message : 'Failed to update lead',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleFetchMoreInfo = async (lead: Lead) => {
+    if (!lead.id) return;
+
+    try {
+      const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData.error || 'Failed to fetch additional lead info',
+        );
+      }
+
+      const result = await res.json();
+
+      if (result.success) {
+        // Update the local lead data with the new info
+        setSnackbar({
+          open: true,
+          message: 'Additional lead information fetched successfully',
+          severity: 'success',
+        });
+
+        // Refresh the leads data to show the update
+        fetchLeads();
+      }
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to fetch additional lead info',
         severity: 'error',
       });
     }
@@ -475,6 +531,13 @@ const LeadsTable: React.FC = () => {
         break;
       case 'chat':
         handleOpenChat(currentMenuLead.id!);
+        break;
+      case 'invoice':
+        setSelectedLead(currentMenuLead);
+        setOpenInvoiceDialog(true);
+        break;
+      case 'fetch-info':
+        handleFetchMoreInfo(currentMenuLead);
         break;
       case 'delete':
         handleLeadDelete(currentMenuLead.id!);
@@ -558,8 +621,8 @@ const LeadsTable: React.FC = () => {
               '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // Make
               '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // Model
               '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // VRM
-              '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Registration
-              '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 280 }, // Additional Notes
+              '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Year
+              '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 280 }, // Customer Notes
               '& th:nth-of-type(9), & td:nth-of-type(9)': { minWidth: 140 }, // Fuel Type
               '& th:nth-of-type(10), & td:nth-of-type(10)': { minWidth: 180 }, // Engine Title
               '& th:nth-of-type(11), & td:nth-of-type(11)': { minWidth: 140 }, // Engine Capacity
@@ -591,6 +654,16 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
+                    VRM
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Post Code
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
                     Make
                   </Typography>
                 </TableCell>
@@ -602,17 +675,12 @@ const LeadsTable: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
-                    VRM
+                    Year
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="bold">
-                    Registration
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Additional Notes
+                    Customer Notes
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -682,28 +750,136 @@ const LeadsTable: React.FC = () => {
                   <TableCell>
                     <Typography>{lead.name || '-'}</Typography>
                   </TableCell>
-                  <TableCell>{lead.email || '-'}</TableCell>
-                  <TableCell>{lead.number || '-'}</TableCell>
+                  <TableCell>
+                    {lead.email ? (
+                      <Tooltip
+                        title={lead.email}
+                        placement="top"
+                        componentsProps={{
+                          tooltip: {
+                            sx: {
+                              fontSize: '1.25rem', // Increase tooltip text size
+                            },
+                          },
+                        }}
+                      >
+                        <a
+                          href={`mailto:${lead.email}`}
+                          style={{
+                            textDecoration: 'none',
+                            color: '#1976d2', // Primary blue color
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.textDecoration = 'underline')
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.textDecoration = 'none')
+                          }
+                        >
+                          {lead.email.length > 19
+                            ? `${lead.email.substring(0, 19)}...`
+                            : lead.email}
+                        </a>
+                      </Tooltip>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {lead.number ? (
+                      <Tooltip
+                        title={lead.number}
+                        placement="top"
+                        componentsProps={{
+                          tooltip: {
+                            sx: {
+                              fontSize: '1.25rem', // Increase tooltip text size
+                            },
+                          },
+                        }}
+                      >
+                        <a
+                          href={`https://wa.me/${lead.number.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            textDecoration: 'none',
+                            color: '#1976d2', // Primary blue color
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.textDecoration = 'underline')
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.textDecoration = 'none')
+                          }
+                        >
+                          {lead.number.length > 11
+                            ? `${lead.number.substring(0, 11)}...`
+                            : lead.number}
+                        </a>
+                      </Tooltip>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {(lead.vehicle_vrm?.toUpperCase().trim() || '-').replace(
+                      /\s+/g,
+                      '',
+                    ) || '-'}
+                  </TableCell>
+
+                  <TableCell>
+                    {(lead.postcode?.toUpperCase().trim() || '-').replace(
+                      /\s+/g,
+                      '',
+                    ) || '-'}
+                  </TableCell>
                   <TableCell>{lead.vehicle_brand || '-'}</TableCell>
                   <TableCell>{lead.vehicle_model || '-'}</TableCell>
-                  <TableCell>{lead.vehicle_vrm || '-'}</TableCell>
                   <TableCell>{lead.vehicle_reg || '-'}</TableCell>
                   <TableCell>
-                    {lead.description
-                      ? lead.description.length > 15
-                        ? `${lead.description.slice(0, 15)}...`
-                        : lead.description
-                      : 'N/A'}
+                    <Tooltip
+                      title={lead.description}
+                      placement="top"
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            fontSize: '1.25rem', // Increase tooltip text size
+                          },
+                        },
+                      }}
+                    >
+                      <span>
+                        {lead.description
+                          ? lead.description.length > 15
+                            ? `${lead.description.slice(0, 15)}...`
+                            : lead.description
+                          : '-'}
+                      </span>
+                    </Tooltip>
                   </TableCell>
                   <TableCell>{lead.fuelType || '-'}</TableCell>
                   <TableCell>{lead.vehicle_title || '-'}</TableCell>
                   <TableCell>
                     {lead.engin_capacity ? `${lead.engin_capacity}.0L` : '-'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ textAlign: 'center' }}>
                     {new Date(
                       lead.createdAt as unknown as string,
-                    ).toLocaleString()}
+                    ).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                    <br />
+                    {new Date(
+                      lead.createdAt as unknown as string,
+                    ).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
                   </TableCell>
                   <TableCell
                     onClick={() => {
@@ -735,11 +911,19 @@ const LeadsTable: React.FC = () => {
                       minWidth: STATUS_COL_WIDTH,
                     }}
                   >
-                    <Chip
-                      label={lead.status || 'Unknown'}
-                      color={getStatusColor(lead.status)}
-                      size="small"
-                    />
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.5,
+                      }}
+                    >
+                      <Chip
+                        label={lead.status || 'Unknown'}
+                        color={getStatusColor(lead.status)}
+                        size="small"
+                      />
+                    </Box>
                   </TableCell>
                   <TableCell
                     sx={{
@@ -751,33 +935,47 @@ const LeadsTable: React.FC = () => {
                     }}
                   >
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                      {/* Quotation Icon - Outside Menu */}
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => {
-                          setSelectedLead(lead);
-                          setOpenQuotationDialog(true);
-                        }}
-                        title="Send Quotation"
-                      >
-                        <RequestQuoteIcon fontSize="small" />
-                      </IconButton>
+                      {/* Check if lead is won by another dealer */}
+                      {lead.wonByDealerId &&
+                      lead.wonByDealerId !== currentDealerId ? (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ fontStyle: 'italic' }}
+                          title="This lead has been won by another dealer"
+                        >
+                          Won by other dealer
+                        </Typography>
+                      ) : (
+                        <>
+                          {/* Info Icon - Outside Menu */}
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => {
+                              handleActionClick('info', lead);
+                            }}
+                            title="View Info"
+                          >
+                            <InfoIcon fontSize="small" />
+                          </IconButton>
 
-                      {/* Invoice Icon - Outside Menu */}
-                      <IconButton
-                        size="small"
-                        color="warning"
-                        onClick={() => {
-                          setSelectedLead(lead);
-                          setOpenInvoiceDialog(true);
-                        }}
-                        title="Send Invoice"
-                      >
-                        <ReceiptLongIcon fontSize="small" />
-                      </IconButton>
+                          {/* Quotation Icon - Outside Menu */}
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setOpenQuotationDialog(true);
+                            }}
+                            title="Send Quotation"
+                          >
+                            <RequestQuoteIcon fontSize="small" />
+                          </IconButton>
+                        </>
+                      )}
 
-                      {/* Three Dots Menu for remaining actions */}
+                      {/* Three Dots Menu for remaining actions - always available */}
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, lead)}
@@ -847,25 +1045,86 @@ const LeadsTable: React.FC = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={() => handleMenuAction('edit')}>
+        <MenuItem
+          onClick={() => handleMenuAction('edit')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <EditIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('info')}>
+        <MenuItem
+          onClick={() => handleMenuAction('info')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <InfoIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>View Info</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('chat')}>
+        <MenuItem
+          onClick={() => handleMenuAction('fetch-info')}
+          disabled={
+            currentMenuLead?.moreInfoFetched === true ||
+            (currentMenuLead?.wonByDealerId !== undefined &&
+              currentMenuLead?.wonByDealerId !== null &&
+              currentMenuLead?.wonByDealerId !== currentDealerId)
+          }
+        >
           <ListItemIcon>
-            <ChatIcon fontSize="small" />
+            <AutoFixHighIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open Chat</ListItemText>
+          <ListItemText>
+            {currentMenuLead?.moreInfoFetched
+              ? 'Info Fetched'
+              : 'Fetch More Info'}
+          </ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('delete')}>
+        {/* WARN: DO NOT REMOVE THIS */}
+        {/*<MenuItem
+            onClick={() => handleMenuAction("chat")}
+            disabled={
+              currentMenuLead?.wonByDealerId !== undefined &&
+              currentMenuLead?.wonByDealerId !== null &&
+              currentMenuLead?.wonByDealerId !== currentProfileId
+            }
+          >*/}
+        {/*<ListItemIcon>
+              <ChatIcon fontSize="small" />
+            </ListItemIcon>*/}
+        {/*<ListItemText>Open Chat</ListItemText>*/}
+        {/*</MenuItem>*/}
+        {/* WARN: DO NOT REMOVE THIS */}
+        <MenuItem
+          onClick={() => handleMenuAction('invoice')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
+          <ListItemIcon>
+            <ReceiptLongIcon fontSize="small" color="warning" />
+          </ListItemIcon>
+          <ListItemText>Send Invoice</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleMenuAction('delete')}
+          disabled={
+            currentMenuLead?.wonByDealerId !== undefined &&
+            currentMenuLead?.wonByDealerId !== null &&
+            currentMenuLead?.wonByDealerId !== currentDealerId
+          }
+        >
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />
           </ListItemIcon>

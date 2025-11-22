@@ -42,7 +42,7 @@ export class DealerController {
   @Post()
   @UseInterceptors(FileInterceptor('logoFile'))
   async create(
-    @Body() dto: Omit<CreateDealerDto, 'logo'>, // exclude logo string
+    @Body() dto: Omit<CreateDealerDto, 'logo'> & { logo?: string }, // include logo in body
     @UploadedFile() file: Multer.File, // ✅ Multer file type
   ) {
     return this.dealerService.createDealer(dto, file);
@@ -56,6 +56,7 @@ export class DealerController {
   @UseGuards(JwtAuthGuard)
   @Get('/profile/me')
   getProfile(@Req() req: AuthenticatedRequest) {
+    console.log('Request Recieved for Dealer:', req.user.id);
     return this.dealerService.getDealerById(req.user.id);
   }
 
@@ -94,15 +95,21 @@ export class DealerController {
   @UseInterceptors(FileInterceptor('logoFile'))
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateDealerDto,
+    @Body() dto: UpdateDealerDto & { logo?: string },
     @UploadedFile() file?: Multer.File,
   ) {
     return this.dealerService.updateDealer(id, dto, file);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.dealerService.deleteDealer(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const result = await this.dealerService.deleteDealer(id);
+      return result;
+    } catch (error) {
+      console.error('Error deleting dealer:', error);
+      throw error;
+    }
   }
 
   // @UseGuards(JwtAuthGuard, DealerGuard)

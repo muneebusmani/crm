@@ -140,6 +140,9 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
           conversionRate={stats.overview.conversionRate}
           totalDealers={stats.overview.totalDealers}
           dealerCredits={stats.overview.dealerCredits}
+          dealerTier={stats.overview.dealerTier}
+          totalRevenue={stats.overview.totalRevenue}
+          pendingQuotations={stats.overview.pendingQuotations}
           userType={userType}
         />
       </Box>

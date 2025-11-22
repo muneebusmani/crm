@@ -147,9 +147,9 @@
                       {{#each invoiceData.items}}
                       <tr style="border-bottom:1px solid #007b8f;">
                         <td style="padding:4px; color:#555;">{{this.productName}}</td>
-                        <td style="padding:4px; text-align:right; color:#555;">${{this.unitPrice}}</td>
+                        <td style="padding:4px; text-align:right; color:#555;">£{{this.unitPrice}}</td>
                         <td style="padding:4px; text-align:right; color:#555;">{{this.quantity}}</td>
-                        <td style="padding:4px; text-align:right; color:#555;">${{this.subTotal}}</td>
+                        <td style="padding:4px; text-align:right; color:#555;">£{{this.subTotal}}</td>
                       </tr>
                       {{/each}}
                     </tbody>
@@ -160,19 +160,19 @@
                   <table class="totals-table" style="margin-left:auto; min-width:150px;">
                     <tr>
                       <td style="padding:2px 6px; font-size:10px; color:#555;">Sub Total</td>
-                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.subTotal}}</td>
+                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">£{{invoiceData.subTotal}}</td>
                     </tr>
                     <tr>
                       <td style="padding:2px 6px; font-size:10px; color:#555;">VAT ({{invoiceData.taxPercentage}}%)</td>
-                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.totalTax}}</td>
+                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">£{{invoiceData.totalTax}}</td>
                     </tr>
                     <tr>
                       <td style="padding:2px 6px; font-size:10px; color:#555;">Discount ({{invoiceData.discountPercentage}}%)</td>
-                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">${{invoiceData.totalDiscount}}</td>
+                      <td style="padding:2px 6px; text-align:right; font-size:10px; color:#555;">£{{invoiceData.totalDiscount}}</td>
                     </tr>
                     <tr style="border-top:1px solid #007b8f;">
                       <td style="padding:4px 6px; font-size:11px; font-weight:600; color:#333;">Grand Total</td>
-                      <td style="padding:4px 6px; text-align:right; font-size:11px; font-weight:600; color:#333;">${{invoiceData.grandTotal}}</td>
+                      <td style="padding:4px 6px; text-align:right; font-size:11px; font-weight:600; color:#333;">£{{invoiceData.grandTotal}}</td>
                     </tr>
                   </table>
                 </div>
