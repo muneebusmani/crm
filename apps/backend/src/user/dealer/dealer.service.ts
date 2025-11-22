@@ -827,7 +827,8 @@ export class DealerService {
       const lead = await this.leadRepository.findOneBy({ id: leadId });
       if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
-      // Call pivot helper function
+      // Call pivot helper function - the ensureDealerLead method now properly handles
+      // status transitions to prevent downgrades
       await this.ensureDealerLead(leadId, dealerId, LeadStatus.OPEN);
 
       return lead;
@@ -841,8 +842,8 @@ export class DealerService {
   /**
    * Ensure dealer_leads pivot entry exists for dealer+lead.
    * If not, create it with the given status.
-   * If exists, only update status if it's a valid progression (e.g., QUOTED -> WON).
-   * Never downgrade WON status back to OPEN.
+   * If exists, only update status if it's a valid progression (e.g., OPEN -> QUOTED, QUOTED -> WON).
+   * Never downgrade status (e.g., WON -> QUOTED, QUOTED -> OPEN).
    */
   private async ensureDealerLead(
     leadId: number,
@@ -864,12 +865,9 @@ export class DealerService {
     if (!lead) throw new CustomError(`Lead with ID ${leadId} not found`, 404);
 
     if (existing) {
-      // CRITICAL: Don't downgrade WON status
-      // Only allow status updates in these cases:
-      // 1. Current status is not WON
-      // 2. New status is WON (upgrading from QUOTED)
-      const shouldUpdate =
-        existing.status !== LeadStatus.WON || status === LeadStatus.WON;
+      // Only allow status updates that follow the progression: OPEN -> QUOTED -> WON
+      // Prevent any downgrades like QUOTED -> OPEN, WON -> QUOTED, etc.
+      const shouldUpdate = this.isValidStatusTransition(existing.status, status);
 
       if (shouldUpdate && existing.status !== status) {
         existing.status = status;
@@ -903,6 +901,32 @@ export class DealerService {
     lead.status = status;
     this.leadsGateway.emitUpdateLead(lead);
     return result;
+  }
+
+  /**
+   * Checks if a status transition is valid based on the progression:
+   * OPEN -> QUOTED -> WON
+   * Valid transitions: OPEN -> QUOTED, OPEN -> WON, QUOTED -> WON
+   * Invalid transitions: QUOTED -> OPEN, WON -> QUOTED, WON -> OPEN
+   */
+  private isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
+    if (currentStatus === newStatus) {
+      return false; // No need to update if status is the same
+    }
+
+    // Define status progression hierarchy: OPEN < QUOTED < WON
+    const statusOrder = {
+      [LeadStatus.OPEN]: 0,
+      [LeadStatus.QUOTED]: 1,
+      [LeadStatus.WON]: 2,
+      [LeadStatus.CONTACT]: 0, // Assuming CONTACT is at same level as OPEN
+    };
+
+    const currentOrder = statusOrder[currentStatus as keyof typeof statusOrder] ?? -1;
+    const newOrder = statusOrder[newStatus as keyof typeof statusOrder] ?? -1;
+
+    // Only allow transitions to higher or same status levels
+    return newOrder > currentOrder;
   }
 
   private async leadMessage(leadId: number, dealerId: number, content: string) {

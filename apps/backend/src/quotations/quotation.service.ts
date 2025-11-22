@@ -102,6 +102,20 @@ export class QuotationService {
       );
     }
 
+    // 🔒 Check if the current dealer already won this lead (in dealer_leads table)
+    const dealerLead = await this.dealerLeadRepository.findOne({
+      where: {
+        dealer: { id: dealerId },
+        lead: { id: createQuotationDto.leadId }
+      }
+    });
+
+    if (dealerLead && dealerLead.status === LeadStatus.WON) {
+      throw new ForbiddenException(
+        'Cannot create quotation for a lead that you have already won',
+      );
+    }
+
     const setting = await this.businessSettingRepository.findOne({
       where: { dealerId },
     });
