@@ -107,9 +107,6 @@ export class QuotationService {
     });
     if (!setting) throw new NotFoundException('Business setting not found');
 
-    // 🧾 3. Generate unique quotation number
-    const quotationNumber = await this.generateQuotationNumber();
-
     // 💰 4. Calculate totals
     let subTotal = 0;
     let totalTax = 0;
@@ -131,21 +128,46 @@ export class QuotationService {
     totalDiscount = Math.round(totalDiscount);
     const grandTotal = Math.round(subTotal - totalDiscount + totalTax);
 
-    // 🧾 5. Create quotation
-    const quotation = this.quotationRepository.create({
-      quotationNumber,
-      date: createQuotationDto.date,
-      lead,
-      dealer,
-      company_user_id: companyUserId || null,
-      sellerNote: createQuotationDto.sellerNote,
-      subTotal,
-      taxAmount: totalTax,
-      grandTotal,
-      status: QuotationStatus.PENDING,
-    });
+    // 🧾 5. Create quotation with retry mechanism for unique quotation number
+    let savedQuotation;
+    const maxRetries = 5;
 
-    const savedQuotation = await this.quotationRepository.save(quotation);
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Generate quotation number for this attempt
+        const quotationNumber = await this.generateQuotationNumber();
+
+        // Create quotation
+        const quotation = this.quotationRepository.create({
+          quotationNumber,
+          date: createQuotationDto.date,
+          lead,
+          dealer,
+          company_user_id: companyUserId || null,
+          sellerNote: createQuotationDto.sellerNote,
+          subTotal,
+          taxAmount: totalTax,
+          grandTotal,
+          status: QuotationStatus.PENDING,
+        });
+
+        savedQuotation = await this.quotationRepository.save(quotation);
+        break; // Success, exit retry loop
+      } catch (error) {
+        if (error.code === '23505' && error.detail && error.detail.includes('quotationNumber')) {
+          // Duplicate key error for quotationNumber, retry
+          console.log(`Duplicate quotation number on attempt ${attempt + 1}, retrying...`);
+          continue;
+        } else {
+          // Some other error, re-throw
+          throw error;
+        }
+      }
+    }
+
+    if (!savedQuotation) {
+      throw new BadRequestException('Failed to create quotation after multiple attempts');
+    }
 
     // 📦 6. Create quotation items
     const quotationItems = createQuotationDto.items.map((item) =>
@@ -237,7 +259,7 @@ export class QuotationService {
     // 📧 9. Send quotation mail
     await this.mailService.sendMail({
       to: lead.email,
-      subject: `Quotation ${quotation.quotationNumber}`,
+      subject: `Quotation ${savedQuotation.quotationNumber}`,
       template: 'quotation-pdf',
       context: { quotationData },
     });
@@ -285,19 +307,19 @@ export class QuotationService {
       console.log(
         `🔗 DealerLead relationship updated for dealer ${dealerId} and lead ${leadId} with status ${status}`,
       );
-      lead.status = status;
+      // Only emit the lead with updated dealer status, but don't update the main leads table status
       this.leadsGateway.emitUpdateLead(lead);
       return updated; // return updated existing entry
     }
 
     // create new pivot entry
-    const dealerLead = await this.dealerLeadRepository.create({
+    const dealerLead = this.dealerLeadRepository.create({
       dealer,
       lead,
       status: status,
     });
-    lead.status = status;
     const result = await this.dealerLeadRepository.save(dealerLead);
+    // Only emit the lead, but don't update the main leads table status
     this.leadsGateway.emitUpdateLead(lead);
 
     // ❌ REMOVED: Credits should NOT be deducted for quotations
@@ -357,8 +379,21 @@ export class QuotationService {
   }
 
   private async generateQuotationNumber(): Promise<string> {
-    const count = await this.quotationRepository.count();
-    const nextNumber = count + 1;
+    // Use database locking to ensure uniqueness
+    const latestQuotation = await this.quotationRepository
+      .createQueryBuilder('quotation')
+      .select('MAX(quotation.quotationNumber)', 'maxNumber')
+      .where("quotation.quotationNumber LIKE '#VL%'")
+      .getRawOne();
+
+    let nextNumber = 1;
+    if (latestQuotation && latestQuotation.maxNumber) {
+      const lastNumber = parseInt(latestQuotation.maxNumber.replace('#VL', ''), 10);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
     return `#VL${nextNumber.toString().padStart(7, '0')}`;
   }
 
