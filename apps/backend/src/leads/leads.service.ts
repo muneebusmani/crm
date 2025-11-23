@@ -227,12 +227,12 @@ export class LeadsService {
       }
 
       // Check if lead has vehicle details
-      if (!lead.moreInfoFetched) {
-        throw new CustomError(
-          'No additional vehicle details available for this lead',
-          404,
-        );
-      }
+      // if (!lead.moreInfoFetched) {
+      //   throw new CustomError(
+      //     'No additional vehicle details available for this lead',
+      //     404,
+      //   );
+      // }
 
       // Get the vehicle details for this lead
       const vehicleDetails = await this.vehicleDetailsRepo.findOne({
@@ -240,10 +240,7 @@ export class LeadsService {
       });
 
       if (!vehicleDetails) {
-        throw new CustomError(
-          'No vehicle details found for this lead',
-          404,
-        );
+        throw new CustomError('No vehicle details found for this lead', 404);
       }
 
       return vehicleDetails;
@@ -302,31 +299,40 @@ export class LeadsService {
 
       try {
         // Get the VRM from the lead to call the external API
-        const vrm = lead.vehicle_reg; // or lead.vehicle_vrm, depending on which field contains the registration
+        // const vrm = lead.vehicle_reg; // or lead.vehicle_vrm, depending on which field contains the registration
+        const vrm = 'EA65AMX'; // or lead.vehicle_vrm, depending on which field contains the registration
         if (!vrm) {
-          throw new CustomError('Vehicle registration not available for this lead', 400);
+          throw new CustomError(
+            'Vehicle registration not available for this lead',
+            400,
+          );
         }
 
         // Call the external API to get detailed vehicle information
         const response = await fetch(
-          `https://api.checkcardetails.co.uk/vehicledata/ukvehicledata?apikey=b627ac2f1dfb771559815c03e3161e91&vrm=${encodeURIComponent(vrm)}`,
+          `${process.env.VEHICLE_DATA_API_URL}/vehicledata/ukvehicledata?apikey=${process.env.VEHICLE_DATA_API_KEY}&vrm=${encodeURIComponent(vrm)}`,
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
-          }
+          },
         );
 
-        if (!response.ok) {
-          throw new CustomError(`External API call failed: ${response.status}`, response.status);
-        }
+        // if (!response.ok) {
+        //   throw new CustomError(
+        //     `External API call failed: ${response.status}`,
+        //     response.status,
+        //   );
+        // }
 
         externalData = await response.json();
+        console.log('External Data:', externalData);
 
         // Save the vehicle details to the separate table
         const vehicleDetails = new VehicleDetails();
-        vehicleDetails.vehicleRegistration = externalData.VehicleRegistration || {};
+        vehicleDetails.vehicleRegistration =
+          externalData.VehicleRegistration || {};
         vehicleDetails.dimensions = externalData.Dimensions || null;
         vehicleDetails.engine = externalData.Engine || null;
         vehicleDetails.performance = externalData.Performance || null;
@@ -338,7 +344,6 @@ export class LeadsService {
         vehicleDetails.lead = lead; // Set the relationship
 
         await this.vehicleDetailsRepo.save(vehicleDetails);
-
       } catch (apiError) {
         this.logger.error(
           `External API call failed for lead ${id}`,

@@ -21,11 +21,11 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { CustomError } from '../common/custom-error';
 import { LeadsGateway } from './leads.gateway';
 import { LeadsService } from './leads.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { DealerGuard } from 'src/auth/guards/dealer.guard';
 
 @Controller('leads')
 export class LeadsController {

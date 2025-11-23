@@ -52,6 +52,7 @@ import VehicleDetailsDialog from './vehicle-details-dialog';
 import SendInvoiceDialog from './send-invoice-dialog';
 import SendQuotationDialog from './send-quotation-dialog';
 import LeadNotesPanel from '../LeadNotesPanel';
+import { get, post, post2 } from '@/lib/api';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -76,7 +77,8 @@ const LeadsTable: React.FC = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openEmailDialog, setOpenEmailDialog] = useState(false);
   const [openInfoDialog, setOpenInfoDialog] = useState(false);
-  const [openVehicleDetailsDialog, setOpenVehicleDetailsDialog] = useState(false);
+  const [openVehicleDetailsDialog, setOpenVehicleDetailsDialog] =
+    useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
   const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
@@ -436,22 +438,14 @@ const LeadsTable: React.FC = () => {
     if (!lead.id) return;
 
     try {
-      const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(
-          errorData.error || 'Failed to fetch additional lead info',
-        );
-      }
-
-      const result = await res.json();
+      // const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
+      //   method: 'POST',
+      //   credentials: 'include',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
+      const result = await post2(`/leads/${lead.id}/fetch-more-info`);
 
       if (result.success) {
         // Update the local lead data with the new info
@@ -981,12 +975,18 @@ const LeadsTable: React.FC = () => {
                             onClick={() => {
                               handleActionClick('vehicle-details', lead);
                             }}
-                            title={lead.moreInfoFetched ? "View Detailed Vehicle Information" : "No Detailed Information Available"}
+                            title={
+                              lead.moreInfoFetched
+                                ? 'View Detailed Vehicle Information'
+                                : 'No Detailed Information Available'
+                            }
                             disabled={!lead.moreInfoFetched}
                           >
                             <DashboardIcon
                               fontSize="small"
-                              color={lead.moreInfoFetched ? "primary" : "disabled"}
+                              color={
+                                lead.moreInfoFetched ? 'primary' : 'disabled'
+                              }
                             />
                           </IconButton>
 
