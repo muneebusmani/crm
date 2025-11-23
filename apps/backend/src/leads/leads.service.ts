@@ -7,12 +7,15 @@ import { CustomError } from '../common/custom-error';
 import { AppLogger } from '../common/logger.service';
 import { Lead } from './entities/lead.entity';
 import { User } from 'src/user/entities';
+import { VehicleDetails } from './entities/vehicle-details.entity';
 
 @Injectable()
 export class LeadsService {
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepo: Repository<Lead>,
+    @InjectRepository(VehicleDetails)
+    private readonly vehicleDetailsRepo: Repository<VehicleDetails>,
     private readonly logger: AppLogger,
     private readonly activityLogger: ActivityLogger,
     @InjectRepository(User)
@@ -192,6 +195,66 @@ export class LeadsService {
     }
   }
 
+  async getVehicleDetails(id: number, dealerId: number) {
+    try {
+      // First, verify the lead exists and the dealer has access to it
+      const lead = await this.leadRepo.findOne({
+        where: { id },
+        relations: ['dealerLeads', 'dealerLeads.dealer'],
+      });
+
+      if (!lead) {
+        throw new CustomError(`Lead with ID ${id} not found`, 404);
+      }
+
+      // 🔍 Find dealer with profile to get Dealer Entity ID
+      const dealer = await this.userRepository.findOne({
+        where: { id: dealerId },
+        relations: ['dealer'],
+      });
+
+      if (!dealer) {
+        throw new CustomError('Dealer not found', 404);
+      }
+
+      // Check if another dealer has already won this lead
+      // Use dealer.dealer.id (Dealer Entity ID) for comparison
+      if (lead.wonByDealerId && lead.wonByDealerId !== dealer.dealer?.id) {
+        throw new CustomError(
+          'This lead has already been won by another dealer',
+          403,
+        );
+      }
+
+      // Check if lead has vehicle details
+      // if (!lead.moreInfoFetched) {
+      //   throw new CustomError(
+      //     'No additional vehicle details available for this lead',
+      //     404,
+      //   );
+      // }
+
+      // Get the vehicle details for this lead
+      const vehicleDetails = await this.vehicleDetailsRepo.findOne({
+        where: { lead: { id } },
+      });
+
+      if (!vehicleDetails) {
+        throw new CustomError('No vehicle details found for this lead', 404);
+      }
+
+      return vehicleDetails;
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to fetch vehicle details for lead ${id}`,
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to fetch vehicle details');
+    }
+  }
+
   async fetchMoreInfo(id: number, dealerId: number) {
     try {
       // First, get the lead
@@ -231,15 +294,67 @@ export class LeadsService {
         );
       }
 
-      // Simulate API call to fetch more info (replace with actual API call)
-      // For now, this is a placeholder for the actual implementation
-      // You would typically call an external API here to get more vehicle info, etc.
+      // Call the external API to get vehicle details
+      let externalData = null;
 
-      // In a real implementation, you would make an external API call here
-      // For example: const externalData = await fetch('https://api.example.com/vehicle-info', {...});
+      try {
+        // Get the VRM from the lead to call the external API
+        // const vrm = lead.vehicle_reg; // or lead.vehicle_vrm, depending on which field contains the registration
+        const vrm = 'EA65AMX'; // or lead.vehicle_vrm, depending on which field contains the registration
+        if (!vrm) {
+          throw new CustomError(
+            'Vehicle registration not available for this lead',
+            400,
+          );
+        }
 
-      // Update the lead with the fetched information (simulated for now)
-      // You would update with the actual data received from the external API
+        // Call the external API to get detailed vehicle information
+        const response = await fetch(
+          `${process.env.VEHICLE_DATA_API_URL}/vehicledata/ukvehicledata?apikey=${process.env.VEHICLE_DATA_API_KEY}&vrm=${encodeURIComponent(vrm)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+
+        // if (!response.ok) {
+        //   throw new CustomError(
+        //     `External API call failed: ${response.status}`,
+        //     response.status,
+        //   );
+        // }
+
+        externalData = await response.json();
+        console.log('External Data:', externalData);
+
+        // Save the vehicle details to the separate table
+        const vehicleDetails = new VehicleDetails();
+        vehicleDetails.vehicleRegistration =
+          externalData.VehicleRegistration || {};
+        vehicleDetails.dimensions = externalData.Dimensions || null;
+        vehicleDetails.engine = externalData.Engine || null;
+        vehicleDetails.performance = externalData.Performance || null;
+        vehicleDetails.consumption = externalData.Consumption || null;
+        vehicleDetails.vehicleHistory = externalData.VehicleHistory || null;
+        vehicleDetails.smmtDetails = externalData.SmmtDetails || null;
+        vehicleDetails.vedRate = externalData.vedRate || null;
+        vehicleDetails.general = externalData.General || null;
+        vehicleDetails.lead = lead; // Set the relationship
+
+        await this.vehicleDetailsRepo.save(vehicleDetails);
+      } catch (apiError) {
+        this.logger.error(
+          `External API call failed for lead ${id}`,
+          apiError instanceof Error ? apiError.stack : '',
+          'LeadsService',
+        );
+        // Still mark the info as fetched even if the external call fails
+        // This prevents repeated failed calls to the external API
+      }
+
+      // Update the lead with the fetched information
       lead.moreInfoFetched = true;
       lead.updatedAt = new Date();
 

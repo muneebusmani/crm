@@ -11,6 +11,7 @@ import {
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
   AutoFixHigh as AutoFixHighIcon,
+  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import ChatIcon from '@mui/icons-material/Chat';
 
@@ -47,9 +48,11 @@ import { socketService } from '@/services/socket.service';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
+import VehicleDetailsDialog from './vehicle-details-dialog';
 import SendInvoiceDialog from './send-invoice-dialog';
 import SendQuotationDialog from './send-quotation-dialog';
 import LeadNotesPanel from '../LeadNotesPanel';
+import { get, post, post2 } from '@/lib/api';
 
 const LeadsTable: React.FC = () => {
   const router = useRouter();
@@ -74,6 +77,8 @@ const LeadsTable: React.FC = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openEmailDialog, setOpenEmailDialog] = useState(false);
   const [openInfoDialog, setOpenInfoDialog] = useState(false);
+  const [openVehicleDetailsDialog, setOpenVehicleDetailsDialog] =
+    useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isInfoDialogLoading, setIsInfoDialogLoading] = useState(false);
   const [openQuotationDialog, setOpenQuotationDialog] = useState(false);
@@ -394,6 +399,12 @@ const LeadsTable: React.FC = () => {
         break;
       }
 
+      case 'vehicle-details': {
+        setSelectedLead(lead);
+        setOpenVehicleDetailsDialog(true);
+        break;
+      }
+
       default:
         break;
     }
@@ -427,22 +438,14 @@ const LeadsTable: React.FC = () => {
     if (!lead.id) return;
 
     try {
-      const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(
-          errorData.error || 'Failed to fetch additional lead info',
-        );
-      }
-
-      const result = await res.json();
+      // const res = await fetch(`/api/leads/${lead.id}/fetch-more-info`, {
+      //   method: 'POST',
+      //   credentials: 'include',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      const result = await post2(`/leads/${lead.id}/fetch-more-info`);
+      // });
 
       if (result.success) {
         // Update the local lead data with the new info
@@ -529,6 +532,9 @@ const LeadsTable: React.FC = () => {
       case 'info':
         handleActionClick('info', currentMenuLead);
         break;
+      case 'vehicle-details':
+        handleActionClick('vehicle-details', currentMenuLead);
+        break;
       case 'chat':
         handleOpenChat(currentMenuLead.id!);
         break;
@@ -570,7 +576,7 @@ const LeadsTable: React.FC = () => {
   }
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
+    <Box sx={{ width: '100%' }}>
       <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
         {/* Header */}
         <Box
@@ -836,7 +842,9 @@ const LeadsTable: React.FC = () => {
                     ) || '-'}
                   </TableCell>
                   <TableCell>{lead.vehicle_brand || '-'}</TableCell>
-                  <TableCell>{lead.vehicle_model || '-'}</TableCell>
+                  <TableCell>
+                    {lead.vehicle_model || lead.vehicle_series || '-'}
+                  </TableCell>
                   <TableCell>{lead.vehicle_reg || '-'}</TableCell>
                   <TableCell>
                     <Tooltip
@@ -958,6 +966,28 @@ const LeadsTable: React.FC = () => {
                             title="View Info"
                           >
                             <InfoIcon fontSize="small" />
+                          </IconButton>
+
+                          {/* Vehicle Details Icon - Outside Menu (Only if details available) */}
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => {
+                              handleActionClick('vehicle-details', lead);
+                            }}
+                            title={
+                              lead.moreInfoFetched
+                                ? 'View Detailed Vehicle Information'
+                                : 'No Detailed Information Available'
+                            }
+                            disabled={!lead.moreInfoFetched}
+                          >
+                            <DashboardIcon
+                              fontSize="small"
+                              color={
+                                lead.moreInfoFetched ? 'primary' : 'disabled'
+                              }
+                            />
                           </IconButton>
 
                           {/* Quotation Icon - Outside Menu */}
@@ -1187,6 +1217,16 @@ const LeadsTable: React.FC = () => {
             }
           />
         </>
+      )}
+
+      {/* Vehicle Details Dialog */}
+      {selectedLead && (
+        <VehicleDetailsDialog
+          open={openVehicleDetailsDialog}
+          onClose={() => setOpenVehicleDetailsDialog(false)}
+          leadId={selectedLead.id ?? null}
+          leadHasDetails={!!selectedLead.moreInfoFetched}
+        />
       )}
 
       {/* Notes Dialog */}

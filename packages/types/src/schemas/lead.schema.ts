@@ -65,6 +65,8 @@ export type CreateLeadDto = z.infer<typeof CreateLeadSchema>;
 
 // ------------------------------
 
-export const UpdateLeadSchema = CreateLeadSchema.partial();
+export const UpdateLeadSchema = CreateLeadSchema.partial().extend({
+  moreInfoFetched: z.boolean().optional(),
+});
 
 export type UpdateLeadDto = z.infer<typeof UpdateLeadSchema>;

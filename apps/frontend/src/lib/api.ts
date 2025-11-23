@@ -70,16 +70,16 @@ export async function get<T = any>(
   options?: RequestConfig<T>,
   skipAuth = false,
 ) {
-  // console.log(`[API GET] Calling: ${path}`);
+  console.log(`[API GET] Calling: ${path}`);
   try {
     const result = await withTokenRefresh(
       async () => http.get<T>(path, await attachToken(options, skipAuth)),
       path,
     );
-    // console.log(`[API GET] Success: ${path}`, result);
+    console.log(`[API GET] Success: ${path}`, result);
     return result;
   } catch (error) {
-    // console.error(`[API GET] Error: ${path}`, error);
+    console.error(`[API GET] Error: ${path}`, error);
     throw error;
   }
 }

@@ -21,11 +21,11 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { DealerGuard } from 'src/auth/guards/dealer.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { CustomError } from '../common/custom-error';
 import { LeadsGateway } from './leads.gateway';
 import { LeadsService } from './leads.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { DealerGuard } from 'src/auth/guards/dealer.guard';
 
 @Controller('leads')
 export class LeadsController {
@@ -101,6 +101,17 @@ export class LeadsController {
     const dealerId = req.user.id;
     const result = await this.leadsService.fetchMoreInfo(id, dealerId);
     this.leadsGateway.emitUpdateLead(result); // Emit via gateway if needed
+    return this.buildResponse(result);
+  }
+
+  @Get(':id/vehicle-details')
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  async getVehicleDetails(
+    @Param('id') id: number,
+    @Req() req,
+  ): Promise<ApiResponse<any>> {
+    const dealerId = req.user.id;
+    const result = await this.leadsService.getVehicleDetails(id, dealerId);
     return this.buildResponse(result);
   }
 
