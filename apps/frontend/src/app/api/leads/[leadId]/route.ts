@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { leadsApi } from '@/services/leads.service';
 
-export async function GET(_req: Request, props: { params: Promise<{ leadId: string }> }) {
+export async function GET(
+  _req: Request,
+  props: { params: Promise<{ leadId: string }> },
+) {
   const params = await props.params;
   try {
     const id = parseInt(params.leadId, 10);
@@ -16,7 +19,10 @@ export async function GET(_req: Request, props: { params: Promise<{ leadId: stri
   }
 }
 
-export async function DELETE(_req: Request, props: { params: Promise<{ leadId: string }> }) {
+export async function DELETE(
+  _req: Request,
+  props: { params: Promise<{ leadId: string }> },
+) {
   const params = await props.params;
   try {
     const id = parseInt(params.leadId, 10);

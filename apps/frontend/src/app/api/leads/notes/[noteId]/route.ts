@@ -4,16 +4,16 @@ import { patch, del } from '@/lib/api';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { noteId: string } }
+  { params }: { params: { noteId: string } },
 ) {
   try {
     const cookieStore = await cookies();
     const profileId = cookieStore.get('selected_profile_id')?.value;
-    
+
     if (!profileId) {
       return NextResponse.json(
         { error: 'No profile selected' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -24,23 +24,23 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to update note' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { noteId: string } }
+  { params }: { params: { noteId: string } },
 ) {
   try {
     const cookieStore = await cookies();
     const profileId = cookieStore.get('selected_profile_id')?.value;
-    
+
     if (!profileId) {
       return NextResponse.json(
         { error: 'No profile selected' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to delete note' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

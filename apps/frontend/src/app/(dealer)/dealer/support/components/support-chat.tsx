@@ -64,7 +64,7 @@ export default function SupportChat() {
     try {
       setLoading(true);
       const response = await get<Message[]>('/messages/dealer');
-      
+
       // Handle both array response and ApiResponse wrapper
       if (Array.isArray(response)) {
         setMessages(response);
@@ -223,7 +223,11 @@ export default function SupportChat() {
             <Typography variant="h6" gutterBottom>
               Welcome to Support Chat
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ maxWidth: 400 }}
+            >
               Need help with the CRM? Send a message and our support team will
               assist you as soon as possible.
             </Typography>

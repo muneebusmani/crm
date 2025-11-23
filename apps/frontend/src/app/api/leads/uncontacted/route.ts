@@ -6,7 +6,8 @@ export async function GET() {
     const data = await leadsApi.getUncontacted();
     return NextResponse.json(data);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed to fetch uncontacted leads';
+    const msg =
+      e instanceof Error ? e.message : 'Failed to fetch uncontacted leads';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

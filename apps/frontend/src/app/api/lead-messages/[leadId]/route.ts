@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { leadMessagesApi } from '@/services/lead-messages.service';
 
-export async function GET(_req: Request, props: { params: Promise<{ leadId: string }> }) {
+export async function GET(
+  _req: Request,
+  props: { params: Promise<{ leadId: string }> },
+) {
   const params = await props.params;
   try {
     const leadId = parseInt(params.leadId, 10);
@@ -11,7 +14,10 @@ export async function GET(_req: Request, props: { params: Promise<{ leadId: stri
     const data = await leadMessagesApi.getByLead(leadId);
     return NextResponse.json(data);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed to fetch lead messages by leadId';
+    const msg =
+      e instanceof Error
+        ? e.message
+        : 'Failed to fetch lead messages by leadId';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

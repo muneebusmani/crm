@@ -1,10 +1,11 @@
-"use client";
+'use client';
 import {
+  UserStatus,
   UserType,
   type Dealer,
   type DealerFlatData,
   type User,
-} from "@crm/types";
+} from '@crm/types';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -16,7 +17,7 @@ import {
   Phone as PhoneIcon,
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -40,12 +41,12 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import axios from "axios";
-import Image from "next/image";
-import type React from "react";
-import { type ChangeEvent, useEffect, useState } from "react";
-import AddDealerDialog from "./add-dealer-dialog";
-import { get } from "@/lib/api";
+import axios from 'axios';
+import Image from 'next/image';
+import type React from 'react';
+import { type ChangeEvent, useEffect, useState } from 'react';
+import AddDealerDialog from './add-dealer-dialog';
+import { get } from '@/lib/api';
 
 type Dealers = User & { dealer: Dealer };
 
@@ -56,10 +57,10 @@ const Dealers = ({ token }: { token: string }) => {
   const [selectedDealer, setSelectedDealer] = useState<DealerFlatData | null>(
     null,
   );
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Name");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('Name');
   const [page, setPage] = useState(1);
-  const [locationFilter, setLocationFilter] = useState<string>("");
+  const [locationFilter, setLocationFilter] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<DealerFlatData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +72,7 @@ const Dealers = ({ token }: { token: string }) => {
       try {
         setLoading(true);
         const data = await get<Dealers[]>(`/dealers`);
-        console.log("Data ===>", data);
+        console.log('Data ===>', data);
         // if (response) throw new Error(response.error);
 
         // flatten structure
@@ -82,15 +83,16 @@ const Dealers = ({ token }: { token: string }) => {
               id: u.id,
               email: u.email,
               username: u.username,
-              name: u.dealer?.name ?? "",
-              owner: u.dealer?.owner ?? "",
-              location: u.dealer?.location ?? "",
-              logo: u.dealer?.logo ?? "",
-              website: u.dealer?.website ?? "",
-              contactEmail: u.dealer?.contactEmail ?? "",
+              name: u.dealer?.name ?? '',
+              owner: u.dealer?.owner ?? '',
+              location: u.dealer?.location ?? '',
+              logo: u.dealer?.logo ?? '',
+              website: u.dealer?.website ?? '',
+              contactEmail: u.dealer?.contactEmail ?? '',
               tierId: u.dealer?.tierId ?? undefined,
               tierName: u.dealer?.tier?.name ?? undefined,
-              password: "", // required by type, default empty
+              status: u.status,
+              password: '', // required by type, default empty
               logoFile: null, // required by type, default null
             }),
           );
@@ -101,7 +103,7 @@ const Dealers = ({ token }: { token: string }) => {
         //   setSelectedDealer(flatData[0]);
         // }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
       }
@@ -131,11 +133,11 @@ const Dealers = ({ token }: { token: string }) => {
       if (data.logoFile) {
         // Request signed upload URL from backend
         const signedUrlResponse = await fetch(
-          "/api/uploads/dealer-avatar-signed-url",
+          '/api/uploads/dealer-avatar-signed-url',
           {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               fileName: data.logoFile.name,
               contentType: data.logoFile.type,
@@ -144,7 +146,7 @@ const Dealers = ({ token }: { token: string }) => {
         );
 
         if (!signedUrlResponse.ok) {
-          throw new Error("Failed to get upload URL");
+          throw new Error('Failed to get upload URL');
         }
 
         const { data: signedUrlData } = await signedUrlResponse.json();
@@ -152,16 +154,16 @@ const Dealers = ({ token }: { token: string }) => {
 
         // Upload file directly to Supabase Storage using signed URL
         const uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
+          method: 'PUT',
           body: data.logoFile,
           headers: {
-            "Content-Type": data.logoFile.type,
-            "x-upsert": "true",
+            'Content-Type': data.logoFile.type,
+            'x-upsert': 'true',
           },
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("Failed to upload file to storage");
+          throw new Error('Failed to upload file to storage');
         }
 
         finalLogoPath = path;
@@ -169,23 +171,23 @@ const Dealers = ({ token }: { token: string }) => {
 
       // Step 2: Create dealer with the logo path
       const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("email", data.email);
-      formData.append("username", data.username);
-      formData.append("password", data.password);
-      formData.append("owner", data.owner);
-      formData.append("location", data.location);
-      formData.append("logo", finalLogoPath); // Use the path from Supabase
-      formData.append("website", data.website);
-      formData.append("contactEmail", data.contactEmail);
-      if (data.tierId) formData.append("tierId", data.tierId.toString());
+      formData.append('name', data.name);
+      formData.append('email', data.email);
+      formData.append('username', data.username);
+      formData.append('password', data.password);
+      formData.append('owner', data.owner);
+      formData.append('location', data.location);
+      formData.append('logo', finalLogoPath); // Use the path from Supabase
+      formData.append('website', data.website);
+      formData.append('contactEmail', data.contactEmail);
+      if (data.tierId) formData.append('tierId', data.tierId.toString());
 
       const { data: newDealer } = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers`,
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token} `,
           },
         },
@@ -196,17 +198,18 @@ const Dealers = ({ token }: { token: string }) => {
         id: newDealer.id,
         email: newDealer.email,
         username: newDealer.username,
-        name: newDealer.name ?? newDealer.dealer?.name ?? "",
-        owner: newDealer.owner ?? newDealer.dealer?.owner ?? "",
-        location: newDealer.location ?? newDealer.dealer?.location ?? "",
-        logo: newDealer.logo ?? newDealer.dealer?.logo ?? "",
-        website: newDealer.website ?? newDealer.dealer?.website ?? "",
+        name: newDealer.name ?? newDealer.dealer?.name ?? '',
+        owner: newDealer.owner ?? newDealer.dealer?.owner ?? '',
+        location: newDealer.location ?? newDealer.dealer?.location ?? '',
+        logo: newDealer.logo ?? newDealer.dealer?.logo ?? '',
+        website: newDealer.website ?? newDealer.dealer?.website ?? '',
         contactEmail:
-          newDealer.contactEmail ?? newDealer.dealer?.contactEmail ?? "",
+          newDealer.contactEmail ?? newDealer.dealer?.contactEmail ?? '',
         tierId: newDealer.tierId ?? newDealer.dealer?.tierId ?? undefined,
         tierName:
           newDealer.tierName ?? newDealer.dealer?.tier?.name ?? undefined,
-        password: "", // required by type, default empty
+        status: newDealer.status ?? UserStatus.IN_ACTIVE,
+        password: '', // required by type, default empty
         logoFile: null, // required by type, default null
       };
       // Refetch dealers to ensure consistent state and logo URLs
@@ -219,15 +222,16 @@ const Dealers = ({ token }: { token: string }) => {
               id: u.id,
               email: u.email,
               username: u.username,
-              name: u.dealer?.name ?? "",
-              owner: u.dealer?.owner ?? "",
-              location: u.dealer?.location ?? "",
-              logo: u.dealer?.logo ?? "",
-              website: u.dealer?.website ?? "",
-              contactEmail: u.dealer?.contactEmail ?? "",
+              name: u.dealer?.name ?? '',
+              owner: u.dealer?.owner ?? '',
+              location: u.dealer?.location ?? '',
+              logo: u.dealer?.logo ?? '',
+              website: u.dealer?.website ?? '',
+              contactEmail: u.dealer?.contactEmail ?? '',
               tierId: u.dealer?.tierId ?? undefined,
               tierName: u.dealer?.tier?.name ?? undefined,
-              password: "", // required by type, default empty
+              status: u.status,
+              password: '', // required by type, default empty
               logoFile: null, // required by type, default null
             }),
           );
@@ -244,7 +248,7 @@ const Dealers = ({ token }: { token: string }) => {
 
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add dealer");
+      setError(err instanceof Error ? err.message : 'Failed to add dealer');
     }
   };
 
@@ -255,7 +259,7 @@ const Dealers = ({ token }: { token: string }) => {
 
   // Handle view click
   const handleViewClick = (dealer: DealerFlatData) => {
-    console.log("selected dealer:", dealer);
+    console.log('selected dealer:', dealer);
     setSelectedDealer(dealer);
     setShowDetails(true);
   };
@@ -290,11 +294,11 @@ const Dealers = ({ token }: { token: string }) => {
       if (data.logoFile) {
         // Request signed upload URL from backend
         const signedUrlResponse = await fetch(
-          "/api/uploads/dealer-avatar-signed-url",
+          '/api/uploads/dealer-avatar-signed-url',
           {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               fileName: data.logoFile.name,
               contentType: data.logoFile.type,
@@ -303,7 +307,7 @@ const Dealers = ({ token }: { token: string }) => {
         );
 
         if (!signedUrlResponse.ok) {
-          throw new Error("Failed to get upload URL");
+          throw new Error('Failed to get upload URL');
         }
 
         const { data: signedUrlData } = await signedUrlResponse.json();
@@ -311,16 +315,16 @@ const Dealers = ({ token }: { token: string }) => {
 
         // Upload file directly to Supabase Storage using signed URL
         const uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
+          method: 'PUT',
           body: data.logoFile,
           headers: {
-            "Content-Type": data.logoFile.type,
-            "x-upsert": "true",
+            'Content-Type': data.logoFile.type,
+            'x-upsert': 'true',
           },
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("Failed to upload file to storage");
+          throw new Error('Failed to upload file to storage');
         }
 
         finalLogoPath = path;
@@ -329,30 +333,30 @@ const Dealers = ({ token }: { token: string }) => {
       // Step 2: Update other profile fields
       const formData = new FormData();
 
-      if (data.name) formData.append("name", data.name);
-      if (data.email) formData.append("email", data.email);
-      if (data.username) formData.append("username", data.username);
-      if (data.owner) formData.append("owner", data.owner);
-      if (data.location) formData.append("location", data.location);
-      if (finalLogoPath) formData.append("logo", finalLogoPath); // Use the path from Supabase
-      if (data.website) formData.append("website", data.website);
-      if (data.contactEmail) formData.append("contactEmail", data.contactEmail);
-      if (data.tierId) formData.append("tierId", data.tierId.toString());
+      if (data.name) formData.append('name', data.name);
+      if (data.email) formData.append('email', data.email);
+      if (data.username) formData.append('username', data.username);
+      if (data.owner) formData.append('owner', data.owner);
+      if (data.location) formData.append('location', data.location);
+      if (finalLogoPath) formData.append('logo', finalLogoPath); // Use the path from Supabase
+      if (data.website) formData.append('website', data.website);
+      if (data.contactEmail) formData.append('contactEmail', data.contactEmail);
+      if (data.tierId) formData.append('tierId', data.tierId.toString());
 
       // Only append password if it's not empty
-      if (data.password && data.password.trim() !== "") {
-        formData.append("password", data.password);
+      if (data.password && data.password.trim() !== '') {
+        formData.append('password', data.password);
       }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers/${editData.id}`,
         {
-          method: "PUT",
+          method: 'PUT',
           body: formData, // send as FormData
         },
       );
 
-      if (!response.ok) throw new Error("Failed to update dealer");
+      if (!response.ok) throw new Error('Failed to update dealer');
 
       const updatedDealer = await response.json();
 
@@ -366,15 +370,16 @@ const Dealers = ({ token }: { token: string }) => {
               id: u.id,
               email: u.email,
               username: u.username,
-              name: u.dealer?.name ?? "",
-              owner: u.dealer?.owner ?? "",
-              location: u.dealer?.location ?? "",
-              logo: u.dealer?.logo ?? "",
-              website: u.dealer?.website ?? "",
-              contactEmail: u.dealer?.contactEmail ?? "",
+              name: u.dealer?.name ?? '',
+              owner: u.dealer?.owner ?? '',
+              location: u.dealer?.location ?? '',
+              logo: u.dealer?.logo ?? '',
+              website: u.dealer?.website ?? '',
+              contactEmail: u.dealer?.contactEmail ?? '',
               tierId: u.dealer?.tierId ?? undefined,
               tierName: u.dealer?.tier?.name ?? undefined,
-              password: "", // required by type, default empty
+              status: u.status,
+              password: '', // required by type, default empty
               logoFile: null, // required by type, default null
             }),
           );
@@ -393,34 +398,69 @@ const Dealers = ({ token }: { token: string }) => {
 
       setIsEditing(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update dealer");
+      setError(err instanceof Error ? err.message : 'Failed to update dealer');
+    }
+  };
+
+  const handleStatusChange = async (
+    dealerId: number,
+    newStatus: UserStatus,
+  ) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admins/dealer/${dealerId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update dealer status");
+      }
+
+      const updatedDealer = await response.json();
+
+      setDealers((prevDealers) =>
+        prevDealers.map((dealer) =>
+          dealer.id === dealerId
+            ? { ...dealer, status: updatedDealer.data.status }
+            : dealer,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
     }
   };
 
   // Handle delete
   const handleDelete = async (id: number) => {
     try {
-      console.log("Attempting to delete dealer:", id);
+      console.log('Attempting to delete dealer:', id);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/dealers/${id}`,
         {
-          method: "DELETE",
-          credentials: "include",
+          method: 'DELETE',
+          credentials: 'include',
         },
       );
 
-      console.log("Delete response status:", response.status);
+      console.log('Delete response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response
           .json()
-          .catch(() => ({ message: "Unknown error" }));
-        console.error("Delete failed:", errorData);
-        throw new Error(errorData.message || "Failed to delete dealer");
+          .catch(() => ({ message: 'Unknown error' }));
+        console.error('Delete failed:', errorData);
+        throw new Error(errorData.message || 'Failed to delete dealer');
       }
 
       const result = await response.json();
-      console.log("Delete successful:", result);
+      console.log('Delete successful:', result);
 
       const updatedDealers = dealers.filter((dealer) => dealer.id !== id);
       setDealers(updatedDealers);
@@ -433,8 +473,8 @@ const Dealers = ({ token }: { token: string }) => {
         }
       }
     } catch (err) {
-      console.error("Error in handleDelete:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete dealer");
+      console.error('Error in handleDelete:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete dealer');
     }
   };
 
@@ -442,20 +482,20 @@ const Dealers = ({ token }: { token: string }) => {
   const handleExportCSV = () => {
     if (dealers.length === 0) return;
 
-    const headers = Object.keys(dealers[0]).join(",");
+    const headers = Object.keys(dealers[0]).join(',');
     const rows = dealers
       .map((dealer) =>
         Object.values(dealer)
-          .map((value) => (typeof value === "string" ? `"${value}"` : value))
-          .join(","),
+          .map((value) => (typeof value === 'string' ? `"${value}"` : value))
+          .join(','),
       )
-      .join("\n");
+      .join('\n');
 
     const csvContent = `data:text/csv;charset=utf-8,${headers}\n${rows}`;
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "dealers.csv");
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'dealers.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -474,8 +514,8 @@ const Dealers = ({ token }: { token: string }) => {
       return matchesSearch && matchesLocation;
     })
     .sort((a, b) => {
-      if (sortBy === "Owner") return a.owner.localeCompare(b.owner);
-      if (sortBy === "Name") return a.name.localeCompare(b.name);
+      if (sortBy === 'Owner') return a.owner.localeCompare(b.owner);
+      if (sortBy === 'Name') return a.name.localeCompare(b.name);
       return a.name.localeCompare(b.name);
     });
 
@@ -515,13 +555,13 @@ const Dealers = ({ token }: { token: string }) => {
       dealers
         .map((d) => {
           // Handle undefined or empty location
-          const location = d.location || "";
-          if (!location.trim()) return "";
+          const location = d.location || '';
+          if (!location.trim()) return '';
 
-          const parts = location.split(", ");
+          const parts = location.split(', ');
           return parts[parts.length - 1]; // Get country
         })
-        .filter((location) => location !== ""), // Remove empty strings
+        .filter((location) => location !== ''), // Remove empty strings
     ),
   );
 
@@ -538,11 +578,11 @@ const Dealers = ({ token }: { token: string }) => {
       {/* Top Controls */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           mb: 3,
-          flexWrap: "wrap",
+          flexWrap: 'wrap',
           gap: 2,
         }}
       >
@@ -553,7 +593,7 @@ const Dealers = ({ token }: { token: string }) => {
           onClick={() => setOpen(true)}
           sx={{
             backgroundColor: theme.palette.primary.main,
-            "&:hover": {
+            '&:hover': {
               backgroundColor: theme.palette.primary.dark,
             },
           }}
@@ -561,7 +601,7 @@ const Dealers = ({ token }: { token: string }) => {
           Add Dealer
         </Button>
 
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             startIcon={<FilterListIcon />}
             variant="outlined"
@@ -569,7 +609,7 @@ const Dealers = ({ token }: { token: string }) => {
             sx={{
               borderColor: theme.palette.error.main,
               color: theme.palette.error.main,
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.error.light,
               },
             }}
@@ -584,7 +624,7 @@ const Dealers = ({ token }: { token: string }) => {
             sx={{
               borderColor: theme.palette.success.main,
               color: theme.palette.success.main,
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.success.light,
               },
             }}
@@ -598,7 +638,7 @@ const Dealers = ({ token }: { token: string }) => {
             sx={{
               borderColor: theme.palette.info.main,
               color: theme.palette.info.main,
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.info.light,
               },
             }}
@@ -611,11 +651,11 @@ const Dealers = ({ token }: { token: string }) => {
       {/* Search and Filters */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           mb: 3,
-          flexWrap: "wrap",
+          flexWrap: 'wrap',
           gap: 2,
         }}
       >
@@ -628,7 +668,7 @@ const Dealers = ({ token }: { token: string }) => {
           slotProps={{
             input: {
               startAdornment: (
-                <Box sx={{ mr: 1, display: "flex" }}>
+                <Box sx={{ mr: 1, display: 'flex' }}>
                   <SearchIcon />
                 </Box>
               ),
@@ -636,21 +676,21 @@ const Dealers = ({ token }: { token: string }) => {
           }}
           sx={{
             width: 300,
-            "& .MuiOutlinedInput-root": {
+            '& .MuiOutlinedInput-root': {
               fieldset: {
                 borderColor: theme.palette.divider,
               },
-              "&:hover fieldset": {
+              '&:hover fieldset': {
                 borderColor: theme.palette.primary.main,
               },
-              "&.Mui-focused fieldset": {
+              '&.Mui-focused fieldset': {
                 borderColor: theme.palette.primary.main,
               },
             },
           }}
         />
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Location</InputLabel>
             <Select
@@ -658,14 +698,14 @@ const Dealers = ({ token }: { token: string }) => {
               onChange={handleLocationFilterChange}
               label="Location"
               sx={{
-                "& .MuiOutlinedInput-root": {
+                '& .MuiOutlinedInput-root': {
                   fieldset: {
                     borderColor: theme.palette.divider,
                   },
-                  "&:hover fieldset": {
+                  '&:hover fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
-                  "&.Mui-focused fieldset": {
+                  '&.Mui-focused fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
                 },
@@ -680,7 +720,7 @@ const Dealers = ({ token }: { token: string }) => {
             </Select>
           </FormControl>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" color={theme.palette.text.secondary}>
               Sort by:
             </Typography>
@@ -691,14 +731,14 @@ const Dealers = ({ token }: { token: string }) => {
               size="small"
               sx={{
                 minWidth: 150,
-                "& .MuiOutlinedInput-root": {
+                '& .MuiOutlinedInput-root': {
                   fieldset: {
                     borderColor: theme.palette.divider,
                   },
-                  "&:hover fieldset": {
+                  '&:hover fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
-                  "&.Mui-focused fieldset": {
+                  '&.Mui-focused fieldset': {
                     borderColor: theme.palette.primary.main,
                   },
                 },
@@ -712,16 +752,16 @@ const Dealers = ({ token }: { token: string }) => {
       </Box>
 
       {/* Main Content */}
-      <Box sx={{ display: "flex", gap: 3 }}>
+      <Box sx={{ display: 'flex', gap: 3 }}>
         {/* Table */}
         <Box flex={1}>
           {dealers.length === 0 ? (
             <Box
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
                 height: 400,
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 1,
@@ -734,7 +774,7 @@ const Dealers = ({ token }: { token: string }) => {
               <Typography
                 variant="body2"
                 color="textSecondary"
-                sx={{ mb: 3, textAlign: "center" }}
+                sx={{ mb: 3, textAlign: 'center' }}
               >
                 Get started by adding your first dealer
               </Typography>
@@ -757,133 +797,22 @@ const Dealers = ({ token }: { token: string }) => {
                       <TableCell>Dealer Name</TableCell>
                       <TableCell>Owner</TableCell>
                       <TableCell>Location</TableCell>
+                      <TableCell>Status</TableCell>
                       <TableCell>Action</TableCell>
                     </TableRow>
                   </TableHead>
-                  {/* <TableBody> */}
-                  {/*   {paginatedData.map((dealer) => ( */}
-                  {/*     <TableRow */}
-                  {/*       key={dealer.id} */}
-                  {/*       hover */}
-                  {/*       // Remove the onClick handler from the row to prevent selection on click */}
-                  {/*       sx={{ */}
-                  {/*         cursor: "pointer", */}
-                  {/*         "&:hover": { */}
-                  {/*           backgroundColor: theme.palette.action.hover, */}
-                  {/*         }, */}
-                  {/*         "&.Mui-selected": { */}
-                  {/*           backgroundColor: theme.palette.action.selected, */}
-                  {/*         }, */}
-                  {/*       }} */}
-                  {/*     > */}
-                  {/*       <TableCell padding="checkbox"> */}
-                  {/*         <Checkbox */}
-                  {/*           checked={selectedDealer?.id === dealer.id} */}
-                  {/*           onChange={(e) => { */}
-                  {/*             e.stopPropagation(); */}
-                  {/*             if (e.target.checked) { */}
-                  {/*               handleSelectDealer(dealer); */}
-                  {/*             } else { */}
-                  {/*               setSelectedDealer(null); */}
-                  {/*             } */}
-                  {/*           }} */}
-                  {/*           onClick={(e) => { */}
-                  {/*             e.stopPropagation(); */}
-                  {/*           }} */}
-                  {/*         /> */}
-                  {/*       </TableCell> */}
-                  {/*       <TableCell> */}
-                  {/*         <Box */}
-                  {/*           sx={{ */}
-                  {/*             display: "flex", */}
-                  {/*             alignItems: "center", */}
-                  {/*             gap: 1, */}
-                  {/*           }} */}
-                  {/*         > */}
-                  {/*           <Box */}
-                  {/*             sx={{ */}
-                  {/*               width: 24, */}
-                  {/*               height: 24, */}
-                  {/*               position: "relative", */}
-                  {/*             }} */}
-                  {/*           > */}
-                  {/*             <Image */}
-                  {/*               src={dealer?.logo} */}
-                  {/*               alt={dealer.name} */}
-                  {/*               width={24} */}
-                  {/*               height={24} */}
-                  {/*               style={{ borderRadius: "50%" }} */}
-                  {/*             /> */}
-                  {/*           </Box> */}
-                  {/*           <Typography>{dealer.name}</Typography> */}
-                  {/*         </Box> */}
-                  {/*       </TableCell> */}
-                  {/*       <TableCell>{dealer.owner}</TableCell> */}
-                  {/*       <TableCell>{dealer.location}</TableCell> */}
-                  {/*       <TableCell> */}
-                  {/*         <Box sx={{ display: "flex", gap: 1 }}> */}
-                  {/*           <Tooltip title="Call"> */}
-                  {/*             <IconButton size="small" color="primary"> */}
-                  {/*               <PhoneIcon /> */}
-                  {/*             </IconButton> */}
-                  {/*           </Tooltip> */}
-                  {/*           <Tooltip title="Chat"> */}
-                  {/*             <IconButton size="small" color="primary"> */}
-                  {/*               <MailIcon /> */}
-                  {/*             </IconButton> */}
-                  {/*           </Tooltip> */}
-                  {/*           <Tooltip title="View"> */}
-                  {/*             <IconButton */}
-                  {/*               size="small" */}
-                  {/*               color="primary" */}
-                  {/*               onClick={(e) => { */}
-                  {/*                 e.stopPropagation(); */}
-                  {/*                 handleViewClick(dealer); */}
-                  {/*               }} */}
-                  {/*             > */}
-                  {/*               <VisibilityIcon /> */}
-                  {/*             </IconButton> */}
-                  {/*           </Tooltip> */}
-                  {/*           <Tooltip title="Edit"> */}
-                  {/*             <IconButton */}
-                  {/*               size="small" */}
-                  {/*               color="primary" */}
-                  {/*               onClick={(e) => { */}
-                  {/*                 e.stopPropagation(); */}
-                  {/*                 handleEditClick(dealer); */}
-                  {/*               }} */}
-                  {/*             > */}
-                  {/*               <EditIcon /> */}
-                  {/*             </IconButton> */}
-                  {/*           </Tooltip> */}
-                  {/*           <Tooltip title="Delete"> */}
-                  {/*             <IconButton */}
-                  {/*               size="small" */}
-                  {/*               color="error" */}
-                  {/*               onClick={(e) => { */}
-                  {/*                 e.stopPropagation(); */}
-                  {/*                 handleDelete(dealer.id); */}
-                  {/*               }} */}
-                  {/*             > */}
-                  {/*               <DeleteIcon /> */}
-                  {/*             </IconButton> */}
-                  {/*           </Tooltip> */}
-                  {/*         </Box> */}
-                  {/*       </TableCell> */}
-                  {/*     </TableRow> */}
-                  {/*   ))} */}
-                  {/* </TableBody> */}
+
                   <TableBody>
                     {paginatedData.map((dealer) => (
                       <TableRow
                         key={dealer.id}
                         hover
                         sx={{
-                          cursor: "pointer",
-                          "&:hover": {
+                          cursor: 'pointer',
+                          '&:hover': {
                             backgroundColor: theme.palette.action.hover,
                           },
-                          "&.Mui-selected": {
+                          '&.Mui-selected': {
                             backgroundColor: theme.palette.action.selected,
                           },
                         }}
@@ -907,8 +836,8 @@ const Dealers = ({ token }: { token: string }) => {
                         <TableCell>
                           <Box
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
+                              display: 'flex',
+                              alignItems: 'center',
                               gap: 1,
                             }}
                           >
@@ -916,18 +845,18 @@ const Dealers = ({ token }: { token: string }) => {
                               sx={{
                                 width: 24,
                                 height: 24,
-                                position: "relative",
+                                position: 'relative',
                               }}
                             >
                               <Image
                                 src={
                                   dealer.logo ||
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(dealer.name || dealer.owner || "John Doe")}&background=3f51b5&color=ffffff&type=png`
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(dealer.name || dealer.owner || 'John Doe')}&background=3f51b5&color=ffffff&type=png`
                                 }
                                 alt={dealer.name}
                                 width={24}
                                 height={24}
-                                style={{ borderRadius: "50%" }}
+                                style={{ borderRadius: '50%' }}
                               />
                             </Box>
                             <Typography>{dealer.name}</Typography>
@@ -936,7 +865,37 @@ const Dealers = ({ token }: { token: string }) => {
                         <TableCell>{dealer.owner}</TableCell>
                         <TableCell>{dealer.location}</TableCell>
                         <TableCell>
-                          <Box sx={{ display: "flex", gap: 1 }}>
+                          <Select
+                            value={dealer.status}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(
+                                dealer.id as number,
+                                e.target.value as UserStatus,
+                              );
+                            }}
+                            size="small"
+                            sx={{
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                border: "none",
+                              },
+                              "& .MuiSelect-select": {
+                                padding: "5px",
+                                fontSize: "0.875rem",
+                              },
+                            }}
+                          >
+                            <MenuItem value={UserStatus.ACTIVE}>Active</MenuItem>
+                            <MenuItem value={UserStatus.IN_ACTIVE}>
+                              Inactive
+                            </MenuItem>
+                            <MenuItem value={UserStatus.SUSPENDED}>
+                              Suspended
+                            </MenuItem>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
                             <Tooltip title="Call">
                               <IconButton
                                 size="small"
@@ -1002,8 +961,8 @@ const Dealers = ({ token }: { token: string }) => {
               {/* Pagination */}
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
+                  display: 'flex',
+                  justifyContent: 'flex-end',
                   mt: 2,
                   gap: 1,
                 }}
@@ -1033,24 +992,24 @@ const Dealers = ({ token }: { token: string }) => {
               boxShadow: theme.shadows[2],
             }}
           >
-            <Box sx={{ textAlign: "center", mb: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
               <Box
                 sx={{
                   width: 60,
                   height: 60,
-                  position: "relative",
-                  margin: "0 auto 8px",
+                  position: 'relative',
+                  margin: '0 auto 8px',
                 }}
               >
                 <Image
                   src={
                     selectedDealer.logo ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDealer.name || selectedDealer.owner || "John Doe")}&background=3f51b5&color=ffffff&type=png`
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDealer.name || selectedDealer.owner || 'John Doe')}&background=3f51b5&color=ffffff&type=png`
                   }
                   alt={selectedDealer.name}
                   width={60}
                   height={60}
-                  style={{ borderRadius: "50%" }}
+                  style={{ borderRadius: '50%' }}
                 />
               </Box>
               <Typography variant="h6">{selectedDealer.name}</Typography>
@@ -1062,8 +1021,8 @@ const Dealers = ({ token }: { token: string }) => {
               </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "center",
+                  display: 'flex',
+                  justifyContent: 'center',
                   gap: 1,
                   mt: 2,
                 }}
@@ -1097,8 +1056,8 @@ const Dealers = ({ token }: { token: string }) => {
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -1109,7 +1068,7 @@ const Dealers = ({ token }: { token: string }) => {
                   {selectedDealer.location}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -1127,7 +1086,7 @@ const Dealers = ({ token }: { token: string }) => {
                   {selectedDealer.website}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -1138,7 +1097,7 @@ const Dealers = ({ token }: { token: string }) => {
                   {selectedDealer.contactEmail}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography
                   variant="body2"
                   color={theme.palette.text.secondary}
@@ -1148,7 +1107,19 @@ const Dealers = ({ token }: { token: string }) => {
                 <Typography variant="body2">
                   {selectedDealer.tierId
                     ? `Tier ${selectedDealer.tierId}`
-                    : "N/A"}
+                    : 'N/A'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography
+                  variant="body2"
+                  color={theme.palette.text.secondary}
+                >
+                  Status
+                </Typography>
+                <Typography variant="body2">
+                  {selectedDealer.status.charAt(0).toUpperCase() +
+                    selectedDealer.status.slice(1).toLowerCase()}
                 </Typography>
               </Box>
             </Box>

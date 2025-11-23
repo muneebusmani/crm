@@ -8,7 +8,10 @@ export async function GET() {
     const anyResp = resp as any;
     if (anyResp && typeof anyResp === 'object' && 'success' in anyResp) {
       if (anyResp.success) return NextResponse.json(anyResp.data ?? null);
-      return NextResponse.json({ error: anyResp.error || 'Failed to load settings' }, { status: 500 });
+      return NextResponse.json(
+        { error: anyResp.error || 'Failed to load settings' },
+        { status: 500 },
+      );
     }
     return NextResponse.json(anyResp);
   } catch (e: unknown) {
@@ -24,7 +27,10 @@ export async function POST(req: Request) {
     const anyResp = resp as any;
     if (anyResp && typeof anyResp === 'object' && 'success' in anyResp) {
       if (anyResp.success) return NextResponse.json(anyResp.data ?? null);
-      return NextResponse.json({ error: anyResp.error || 'Failed to save settings' }, { status: 500 });
+      return NextResponse.json(
+        { error: anyResp.error || 'Failed to save settings' },
+        { status: 500 },
+      );
     }
     return NextResponse.json(anyResp);
   } catch (e: unknown) {

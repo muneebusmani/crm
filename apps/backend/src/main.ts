@@ -48,7 +48,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup(join(__dirname, "..", "api"), app, document);
   // app.useGlobalPipes(
   //   new ValidationPipe({
   //     whitelist: true,
@@ -62,16 +62,16 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: frontend_url,
-    methods: 'GET,POST,DELETE,PUT',
+    origin: [frontendUrl, "http://localhost:3000", "http://localhost:3001"],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
+    allowedHeaders: "Content-Type, Authorization",
   });
   app.use(
     '/uploads',
     express.static(join(__dirname, '..', 'uploads')), // points to backend/uploads
   );
   await app.listen(port, host);
-  console.log(frontend_url);
   console.log(`Listening on ${host}:${port}`);
 }
 bootstrap();

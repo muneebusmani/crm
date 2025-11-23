@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { UserType } from "@crm/types";
+import { UserType } from '@crm/types';
 import {
   AccountBoxOutlined as AccountBoxOutlinedIcon,
   Circle as CircleIcon,
@@ -20,7 +20,7 @@ import {
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
   SupportAgent as SupportAgentIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   alpha,
   Box,
@@ -38,19 +38,19 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
-} from "@mui/material";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { useLayoutEffect, useState } from "react";
+} from '@mui/material';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React, { useLayoutEffect, useState } from 'react';
 
 // Constants
 const DRAWER_WIDTH = 280;
 const DRAWER_WIDTH_SHRUNK = 80;
 const DRAWER_WIDTH_HIDDEN = 0;
-const SIDEBAR_STORAGE_KEY = "sidebar-preferences";
+const SIDEBAR_STORAGE_KEY = 'sidebar-preferences';
 
 // Types
-type SidebarMode = "full" | "shrink" | "hover" | "hidden";
+type SidebarMode = 'full' | 'shrink' | 'hover' | 'hidden';
 
 interface NavigationItem {
   text: string;
@@ -88,14 +88,14 @@ const SidebarContext = React.createContext<SidebarContextType | undefined>(
 
 // LocalStorage utilities
 const getStoredSidebarPreferences = (): SidebarPreferences | null => {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
 
   try {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     return stored ? JSON.parse(stored) : null;
   } catch (error) {
     console.error(
-      "Error reading sidebar preferences from localStorage:",
+      'Error reading sidebar preferences from localStorage:',
       error,
     );
     return null;
@@ -103,12 +103,12 @@ const getStoredSidebarPreferences = (): SidebarPreferences | null => {
 };
 
 const setStoredSidebarPreferences = (preferences: SidebarPreferences): void => {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
   try {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(preferences));
   } catch (error) {
-    console.error("Error saving sidebar preferences to localStorage:", error);
+    console.error('Error saving sidebar preferences to localStorage:', error);
   }
 };
 
@@ -137,34 +137,34 @@ const NavigationLink: React.FC<{
   const isShrunk = sidebarContext?.isShrunk || false;
 
   const baseSx: SxProps = {
-    display: "flex",
-    alignItems: "center",
+    display: 'flex',
+    alignItems: 'center',
     borderRadius: 1,
     my: pl ? 0.25 : 0.5,
-    backgroundColor: isActive ? theme.palette.primary.main : "transparent",
-    color: isActive ? theme.palette.primary.contrastText : "inherit",
-    "&:hover": {
+    backgroundColor: isActive ? theme.palette.primary.main : 'transparent',
+    color: isActive ? theme.palette.primary.contrastText : 'inherit',
+    '&:hover': {
       backgroundColor: isActive
         ? theme.palette.primary.dark
         : alpha(theme.palette.primary.main, 0.1),
     },
-    justifyContent: "center",
+    justifyContent: 'center',
     minHeight: 48,
   };
 
   return (
     <Link
       href={href}
-      style={{ textDecoration: "none", color: "inherit", width: "100%" }}
+      style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}
       onClick={onClick}
     >
-      <Tooltip title={isShrunk && showText ? text : ""} placement="right">
+      <Tooltip title={isShrunk && showText ? text : ''} placement="right">
         <ListItemButton sx={{ ...baseSx, ...sx }}>
           <ListItemIcon
             sx={{
-              color: isActive ? theme.palette.primary.contrastText : "inherit",
+              color: isActive ? theme.palette.primary.contrastText : 'inherit',
               minWidth: pl ? 20 : isShrunk ? 0 : 40,
-              justifyContent: "center",
+              justifyContent: 'center',
             }}
           >
             {icon}
@@ -183,38 +183,38 @@ const NavigationLink: React.FC<{
 
 const userRoutesMap: Record<UserType, NavigationItem[]> = {
   admin: [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
-    { text: "Leads", icon: <GroupOutlinedIcon />, path: "/leads" },
-    { text: "Dealers", icon: <PersonIcon />, path: "/dealer" },
-    { text: "Support", icon: <SupportAgentIcon />, path: "/support" },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Leads', icon: <GroupOutlinedIcon />, path: '/leads' },
+    { text: 'Dealers', icon: <PersonIcon />, path: '/dealer' },
+    { text: 'Support', icon: <SupportAgentIcon />, path: '/support' },
   ],
   dealer: [
-    { text: "Home", icon: <HomeIcon />, path: "/" },
-    { text: "Leads", icon: <Groups2Icon />, path: "/leads" },
-    { text: "Invoices", icon: <ReceiptLongIcon />, path: "/invoices" },
-    { text: "Quotations", icon: <RequestQuoteIcon />, path: "/quotations" },
+    { text: 'Home', icon: <HomeIcon />, path: '/' },
+    { text: 'Leads', icon: <Groups2Icon />, path: '/leads' },
+    { text: 'Invoices', icon: <ReceiptLongIcon />, path: '/invoices' },
+    { text: 'Quotations', icon: <RequestQuoteIcon />, path: '/quotations' },
     // { text: 'Messages', icon: <MessageIcon />, path: '/messages' },
     {
-      text: "Packages",
+      text: 'Packages',
       icon: <Inventory2OutlinedIcon />,
-      path: "/packages",
+      path: '/packages',
     },
     {
-      text: "Support",
+      text: 'Support',
       icon: <SupportAgentIcon />,
-      path: "/support",
+      path: '/support',
     },
     {
-      text: "Profile",
+      text: 'Profile',
       icon: <AccountBoxOutlinedIcon />,
-      path: "/profile",
+      path: '/profile',
     },
   ],
 };
 
 const userPrefixMap: Record<UserType, string> = {
-  admin: "/admin",
-  dealer: "/dealer",
+  admin: '/admin',
+  dealer: '/dealer',
 };
 
 const prefixRoutes = (
@@ -223,30 +223,30 @@ const prefixRoutes = (
 ): NavigationItem[] =>
   items.map((item) => ({
     ...item,
-    path: item.path === "/" ? prefix : `${prefix}${item.path}`,
+    path: item.path === '/' ? prefix : `${prefix}${item.path}`,
   }));
 
 // Bottom navigation is rendered at the footer of the sidebar.
 // We include a dealer-only entry to switch profiles above Logout.
 const getBottomNavigationItems = (userType: UserType): NavigationItem[] => {
-  if (userType === "dealer") {
+  if (userType === 'dealer') {
     return [
       {
-        text: "Switch Profile",
+        text: 'Switch Profile',
         icon: <SwitchAccountIcon />,
-        path: "/dealer/select-profile",
+        path: '/dealer/select-profile',
       },
-      { text: "Logout", icon: <LogoutIcon />, path: "/logout" },
+      { text: 'Logout', icon: <LogoutIcon />, path: '/logout' },
     ];
   }
-  return [{ text: "Logout", icon: <LogoutIcon />, path: "/logout" }];
+  return [{ text: 'Logout', icon: <LogoutIcon />, path: '/logout' }];
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
   userType,
   mobileOpen = false,
   onMobileToggle,
-  mode = "full",
+  mode = 'full',
   onModeChange,
 }) => {
   const navigationItems =
@@ -255,7 +255,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       : [];
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"), { noSsr: true });
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [hovered, setHovered] = useState(false);
@@ -263,7 +263,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Load preferences from localStorage on mount
   useLayoutEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const storedPreferences = getStoredSidebarPreferences();
       if (storedPreferences?.mode) {
         setLocalMode(storedPreferences.mode);
@@ -279,8 +279,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isShrunk =
     !isMobile &&
-    (localMode === "shrink" || (localMode === "hover" && !hovered));
-  const isHidden = localMode === "hidden";
+    (localMode === 'shrink' || (localMode === 'hover' && !hovered));
+  const isHidden = localMode === 'hidden';
   const currentWidth = isHidden
     ? DRAWER_WIDTH_HIDDEN
     : isShrunk
@@ -298,18 +298,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const toggleMode = () => {
-    const newMode = localMode === "full" ? "shrink" : "full";
+    const newMode = localMode === 'full' ? 'shrink' : 'full';
     handleModeChange(newMode);
   };
 
   const handleMouseEnter = () => {
-    if (localMode === "hover") {
+    if (localMode === 'hover') {
       setHovered(true);
     }
   };
 
   const handleMouseLeave = () => {
-    if (localMode === "hover") {
+    if (localMode === 'hover') {
       setHovered(false);
     }
   };
@@ -349,14 +349,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 my: 0.5,
                 backgroundColor: active
                   ? theme.palette.primary.main
-                  : "transparent",
-                color: active ? theme.palette.primary.contrastText : "inherit",
-                "&:hover": {
+                  : 'transparent',
+                color: active ? theme.palette.primary.contrastText : 'inherit',
+                '&:hover': {
                   backgroundColor: active
                     ? theme.palette.primary.dark
                     : alpha(theme.palette.primary.main, 0.1),
                 },
-                justifyContent: "center",
+                justifyContent: 'center',
                 minHeight: 48,
               }}
             >
@@ -364,9 +364,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 sx={{
                   color: active
                     ? theme.palette.primary.contrastText
-                    : "inherit",
+                    : 'inherit',
                   minWidth: 0,
-                  justifyContent: "center",
+                  justifyContent: 'center',
                 }}
               >
                 {item.icon}
@@ -388,14 +388,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 my: 0.5,
                 backgroundColor: active
                   ? theme.palette.primary.main
-                  : "transparent",
-                color: active ? theme.palette.primary.contrastText : "inherit",
-                "&:hover": {
+                  : 'transparent',
+                color: active ? theme.palette.primary.contrastText : 'inherit',
+                '&:hover': {
                   backgroundColor: active
                     ? theme.palette.primary.dark
                     : alpha(theme.palette.primary.main, 0.1),
                 },
-                justifyContent: isShrunk ? "center" : "flex-start",
+                justifyContent: isShrunk ? 'center' : 'flex-start',
                 minHeight: 48,
               }}
             >
@@ -403,9 +403,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 sx={{
                   color: active
                     ? theme.palette.primary.contrastText
-                    : "inherit",
+                    : 'inherit',
                   minWidth: isShrunk ? 0 : 40,
-                  justifyContent: "center",
+                  justifyContent: 'center',
                 }}
               >
                 {item.icon}
@@ -464,22 +464,22 @@ const Sidebar: React.FC<SidebarProps> = ({
     <SidebarContext.Provider value={sidebarContextValue}>
       <Box
         sx={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
           backgroundColor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           borderColor: theme.palette.divider,
-          transition: theme.transitions.create(["background-color", "color"]),
+          transition: theme.transitions.create(['background-color', 'color']),
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             px: 3,
             borderBottom: `1px solid ${theme.palette.divider}`,
             minHeight: 64,
@@ -488,14 +488,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Typography
             variant="h6"
             sx={{
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              transition: theme.transitions.create(["opacity", "maxWidth"], {
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              transition: theme.transitions.create(['opacity', 'maxWidth'], {
                 duration: theme.transitions.duration.shortest,
               }),
               opacity: isShrunk && !isMobile ? 0 : 1,
-              maxWidth: isShrunk && !isMobile ? 0 : "auto",
+              maxWidth: isShrunk && !isMobile ? 0 : 'auto',
             }}
           >
             Engine Finders
@@ -506,7 +506,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={toggleMode}
                 size="small"
                 sx={{
-                  color: "inherit",
+                  color: 'inherit',
                 }}
               >
                 {isShrunk ? <MenuIcon /> : <MenuOpen />}
@@ -518,7 +518,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Box
           sx={{
             flex: 1,
-            overflowY: "auto",
+            overflowY: 'auto',
             py: 1,
           }}
         >
@@ -556,7 +556,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       sx={{
         width: { md: currentWidth },
         flexShrink: { md: 0 },
-        transition: theme.transitions.create("width"),
+        transition: theme.transitions.create('width'),
       }}
     >
       {/* Mobile drawer */}
@@ -568,11 +568,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           keepMounted: true,
         }}
         sx={{
-          display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": {
-            boxSizing: "border-box",
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
             width: DRAWER_WIDTH,
-            border: "none",
+            border: 'none',
             boxShadow: theme.shadows[8],
             backgroundColor: theme.palette.background.paper,
           },
@@ -586,14 +586,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: "none", md: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
               width: currentWidth,
-              border: "none",
+              border: 'none',
               borderRight: `1px solid ${theme.palette.divider}`,
-              overflowX: "hidden",
-              transition: theme.transitions.create("width"),
+              overflowX: 'hidden',
+              transition: theme.transitions.create('width'),
               backgroundColor: theme.palette.background.paper,
             },
           }}
@@ -615,21 +615,21 @@ const Layout: React.FC<{
 }> = ({ children, userType, sidebarMode, onSidebarModeChange }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const currentWidth =
-    sidebarMode === "hidden"
+    sidebarMode === 'hidden'
       ? DRAWER_WIDTH_HIDDEN
-      : sidebarMode === "shrink" || sidebarMode === "hover"
+      : sidebarMode === 'shrink' || sidebarMode === 'hover'
         ? DRAWER_WIDTH_SHRUNK
         : DRAWER_WIDTH;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar
         userType={userType as UserType}
         mobileOpen={mobileOpen}
@@ -644,8 +644,8 @@ const Layout: React.FC<{
           flexGrow: 1,
           width: { md: `calc(100% - ${currentWidth}px)` },
           backgroundColor: theme.palette.grey[50],
-          minHeight: "100vh",
-          transition: theme.transitions.create("width"),
+          minHeight: '100vh',
+          transition: theme.transitions.create('width'),
         }}
       >
         {/* Mobile menu button */}
@@ -656,13 +656,13 @@ const Layout: React.FC<{
             edge="start"
             onClick={handleDrawerToggle}
             sx={{
-              position: "fixed",
+              position: 'fixed',
               top: 16,
               left: 16,
               zIndex: theme.zIndex.appBar,
               backgroundColor: theme.palette.background.paper,
               boxShadow: theme.shadows[2],
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.action.hover,
               },
             }}
@@ -672,20 +672,20 @@ const Layout: React.FC<{
         )}
 
         {/* Desktop sidebar toggle for hidden mode */}
-        {!isMobile && sidebarMode === "hidden" && (
+        {!isMobile && sidebarMode === 'hidden' && (
           <IconButton
             color="inherit"
             aria-label="show sidebar"
             edge="start"
-            onClick={() => onSidebarModeChange?.("full")}
+            onClick={() => onSidebarModeChange?.('full')}
             sx={{
-              position: "fixed",
+              position: 'fixed',
               top: 16,
               left: 16,
               zIndex: theme.zIndex.appBar,
               backgroundColor: theme.palette.background.paper,
               boxShadow: theme.shadows[2],
-              "&:hover": {
+              '&:hover': {
                 backgroundColor: theme.palette.action.hover,
               },
             }}
@@ -697,9 +697,9 @@ const Layout: React.FC<{
         {/* Main content area */}
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
           }}
         >
           {children}
@@ -713,7 +713,7 @@ const Layout: React.FC<{
 const useSidebar = () => {
   const context = React.useContext(SidebarContext);
   if (context === undefined) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
+    throw new Error('useSidebar must be used within a SidebarProvider');
   }
   return context;
 };

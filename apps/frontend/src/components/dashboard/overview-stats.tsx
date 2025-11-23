@@ -150,14 +150,14 @@ export default function OverviewStats({
         color: theme.palette.warning.main,
       });
     }
-    
+
     stats.push({
       title: 'Conversion Rate',
       value: `${conversionRate.toFixed(1)}%`,
       icon: <PercentIcon sx={{ fontSize: 32 }} />,
       color: theme.palette.secondary.main,
     });
-    
+
     // Financial results: Total Revenue
     if (totalRevenue !== undefined) {
       stats.push({
@@ -167,7 +167,7 @@ export default function OverviewStats({
         color: theme.palette.success.main,
       });
     }
-    
+
     // Account status: Credits → Tier
     if (dealerCredits !== undefined) {
       stats.push({
@@ -177,7 +177,7 @@ export default function OverviewStats({
         color: theme.palette.warning.main,
       });
     }
-    
+
     if (dealerTier) {
       stats.push({
         title: 'My Tier',
