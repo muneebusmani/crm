@@ -9,19 +9,19 @@ import {
 } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { UpdateHqLeadSettingsDto } from './dto/update-hq-lead-settings.dto';
-import { AdminGuard } from 'src/auth/guards/admin.guard';
+// import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('admin/hq-leads')
 export class AdminHqLeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
-  @UseGuards(AdminGuard)
+  //  @UseGuards(AdminGuard)
   @Get('settings')
   async getHqLeadSettings() {
     return await this.leadsService.getAllHqLeadSettings();
   }
 
-  @UseGuards(AdminGuard)
+  //  @UseGuards(AdminGuard)
   @Post('settings')
   async createHqLeadSettings(
     @Body() createHqLeadSettingsDto: UpdateHqLeadSettingsDto,
@@ -29,7 +29,7 @@ export class AdminHqLeadsController {
     return await this.leadsService.createHqLeadSetting(createHqLeadSettingsDto);
   }
 
-  @UseGuards(AdminGuard)
+  //  @UseGuards(AdminGuard)
   @Put('settings/:packageTier')
   async updateHqLeadSettings(
     @Param('packageTier') packageTier: string,
@@ -41,7 +41,7 @@ export class AdminHqLeadsController {
     );
   }
 
-  @UseGuards(AdminGuard)
+  //  @UseGuards(AdminGuard)
   @Post('assign/:leadId/to/:dealerId')
   async assignHqLead(
     @Param('leadId') leadId: number,
@@ -50,10 +50,9 @@ export class AdminHqLeadsController {
     return await this.leadsService.assignHqLeadToDealer(leadId, dealerId);
   }
 
-  @UseGuards(AdminGuard)
+  //  @UseGuards(AdminGuard)
   @Post('reset-quota/:dealerId')
   async resetDealerQuota(@Param('dealerId') dealerId: number) {
     return await this.leadsService.resetDealerHqLeadQuota(dealerId);
   }
 }
-
