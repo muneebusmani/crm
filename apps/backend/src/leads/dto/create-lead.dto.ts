@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsPhoneNumber,
   IsDateString,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateLeadDto {
@@ -47,4 +48,8 @@ export class CreateLeadDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isHqLead?: boolean;
 }
