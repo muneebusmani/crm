@@ -32,6 +32,7 @@ export interface Lead {
   follow_up_date?: Date;
   notes?: string;
   wonByDealerId?: number;
+  moreInfoFetched?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

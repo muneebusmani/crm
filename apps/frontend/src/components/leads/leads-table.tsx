@@ -570,7 +570,7 @@ const LeadsTable: React.FC = () => {
   }
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
+    <Box sx={{ width: '100%' }}>
       <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
         {/* Header */}
         <Box
@@ -836,7 +836,9 @@ const LeadsTable: React.FC = () => {
                     ) || '-'}
                   </TableCell>
                   <TableCell>{lead.vehicle_brand || '-'}</TableCell>
-                  <TableCell>{lead.vehicle_model || '-'}</TableCell>
+                  <TableCell>
+                    {lead.vehicle_model || lead.vehicle_series || '-'}
+                  </TableCell>
                   <TableCell>{lead.vehicle_reg || '-'}</TableCell>
                   <TableCell>
                     <Tooltip

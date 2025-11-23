@@ -231,17 +231,53 @@ export class LeadsService {
         );
       }
 
-      // Simulate API call to fetch more info (replace with actual API call)
-      // For now, this is a placeholder for the actual implementation
-      // You would typically call an external API here to get more vehicle info, etc.
+      // TODO: Add data handling from external API later
+      // For now, use placeholder implementation
+      let externalData = null;
 
-      // In a real implementation, you would make an external API call here
-      // For example: const externalData = await fetch('https://api.example.com/vehicle-info', {...});
+      try {
+        // Placeholder for external API call - this will be implemented later
+        // Example implementation might be:
+        // externalData = await this.callExternalApi(lead);
 
-      // Update the lead with the fetched information (simulated for now)
-      // You would update with the actual data received from the external API
+        // For now, just simulate the API call with placeholder data
+        console.log(`[PLACEHOLDER] Would call external API for lead ID: ${id}`);
+
+        // You can add a timeout here to simulate API call delay
+        // await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Example of what the external API might return:
+        // externalData = {
+        //   vehicleInfo: {
+        //     additionalDetails: 'Detailed vehicle information from external API',
+        //     marketValue: 'Estimated market value',
+        //     historyReport: 'Vehicle history report'
+        //   },
+        //   customerInfo: {
+        //     additionalDetails: 'Additional customer information from external API'
+        //   }
+        // };
+
+      } catch (apiError) {
+        this.logger.error(
+          `External API call failed for lead ${id}`,
+          apiError instanceof Error ? apiError.stack : '',
+          'LeadsService',
+        );
+        // For now, we still mark the info as fetched even if the external call fails
+        // This could be changed depending on business requirements
+      }
+
+      // Update the lead with the fetched information
+      // If externalData exists, merge it with the existing lead data
+      // For now, just set the moreInfoFetched flag to true
       lead.moreInfoFetched = true;
       lead.updatedAt = new Date();
+
+      // If we had external data, we would update the lead with it like:
+      // if (externalData) {
+      //   Object.assign(lead, externalData);
+      // }
 
       // Save the updated lead to persist the changes to the database
       const updatedLead = await this.leadRepo.save(lead);
