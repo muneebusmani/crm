@@ -4,13 +4,11 @@ import { VehicleDetails } from '@crm/types';
 import {
   Build,
   CalendarToday,
-  CheckCircle,
   Close,
   DirectionsCar,
   Info,
   LocalGasStation,
   LocalShipping,
-  LocationOn,
   Note,
   Settings,
   Speed,
@@ -19,7 +17,6 @@ import {
 import {
   Box,
   Button,
-  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -32,7 +29,8 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { get } from '@/lib/api';
 
 // Helper component for consistent info display
 const InfoItem = ({
@@ -64,7 +62,7 @@ const InfoItem = ({
       {label}
     </Typography>
     <Typography variant={valueVariant}>
-      {value || '-'}
+      {value != null && value !== '' ? value : '-'}
     </Typography>
   </Box>
 );
@@ -85,68 +83,57 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
   leadId,
   leadHasDetails,
 }) => {
-  const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails | null>(null);
+  const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasMadeApiCall = useRef(false);
   const theme = useTheme();
 
-  // Reset local state when dialog closes
   useEffect(() => {
     if (!open) {
-      // Reset on close to prepare for next open
       setVehicleDetails(null);
       setIsLoading(false);
       setError(null);
-      hasMadeApiCall.current = false; // Reset the API call flag when dialog closes
+      return;
     }
-  }, [open]);
 
-  // Load vehicle details from API when dialog opens
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadVehicleDetails = async () => {
-      // Only proceed if dialog is open, leadId exists, it's the initial load for this dialog instance, and API hasn't been called yet
-      if (open && leadId && !hasMadeApiCall.current) {
-        hasMadeApiCall.current = true; // Set the flag to prevent duplicate calls
+    if (leadId) {
+      if (leadHasDetails) {
+        let cancelled = false;
         setIsLoading(true);
         setError(null);
 
-        try {
-          const resp = await fetch(`/api/leads/${leadId}/vehicle-details`, {
-            credentials: 'include',
-          });
-          
-          if (!resp.ok) {
-            const errorData = await resp.json();
-            throw new Error(errorData.error || 'Failed to load vehicle details');
-          }
-          
-          const data = await resp.json();
-          if (!cancelled && data.success) {
-            setVehicleDetails(data.data);
-          }
-        } catch (e: any) {
-          console.error('Error loading vehicle details:', e);
-          if (!cancelled) {
+        get(`/leads/${leadId}/vehicle-details`, { credentials: 'include' })
+          .then((data) => {
+            if (cancelled) return;
+            console.log('Vehicle details loaded:', data);
+            if (data.success) {
+              setVehicleDetails(data.data);
+            } else {
+              setError(data.message || 'No vehicle details found');
+            }
+          })
+          .catch((e) => {
+            if (cancelled) return;
+            console.error('Error loading vehicle details:', e);
             setError(e.message || 'Failed to load vehicle details');
-          }
-        } finally {
-          if (!cancelled) {
-            setIsLoading(false);
-          }
-        }
+          })
+          .finally(() => {
+            if (!cancelled) {
+              setIsLoading(false);
+            }
+          });
+
+        return () => {
+          cancelled = true;
+        };
+      } else {
+        setError('No vehicle details available for this lead');
+        setVehicleDetails(null);
+        setIsLoading(false);
       }
-    };
-
-    if (leadHasDetails) {
-      loadVehicleDetails();
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, [open, leadId, leadHasDetails]);
 
   // Format date for display
@@ -222,9 +209,7 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <DirectionsCar color="primary" />
-            <Typography variant="h6">
-              Detailed Vehicle Information
-            </Typography>
+            <Typography variant="h6">Detailed Vehicle Information</Typography>
           </Box>
           <IconButton onClick={onClose} size="small">
             <Close />
@@ -265,7 +250,9 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                     <InfoItem
                       label="Year of Manufacture"
-                      value={vehicleDetails.vehicleRegistration.YearOfManufacture}
+                      value={
+                        vehicleDetails.vehicleRegistration.YearOfManufacture
+                      }
                     />
                   </GridItem>
                   <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
@@ -301,13 +288,18 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                     <InfoItem
                       label="Date of Last Update"
-                      value={formatDate(vehicleDetails.vehicleRegistration.DateOfLastUpdate)}
+                      value={formatDate(
+                        vehicleDetails.vehicleRegistration.DateOfLastUpdate,
+                      )}
                     />
                   </GridItem>
                   <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                     <InfoItem
                       label="Date First Registered (UK)"
-                      value={formatDate(vehicleDetails.vehicleRegistration.DateFirstRegisteredUk)}
+                      value={formatDate(
+                        vehicleDetails.vehicleRegistration
+                          .DateFirstRegisteredUk,
+                      )}
                     />
                   </GridItem>
                   <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
@@ -331,7 +323,12 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
                   >
                     <Build color="primary" />
                     Engine Details
@@ -384,7 +381,12 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
                   >
                     <Speed color="primary" />
                     Performance
@@ -447,7 +449,12 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
                   >
                     <LocalShipping color="primary" />
                     Dimensions & Weight
@@ -506,13 +513,70 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                 </Paper>
               )}
 
+              {/* Consumption Information */}
+              {vehicleDetails.consumption && (
+                <Paper sx={{ p: 3, mb: 3 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
+                    <LocalGasStation color="primary" />
+                    Fuel Consumption
+                  </Typography>
+
+                  <Grid container spacing={2}>
+                    <GridItem size={{ xs: 12, sm: 4, md: 4 }}>
+                      <InfoItem
+                        label="Combined"
+                        value={
+                          vehicleDetails.consumption.Combined
+                            ? `${vehicleDetails.consumption.Combined.Mpg || ''} mpg / ${vehicleDetails.consumption.Combined.Lkm || ''} L/100km`
+                            : '-'
+                        }
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 4, md: 4 }}>
+                      <InfoItem
+                        label="Urban (Cold)"
+                        value={
+                          vehicleDetails.consumption.UrbanCold
+                            ? `${vehicleDetails.consumption.UrbanCold.Mpg || ''} mpg / ${vehicleDetails.consumption.UrbanCold.Lkm || ''} L/100km`
+                            : '-'
+                        }
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 4, md: 4 }}>
+                      <InfoItem
+                        label="Extra Urban"
+                        value={
+                          vehicleDetails.consumption.ExtraUrban
+                            ? `${vehicleDetails.consumption.ExtraUrban.Mpg || ''} mpg / ${vehicleDetails.consumption.ExtraUrban.Lkm || ''} L/100km`
+                            : '-'
+                        }
+                      />
+                    </GridItem>
+                  </Grid>
+                </Paper>
+              )}
+
               {/* Vehicle History */}
               {vehicleDetails.vehicleHistory && (
                 <Paper sx={{ p: 3, mb: 3 }}>
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
                   >
                     <CalendarToday color="primary" />
                     Vehicle History
@@ -522,13 +586,17 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                     <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                       <InfoItem
                         label="Number of Previous Keepers"
-                        value={vehicleDetails.vehicleHistory.NumberOfPreviousKeepers}
+                        value={
+                          vehicleDetails.vehicleHistory.NumberOfPreviousKeepers
+                        }
                       />
                     </GridItem>
                     <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                       <InfoItem
                         label="V5C Certificate Count"
-                        value={vehicleDetails.vehicleHistory.V5CCertificateCount}
+                        value={
+                          vehicleDetails.vehicleHistory.V5CCertificateCount
+                        }
                       />
                     </GridItem>
                     <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
@@ -540,19 +608,131 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                     <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                       <InfoItem
                         label="Scrapped"
-                        value={vehicleDetails.vehicleRegistration.Scrapped ? 'Yes' : 'No'}
+                        value={
+                          vehicleDetails.vehicleRegistration.Scrapped
+                            ? 'Yes'
+                            : 'No'
+                        }
                       />
                     </GridItem>
                     <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                       <InfoItem
                         label="Exported"
-                        value={vehicleDetails.vehicleRegistration.Exported ? 'Yes' : 'No'}
+                        value={
+                          vehicleDetails.vehicleRegistration.Exported
+                            ? 'Yes'
+                            : 'No'
+                        }
                       />
                     </GridItem>
                     <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
                       <InfoItem
                         label="Imported from Non-EU"
-                        value={vehicleDetails.vehicleRegistration.ImportNonEu ? 'Yes' : 'No'}
+                        value={
+                          vehicleDetails.vehicleRegistration.ImportNonEu
+                            ? 'Yes'
+                            : 'No'
+                        }
+                      />
+                    </GridItem>
+                  </Grid>
+                </Paper>
+              )}
+
+              {/* SMMT Details */}
+              {vehicleDetails.smmtDetails && (
+                <Paper sx={{ p: 3, mb: 3 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
+                    <Settings color="primary" />
+                    SMMT Details
+                  </Typography>
+
+                  <Grid container spacing={2}>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Marque"
+                        value={vehicleDetails.smmtDetails.Marque}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Model"
+                        value={vehicleDetails.smmtDetails.ModelVariant}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Range"
+                        value={vehicleDetails.smmtDetails.Range}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Body Style"
+                        value={vehicleDetails.smmtDetails.BodyStyle}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Fuel Type"
+                        value={vehicleDetails.smmtDetails.FuelType}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Engine Capacity"
+                        value={`${vehicleDetails.smmtDetails.EngineCapacity || ''} cc`}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Transmission"
+                        value={vehicleDetails.smmtDetails.Transmission}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Number of Gears"
+                        value={vehicleDetails.smmtDetails.NumberOfGears}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Number of Doors"
+                        value={vehicleDetails.smmtDetails.NumberOfDoors}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Drive Type"
+                        value={vehicleDetails.smmtDetails.DriveType}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Country of Origin"
+                        value={vehicleDetails.smmtDetails.CountryOfOrigin}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Series"
+                        value={vehicleDetails.smmtDetails.Series}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Market Sector"
+                        value={vehicleDetails.smmtDetails.MarketSectorCode}
                       />
                     </GridItem>
                   </Grid>
@@ -565,7 +745,12 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
                   >
                     <Note color="primary" />
                     VED Rate (Tax)
@@ -593,13 +778,85 @@ const VehicleDetailsDialog: React.FC<VehicleDetailsDialogProps> = ({
                   </Grid>
                 </Paper>
               )}
+
+              {/* General Information */}
+              {vehicleDetails.general && (
+                <Paper sx={{ p: 3, mb: 3 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
+                    <Info color="primary" />
+                    General Specifications
+                  </Typography>
+
+                  <Grid container spacing={2}>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Type Approval Category"
+                        value={vehicleDetails.general.TypeApprovalCategory}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Driver Position"
+                        value={vehicleDetails.general.DriverPosition}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Driving Axle"
+                        value={vehicleDetails.general.DrivingAxle}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Power Delivery"
+                        value={vehicleDetails.general.PowerDelivery}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Euro Status"
+                        value={vehicleDetails.general.EuroStatus}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Series Description"
+                        value={vehicleDetails.general.SeriesDescription}
+                      />
+                    </GridItem>
+                    <GridItem size={{ xs: 12, sm: 6, md: 4 }}>
+                      <InfoItem
+                        label="Limited Edition"
+                        value={
+                          vehicleDetails.general.IsLimitedEdition ? 'Yes' : 'No'
+                        }
+                      />
+                    </GridItem>
+                  </Grid>
+                </Paper>
+              )}
             </>
           )}
 
           {!vehicleDetails && !isLoading && (
-            <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              py={8}
+            >
               <Typography variant="h6" color="text.secondary">
-                No detailed vehicle information available. Click "Fetch More Info" to retrieve details.
+                No detailed vehicle information available. Click "Fetch More
+                Info" to retrieve details.
               </Typography>
             </Box>
           )}

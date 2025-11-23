@@ -444,8 +444,8 @@ const LeadsTable: React.FC = () => {
       //   headers: {
       //     'Content-Type': 'application/json',
       //   },
-      // });
       const result = await post2(`/leads/${lead.id}/fetch-more-info`);
+      // });
 
       if (result.success) {
         // Update the local lead data with the new info
