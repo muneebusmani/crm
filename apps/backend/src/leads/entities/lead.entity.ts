@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -107,6 +108,9 @@ export class Lead {
 
   @Column({ type: "boolean", default: false })
   moreInfoFetched!: boolean;
+
+  @OneToOne("VehicleDetails", (vehicleDetails: any) => vehicleDetails.lead)
+  vehicleDetails?: any;
 
   @OneToMany("DealerLead", "lead")
   dealerLeads!: any[];

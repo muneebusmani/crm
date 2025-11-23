@@ -5,6 +5,7 @@ import { ActivityLogger } from 'src/common/activity-log.subscriber';
 import { AppLogger } from 'src/common/logger.service';
 import { Lead } from './entities/lead.entity';
 import { LeadNote } from './entities/lead-note.entity';
+import { VehicleDetails } from './entities/vehicle-details.entity';
 import { CompanyUser } from '../company-user/entities/company-user.entity';
 import { User } from 'src/user/entities';
 import { LeadsController } from './leads.controller';
@@ -15,7 +16,7 @@ import { LeadNotesService } from './lead-notes.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Lead, LeadNote, CompanyUser, User]),
+    TypeOrmModule.forFeature([Lead, LeadNote, VehicleDetails, CompanyUser, User]),
     ActivityLogModule,
   ],
   providers: [

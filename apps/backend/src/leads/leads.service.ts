@@ -7,12 +7,15 @@ import { CustomError } from '../common/custom-error';
 import { AppLogger } from '../common/logger.service';
 import { Lead } from './entities/lead.entity';
 import { User } from 'src/user/entities';
+import { VehicleDetails } from './entities/vehicle-details.entity';
 
 @Injectable()
 export class LeadsService {
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepo: Repository<Lead>,
+    @InjectRepository(VehicleDetails)
+    private readonly vehicleDetailsRepo: Repository<VehicleDetails>,
     private readonly logger: AppLogger,
     private readonly activityLogger: ActivityLogger,
     @InjectRepository(User)
@@ -192,6 +195,69 @@ export class LeadsService {
     }
   }
 
+  async getVehicleDetails(id: number, dealerId: number) {
+    try {
+      // First, verify the lead exists and the dealer has access to it
+      const lead = await this.leadRepo.findOne({
+        where: { id },
+        relations: ['dealerLeads', 'dealerLeads.dealer'],
+      });
+
+      if (!lead) {
+        throw new CustomError(`Lead with ID ${id} not found`, 404);
+      }
+
+      // 🔍 Find dealer with profile to get Dealer Entity ID
+      const dealer = await this.userRepository.findOne({
+        where: { id: dealerId },
+        relations: ['dealer'],
+      });
+
+      if (!dealer) {
+        throw new CustomError('Dealer not found', 404);
+      }
+
+      // Check if another dealer has already won this lead
+      // Use dealer.dealer.id (Dealer Entity ID) for comparison
+      if (lead.wonByDealerId && lead.wonByDealerId !== dealer.dealer?.id) {
+        throw new CustomError(
+          'This lead has already been won by another dealer',
+          403,
+        );
+      }
+
+      // Check if lead has vehicle details
+      if (!lead.moreInfoFetched) {
+        throw new CustomError(
+          'No additional vehicle details available for this lead',
+          404,
+        );
+      }
+
+      // Get the vehicle details for this lead
+      const vehicleDetails = await this.vehicleDetailsRepo.findOne({
+        where: { lead: { id } },
+      });
+
+      if (!vehicleDetails) {
+        throw new CustomError(
+          'No vehicle details found for this lead',
+          404,
+        );
+      }
+
+      return vehicleDetails;
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to fetch vehicle details for lead ${id}`,
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to fetch vehicle details');
+    }
+  }
+
   async fetchMoreInfo(id: number, dealerId: number) {
     try {
       // First, get the lead
@@ -231,32 +297,47 @@ export class LeadsService {
         );
       }
 
-      // TODO: Add data handling from external API later
-      // For now, use placeholder implementation
+      // Call the external API to get vehicle details
       let externalData = null;
 
       try {
-        // Placeholder for external API call - this will be implemented later
-        // Example implementation might be:
-        // externalData = await this.callExternalApi(lead);
+        // Get the VRM from the lead to call the external API
+        const vrm = lead.vehicle_reg; // or lead.vehicle_vrm, depending on which field contains the registration
+        if (!vrm) {
+          throw new CustomError('Vehicle registration not available for this lead', 400);
+        }
 
-        // For now, just simulate the API call with placeholder data
-        console.log(`[PLACEHOLDER] Would call external API for lead ID: ${id}`);
+        // Call the external API to get detailed vehicle information
+        const response = await fetch(
+          `https://api.checkcardetails.co.uk/vehicledata/ukvehicledata?apikey=b627ac2f1dfb771559815c03e3161e91&vrm=${encodeURIComponent(vrm)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
 
-        // You can add a timeout here to simulate API call delay
-        // await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!response.ok) {
+          throw new CustomError(`External API call failed: ${response.status}`, response.status);
+        }
 
-        // Example of what the external API might return:
-        // externalData = {
-        //   vehicleInfo: {
-        //     additionalDetails: 'Detailed vehicle information from external API',
-        //     marketValue: 'Estimated market value',
-        //     historyReport: 'Vehicle history report'
-        //   },
-        //   customerInfo: {
-        //     additionalDetails: 'Additional customer information from external API'
-        //   }
-        // };
+        externalData = await response.json();
+
+        // Save the vehicle details to the separate table
+        const vehicleDetails = new VehicleDetails();
+        vehicleDetails.vehicleRegistration = externalData.VehicleRegistration || {};
+        vehicleDetails.dimensions = externalData.Dimensions || null;
+        vehicleDetails.engine = externalData.Engine || null;
+        vehicleDetails.performance = externalData.Performance || null;
+        vehicleDetails.consumption = externalData.Consumption || null;
+        vehicleDetails.vehicleHistory = externalData.VehicleHistory || null;
+        vehicleDetails.smmtDetails = externalData.SmmtDetails || null;
+        vehicleDetails.vedRate = externalData.vedRate || null;
+        vehicleDetails.general = externalData.General || null;
+        vehicleDetails.lead = lead; // Set the relationship
+
+        await this.vehicleDetailsRepo.save(vehicleDetails);
 
       } catch (apiError) {
         this.logger.error(
@@ -264,20 +345,13 @@ export class LeadsService {
           apiError instanceof Error ? apiError.stack : '',
           'LeadsService',
         );
-        // For now, we still mark the info as fetched even if the external call fails
-        // This could be changed depending on business requirements
+        // Still mark the info as fetched even if the external call fails
+        // This prevents repeated failed calls to the external API
       }
 
       // Update the lead with the fetched information
-      // If externalData exists, merge it with the existing lead data
-      // For now, just set the moreInfoFetched flag to true
       lead.moreInfoFetched = true;
       lead.updatedAt = new Date();
-
-      // If we had external data, we would update the lead with it like:
-      // if (externalData) {
-      //   Object.assign(lead, externalData);
-      // }
 
       // Save the updated lead to persist the changes to the database
       const updatedLead = await this.leadRepo.save(lead);

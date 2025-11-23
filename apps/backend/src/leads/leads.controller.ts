@@ -104,6 +104,17 @@ export class LeadsController {
     return this.buildResponse(result);
   }
 
+  @Get(':id/vehicle-details')
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  async getVehicleDetails(
+    @Param('id') id: number,
+    @Req() req,
+  ): Promise<ApiResponse<any>> {
+    const dealerId = req.user.id;
+    const result = await this.leadsService.getVehicleDetails(id, dealerId);
+    return this.buildResponse(result);
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: number): Promise<ApiResponse<any>> {
     const result = await this.leadsService.remove(id);
