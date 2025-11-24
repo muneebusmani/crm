@@ -12,7 +12,7 @@ export class AdminGuard implements CanActivate {
     const user = request.user;
 
     if (user?.role !== 'admin') {
-      throw new ForbiddenException('Access restricted to dealers only');
+      throw new ForbiddenException('Access restricted to admins only');
     }
 
     return true;

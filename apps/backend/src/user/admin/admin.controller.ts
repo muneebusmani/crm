@@ -15,9 +15,11 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CustomError } from 'src/common/custom-error';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('admins')
 export class AdminController {
@@ -41,6 +43,13 @@ export class AdminController {
   @Get()
   findAll() {
     return this.adminService.getAllAdmins();
+  }
+
+  @Get('dealers-status')
+  @UseGuards(AdminGuard)
+  async getDealersWithQuota() {
+    const statuses = await this.adminService.getDealersWithQuota();
+    return this.buildResponse(statuses);
   }
 
   @Get(':id')

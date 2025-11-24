@@ -16,6 +16,7 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Admin, AdminRole, User } from '../entities';
 import { CustomError } from 'src/common/custom-error';
+import { LeadsService } from 'src/leads/leads.service';
 
 @Injectable()
 export class AdminService {
@@ -26,6 +27,7 @@ export class AdminService {
     private adminRepository: Repository<Admin>,
     @InjectRepository(AdminRole)
     private adminRoleRepository: Repository<AdminRole>,
+    private leadsService: LeadsService,
   ) {}
 
   async createAdmin(dto: CreateAdminDto) {
@@ -165,5 +167,45 @@ export class AdminService {
     } catch (error: unknown) {
       throw new CustomError("Unable to update dealer status");
     }
+  }
+
+  async getDealersWithQuota() {
+    const dealers = await this.userRepository.find({
+      where: { type: UserType.DEALER },
+    });
+
+    const dealerStatuses = await Promise.all(
+      dealers.map(async (dealer) => {
+        try {
+          const packageTier = await this.leadsService.getDealerPackageTier(
+            dealer.id,
+          );
+          const quota = await this.leadsService.checkHqLeadQuota(dealer.id);
+          return {
+            id: dealer.id,
+            name: dealer.name,
+            email: dealer.email,
+            status: dealer.status,
+            packageTier,
+            assignedCount: quota.assignedCount,
+            dailyLimit: quota.dailyLimit,
+          };
+        } catch (error) {
+          // If a dealer has an issue (e.g., no tier), return basic info
+          return {
+            id: dealer.id,
+            name: dealer.name,
+            email: dealer.email,
+            status: dealer.status,
+            packageTier: 'N/A',
+            assignedCount: 'N/A',
+            dailyLimit: 'N/A',
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
+      }),
+    );
+
+    return dealerStatuses;
   }
 }
