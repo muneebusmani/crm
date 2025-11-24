@@ -1,6 +1,8 @@
+import { APP_PIPE, APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt.guard';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_PIPE } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { ActivityLogModule } from './activity-log/activity-log.module';
@@ -21,13 +23,16 @@ import { MessagesModule } from './dealer-chat/messages.module';
 import { BusinessSettingModule } from './business-setting/business-setting.module';
 import { CompanyUserModule } from './company-user/company-user.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { HqLeadResetModule } from './hq-lead-reset/hq-lead-reset.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
       isGlobal: true,
     }),
+    HqLeadResetModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -68,6 +73,10 @@ import { UploadsModule } from './uploads/uploads.module';
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
   ],
 })

@@ -29,6 +29,28 @@ interface IncomingLead {
   engine_code?: string;
 }
 
+// Regex to identify HQ brands (case-insensitive)
+const hqBrandsRegex =
+  /(bmw|land\s?rover|rang(e)?\s?rover|jaguar|merc(edes)?[\s-]?benz)/i;
+
+const isHqLead = (leadData: IncomingLead): boolean => {
+  const searchableString = [
+    leadData.vehicle_model,
+    leadData.vehicle_reg,
+    leadData.vehicle_brand,
+    leadData.vehicle_title,
+    leadData.vehicle_vrm,
+    leadData.vehicle_series,
+    leadData.vehicle_part,
+    leadData.fuel_type,
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  if (!searchableString) return false;
+  return hqBrandsRegex.test(searchableString);
+};
+
 serve(async (req) => {
   // CORS headers for cross-origin requests
   const corsHeaders = {
@@ -69,6 +91,9 @@ serve(async (req) => {
       );
     }
 
+    // Determine if it's an HQ lead
+    const isHq = isHqLead(leadData);
+
     // Process and structure the data matching Lead entity structure
     const processedLead = {
       name: leadData.name || null,
@@ -98,6 +123,7 @@ serve(async (req) => {
       source: 'enginefinders.co.uk',
       status: 'NEW',
       is_deleted: false,
+      isHqLead: isHq, // Set the flag here
     };
 
     // Insert into database

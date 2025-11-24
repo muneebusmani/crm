@@ -135,6 +135,9 @@ export class Lead {
   })
   updatedAt!: Date;
 
+  @Column({ type: 'boolean', default: false })
+  isHqLead!: boolean;
+
   @OneToMany("LeadMessage", "lead")
   messages!: any[];
 }

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { JwtAuthGuard } from './auth/guards/jwt.guard';
+
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { join } from 'path';
@@ -58,7 +58,7 @@ async function bootstrap() {
   // );
   // app.useGlobalPipes(new ZodValidationPipe());
 
-  app.useGlobalGuards(new JwtAuthGuard(app.get(ConfigService)));
+
 
   app.use(cookieParser());
   app.enableCors({

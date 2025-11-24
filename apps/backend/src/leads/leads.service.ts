@@ -6,8 +6,9 @@ import { Repository } from 'typeorm';
 import { CustomError } from '../common/custom-error';
 import { AppLogger } from '../common/logger.service';
 import { Lead } from './entities/lead.entity';
-import { User } from 'src/user/entities';
+import { User, DealerTier } from 'src/user/entities';
 import { VehicleDetails } from './entities/vehicle-details.entity';
+import { HqLeadDistribution, HqLeadSettings } from './entities';
 
 @Injectable()
 export class LeadsService {
@@ -380,5 +381,171 @@ export class LeadsService {
       if (error instanceof CustomError) throw error;
       throw new CustomError('Unable to fetch additional lead information');
     }
+  }
+
+  // Get the package tier for a dealer
+  async getDealerPackageTier(dealerId: number): Promise<string> {
+    const dealer = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.dealer', 'dealer')
+      .leftJoinAndSelect('dealer.dealerTierCredits', 'tierCredits')
+      .leftJoinAndSelect('tierCredits.tier', 'tier')
+      .where('dealer.id = :dealerId', { dealerId })
+      .getOne();
+
+    if (!dealer || !dealer.dealer) {
+      throw new CustomError('Dealer not found', 404);
+    }
+
+    const tier = dealer.dealer.tierId; // Get tier ID from dealer
+    const dealerTier = await this.userRepository.manager
+      .createQueryBuilder(DealerTier, 'dealerTier')
+      .where('dealerTier.id = :tierId', { tierId: tier })
+      .getOne();
+
+    return dealerTier ? dealerTier.name : 'Bronze'; // Default to Bronze if no tier
+  }
+
+  // Get daily limit for a package tier
+  async getDailyLimitForTier(packageTier: string): Promise<number> {
+    const setting = await this.userRepository.manager
+      .createQueryBuilder(HqLeadSettings, 'hqLeadSettings')
+      .where('hqLeadSettings.packageTier = :packageTier', { packageTier })
+      .getOne();
+
+    return setting ? setting.dailyLimit : 2; // Default to 2 for Bronze if not found
+  }
+
+  // Check if a dealer has reached their daily HQ lead limit
+  async checkHqLeadQuota(dealerId: number): Promise<{ canAssign: boolean, assignedCount: number, dailyLimit: number }> {
+    const packageTier = await this.getDealerPackageTier(dealerId);
+    const dailyLimit = await this.getDailyLimitForTier(packageTier);
+
+    // If unlimited (-1 or a very high number), allow assignment
+    if (dailyLimit === -1) {
+      return { canAssign: true, assignedCount: 0, dailyLimit: -1 };
+    }
+
+    // Get today's date to check daily quota
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+
+    // Count how many HQ leads have been assigned to this dealer today
+    const assignedToday = await this.userRepository.manager
+      .createQueryBuilder(HqLeadDistribution, 'hqLeadDistribution')
+      .where('hqLeadDistribution.dealerId = :dealerId', { dealerId })
+      .andWhere('hqLeadDistribution.assignedDate = :today', { today })
+      .getCount();
+
+    const canAssign = assignedToday < dailyLimit;
+
+    return {
+      canAssign,
+      assignedCount: assignedToday,
+      dailyLimit: dailyLimit
+    };
+  }
+
+  // Record an HQ lead assignment for a dealer
+  async recordHqLeadAssignment(dealerId: number, leadId: number): Promise<void> {
+    const hqLeadDistribution = new HqLeadDistribution();
+    hqLeadDistribution.dealerId = dealerId;
+    hqLeadDistribution.leadId = leadId;
+    hqLeadDistribution.assignedCount = 1;
+
+    // Set to today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    hqLeadDistribution.assignedDate = today;
+
+    await this.userRepository.manager.save(HqLeadDistribution, hqLeadDistribution);
+  }
+
+  // Assign an HQ lead to a dealer if they have quota available
+  async assignHqLeadToDealer(leadId: number, dealerId: number): Promise<boolean> {
+    const lead = await this.leadRepo.findOneBy({ id: leadId });
+    if (!lead) {
+      throw new CustomError('Lead not found', 404);
+    }
+
+    if (!lead.isHqLead) {
+      throw new CustomError('Lead is not an HQ lead', 400);
+    }
+
+    const quotaCheck = await this.checkHqLeadQuota(dealerId);
+    if (!quotaCheck.canAssign) {
+      throw new CustomError(`Dealer has reached daily HQ lead limit. Limit: ${quotaCheck.dailyLimit}, Assigned: ${quotaCheck.assignedCount}`, 400);
+    }
+
+    // Record the assignment
+    await this.recordHqLeadAssignment(dealerId, leadId);
+
+    // Update the lead assignment
+    lead.assigned_to = dealerId.toString();
+    await this.leadRepo.save(lead);
+
+    return true;
+  }
+
+  // Get all HQ lead settings
+  async getAllHqLeadSettings() {
+    return await this.userRepository.manager.find(HqLeadSettings);
+  }
+
+  // Create a new HQ lead setting
+  async createHqLeadSetting(createHqLeadSettingsDto: UpdateHqLeadSettingsDto) {
+    const existingSetting = await this.userRepository.manager
+      .createQueryBuilder(HqLeadSettings, 'hqLeadSettings')
+      .where('hqLeadSettings.packageTier = :packageTier', { packageTier: createHqLeadSettingsDto.packageTier })
+      .getOne();
+
+    if (existingSetting) {
+      throw new CustomError('HQ Lead setting for this package tier already exists', 400);
+    }
+
+    const hqLeadSetting = new HqLeadSettings();
+    hqLeadSetting.packageTier = createHqLeadSettingsDto.packageTier;
+    hqLeadSetting.dailyLimit = createHqLeadSettingsDto.dailyLimit;
+    hqLeadSetting.isActive = createHqLeadSettingsDto.isActive ?? true;
+
+    return await this.userRepository.manager.save(HqLeadSettings, hqLeadSetting);
+  }
+
+  // Update an existing HQ lead setting
+  async updateHqLeadSetting(packageTier: string, updateHqLeadSettingsDto: UpdateHqLeadSettingsDto) {
+    const existingSetting = await this.userRepository.manager
+      .createQueryBuilder(HqLeadSettings, 'hqLeadSettings')
+      .where('hqLeadSettings.packageTier = :packageTier', { packageTier })
+      .getOne();
+
+    if (!existingSetting) {
+      throw new CustomError('HQ Lead setting for this package tier not found', 404);
+    }
+
+    existingSetting.packageTier = updateHqLeadSettingsDto.packageTier;
+    existingSetting.dailyLimit = updateHqLeadSettingsDto.dailyLimit;
+    if (updateHqLeadSettingsDto.isActive !== undefined) {
+      existingSetting.isActive = updateHqLeadSettingsDto.isActive;
+    }
+
+    return await this.userRepository.manager.save(HqLeadSettings, existingSetting);
+  }
+
+  // Reset daily HQ lead quotas for a specific dealer (admin function)
+  async resetDealerHqLeadQuota(dealerId: number) {
+    // Get today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Remove today's entries for the dealer (this will allow them to get new HQ leads)
+    await this.userRepository.manager
+      .createQueryBuilder()
+      .delete()
+      .from(HqLeadDistribution)
+      .where('dealerId = :dealerId', { dealerId })
+      .andWhere('assignedDate = :today', { today })
+      .execute();
+
+    return { message: `HQ lead quota for dealer ${dealerId} has been reset for today` };
   }
 }

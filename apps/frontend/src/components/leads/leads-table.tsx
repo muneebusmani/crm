@@ -834,7 +834,6 @@ const LeadsTable: React.FC = () => {
                       '',
                     ) || '-'}
                   </TableCell>
-
                   <TableCell>
                     {(lead.postcode?.toUpperCase().trim() || '-').replace(
                       /\s+/g,
