@@ -10,3 +10,6 @@ supabase/.temp
 # Deployment
 .env.deploy
 *.deploy.log
+
+.gemini/
+gha-creds-*.json

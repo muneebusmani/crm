@@ -20,6 +20,7 @@ import {
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
   SupportAgent as SupportAgentIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -184,8 +185,9 @@ const NavigationLink: React.FC<{
 const userRoutesMap: Record<UserType, NavigationItem[]> = {
   admin: [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Leads', icon: <GroupOutlinedIcon />, path: '/leads' },
+    // { text: 'Leads', icon: <GroupOutlinedIcon />, path: '/leads' },
     { text: 'Dealers', icon: <PersonIcon />, path: '/dealer' },
+    { text: 'Admin', icon: <AdminPanelSettingsIcon />, path: '/adminstration' },
     { text: 'Support', icon: <SupportAgentIcon />, path: '/support' },
   ],
   dealer: [

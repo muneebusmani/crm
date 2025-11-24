@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -18,15 +17,15 @@ import {
   Select,
   MenuItem,
   Switch,
-  Grid,
   Card,
   CardContent,
   Tabs,
   Tab,
-  IconButton,
+  CircularProgress,
+  Paper,
 } from '@mui/material';
 import { get, post, put } from '@/lib/api';
-import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 
 interface HqLeadSetting {
   id: number;
@@ -54,30 +53,37 @@ const HqLeadsAdminPage = () => {
     null,
   );
   const [isAdding, setIsAdding] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [dealerStatuses, setDealerStatuses] = useState<DealerStatus[]>([]);
 
-  const [dealerIdToReset, setDealerIdToReset] = useState('');
   const [leadIdToAssign, setLeadIdToAssign] = useState('');
   const [dealerIdToAssign, setDealerIdToAssign] = useState('');
 
-  const fetchHqLeadSettings = async () => {
+  const fetchHqLeadSettings = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await get('/admin/hq-leads/settings');
+      // WARN: Don't change response structure here, it is used in other places, this works perfectly according to the helpers
       setSettings(response);
     } catch (error) {
       console.error('Error fetching HQ lead settings:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchDealerStatuses = async () => {
+  const fetchDealerStatuses = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await get('/admins/dealers-status');
       setDealerStatuses(response.data);
     } catch (error) {
       console.error('Error fetching dealer statuses:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (activeTab === 0) {
@@ -85,7 +91,7 @@ const HqLeadsAdminPage = () => {
     } else if (activeTab === 1) {
       fetchDealerStatuses();
     }
-  }, [activeTab]);
+  }, [activeTab, fetchHqLeadSettings, fetchDealerStatuses]);
 
   const handleCreateSetting = async () => {
     if (!editingSetting) return;
@@ -129,7 +135,7 @@ const HqLeadsAdminPage = () => {
     const leadId = parseInt(leadIdToAssign, 10);
     const dealerId = parseInt(dealerIdToAssign, 10);
 
-    if (isNaN(leadId) || isNaN(dealerId)) {
+    if (Number.isNaN(leadId) || Number.isNaN(dealerId)) {
       alert('Please enter a valid Lead ID and Dealer ID.');
       return;
     }
@@ -157,6 +163,24 @@ const HqLeadsAdminPage = () => {
   const handleCancelAdd = () => {
     setIsAdding(false);
     setEditingSetting(null);
+  };
+
+  const renderContent = (children: React.ReactNode) => {
+    if (loading) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            py: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      );
+    }
+    return children;
   };
 
   const renderSettingsContent = () => (
@@ -368,7 +392,9 @@ const HqLeadsAdminPage = () => {
                   </TableCell>
                   <TableCell>{dealer.packageTier}</TableCell>
                   <TableCell>
-                    {`${dealer.assignedCount} / ${dealer.dailyLimit === -1 ? '∞' : dealer.dailyLimit}`}
+                    {`${dealer.assignedCount} / ${
+                      dealer.dailyLimit === -1 ? '∞' : dealer.dailyLimit
+                    }`}
                   </TableCell>
                   <TableCell>{dealer.status}</TableCell>
                   <TableCell align="right">
@@ -396,43 +422,41 @@ const HqLeadsAdminPage = () => {
         <Typography variant="h6" gutterBottom>
           Manual Override Tools
         </Typography>
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" sx={{ fontSize: '1rem' }} gutterBottom>
-                Assign HQ Lead to Dealer
-              </Typography>
-              <Box
-                component="form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAssignLead();
-                }}
-                sx={{ display: 'flex', gap: 2, mt: 1 }}
-              >
-                <TextField
-                  label="Lead ID"
-                  type="number"
-                  value={leadIdToAssign}
-                  onChange={(e) => setLeadIdToAssign(e.target.value)}
-                  sx={{ flex: 1 }}
-                  required
-                />
-                <TextField
-                  label="Dealer ID"
-                  type="number"
-                  value={dealerIdToAssign}
-                  onChange={(e) => setDealerIdToAssign(e.target.value)}
-                  sx={{ flex: 1 }}
-                  required
-                />
-                <Button type="submit" variant="outlined" color="primary">
-                  Assign Lead
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+        <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+          <Paper sx={{ p: 2, flex: 1 }}>
+            <Typography variant="h6" sx={{ fontSize: '1rem' }} gutterBottom>
+              Assign HQ Lead to Dealer
+            </Typography>
+            <Box
+              component="form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAssignLead();
+              }}
+              sx={{ display: 'flex', gap: 2, mt: 1 }}
+            >
+              <TextField
+                label="Lead ID"
+                type="number"
+                value={leadIdToAssign}
+                onChange={(e) => setLeadIdToAssign(e.target.value)}
+                sx={{ flex: 1 }}
+                required
+              />
+              <TextField
+                label="Dealer ID"
+                type="number"
+                value={dealerIdToAssign}
+                onChange={(e) => setDealerIdToAssign(e.target.value)}
+                sx={{ flex: 1 }}
+                required
+              />
+              <Button type="submit" variant="outlined" color="primary">
+                Assign Lead
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
       </CardContent>
     </Card>
   );
@@ -453,8 +477,8 @@ const HqLeadsAdminPage = () => {
         <Tab label="Manual Assignments" />
       </Tabs>
 
-      {activeTab === 0 && renderSettingsContent()}
-      {activeTab === 1 && renderDealerManagementContent()}
+      {activeTab === 0 && renderContent(renderSettingsContent())}
+      {activeTab === 1 && renderContent(renderDealerManagementContent())}
       {activeTab === 2 && renderManualManagementContent()}
     </Box>
   );

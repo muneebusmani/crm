@@ -25,12 +25,6 @@ export class LeadsService {
 
   async create(createLeadDto: CreateLeadDto): Promise<Lead> {
     try {
-      // Identify if this is an HQ lead based on the vehicle brand
-      const isHq = this.isHqLead(createLeadDto.vehicle_brand || createLeadDto.vehicle_model || '');
-
-      // Set the isHqLead flag in the DTO
-      createLeadDto.isHqLead = isHq;
-
       const lead = this.leadRepo.create(createLeadDto);
       const result = await this.leadRepo.save(lead);
 
@@ -387,16 +381,6 @@ export class LeadsService {
       if (error instanceof CustomError) throw error;
       throw new CustomError('Unable to fetch additional lead information');
     }
-  }
-
-  // Helper method to identify if a lead is an HQ lead based on brand
-  isHqLead(vehicleBrand: string): boolean {
-    if (!vehicleBrand) return false;
-
-    const hqBrands = ['BMW', 'Land Rover', 'Range Rover', 'Jaguar', 'Mercedes Benz'];
-    return hqBrands.some(brand =>
-      vehicleBrand.toLowerCase().includes(brand.toLowerCase())
-    );
   }
 
   // Get the package tier for a dealer
