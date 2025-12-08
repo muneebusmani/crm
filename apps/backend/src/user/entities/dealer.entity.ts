@@ -41,6 +41,10 @@ export class Dealer {
   @Column({ nullable: true })
   tierId!: number;
 
+  // Daily HQ lead limit: -1 = unlimited, 0 = no HQ leads, positive = specific limit
+  @Column({ type: 'int', default: 0 })
+  dailyHqLeadLimit!: number;
+
   @OneToMany('CompanyUser', 'dealer', { onDelete: 'CASCADE' })
   companyUsers!: any[];
 

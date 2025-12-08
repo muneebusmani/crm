@@ -247,6 +247,7 @@ export interface Lead {
   notes?: string;
   wonByDealerId?: number;
   moreInfoFetched?: boolean;
+  isHqLead?: boolean;
   vehicleDetails?: VehicleDetails;
   createdAt?: string;
   updatedAt?: string;

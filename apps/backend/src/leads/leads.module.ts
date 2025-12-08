@@ -15,6 +15,7 @@ import { LeadsGateway } from './leads.gateway';
 import { LeadsService } from './leads.service';
 import { LeadNotesService } from './lead-notes.service';
 import { AdminHqLeadsController } from './admin-hq-leads.controller';
+import { AdminLeadsController } from './admin-leads.controller';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { AdminHqLeadsController } from './admin-hq-leads.controller';
     AppLogger,
     ActivityLogger,
   ],
-  controllers: [LeadsController, LeadNotesController, AdminHqLeadsController],
+  controllers: [LeadsController, LeadNotesController, AdminHqLeadsController, AdminLeadsController],
   exports: [LeadsService, LeadNotesService],
 })
 export class LeadsModule {}

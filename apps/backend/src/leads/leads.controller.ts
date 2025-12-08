@@ -121,4 +121,22 @@ export class LeadsController {
     this.leadsGateway.emitRemoveLead(id); // Emit via gateway
     return this.buildResponse(result);
   }
+
+  // Get HQ leads assigned to the logged-in dealer
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('hq/my-leads')
+  async getMyHqLeads(@Req() req): Promise<ApiResponse<Lead[]>> {
+    const dealerId = req.user.id;
+    const result = await this.leadsService.getHqLeadsForDealer(dealerId);
+    return this.buildResponse(result);
+  }
+
+  // Get dealer's HQ lead quota status
+  @UseGuards(JwtAuthGuard, DealerGuard)
+  @Get('hq/my-quota')
+  async getMyHqQuota(@Req() req): Promise<ApiResponse<any>> {
+    const userId = req.user.id;
+    const result = await this.leadsService.getMyHqQuota(userId);
+    return this.buildResponse(result);
+  }
 }
