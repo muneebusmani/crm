@@ -25,7 +25,7 @@ const PackageCard: React.FC<{ plan: Plan }> = ({ plan }) => {
       sx={{
         p: 3,
         borderRadius: 2,
-        border: '1px solid #e0e0e0',
+        border: (theme) => `1px solid ${theme.palette.divider}`,
         transition: 'box-shadow 0.3s ease',
         '&:hover': {
           boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
@@ -40,8 +40,8 @@ const PackageCard: React.FC<{ plan: Plan }> = ({ plan }) => {
             top: -10,
             right: 0,
             transform: 'translateY(-50%)',
-            background: '#f44336',
-            color: 'white',
+            background: (theme) => theme.palette.error.main,
+            color: (theme) => theme.palette.error.contrastText,
             fontSize: '0.8rem',
             fontWeight: 'bold',
             padding: '4px 12px',
@@ -78,7 +78,7 @@ const PackageCard: React.FC<{ plan: Plan }> = ({ plan }) => {
             <Box
               sx={{
                 mr: 1,
-                color: feature.available ? '#4caf50' : '#f44336',
+                color: (theme) => feature.available ? theme.palette.success.main : theme.palette.error.main,
               }}
             >
               {feature.available ? (

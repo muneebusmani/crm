@@ -194,29 +194,29 @@ const QuotationsTable: React.FC = () => {
       <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: theme.palette.grey[100] }}>
-              <TableCell>
+            <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
+              <TableCell sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Quotation #</strong>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Lead</strong>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Sent By</strong>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Date</strong>
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Sub Total</strong>
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Tax</strong>
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Grand Total</strong>
               </TableCell>
-              <TableCell align="center">
+              <TableCell align="center" sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Actions</strong>
               </TableCell>
             </TableRow>

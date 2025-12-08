@@ -95,7 +95,7 @@ const PricingPage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: '#f9f9f9',
+        backgroundColor: 'background.default',
         py: 6,
       }}
     >

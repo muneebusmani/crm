@@ -47,6 +47,7 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useRouter, useSearchParams } from 'next/navigation'; // ✅ App Router hook
 import { useEffect, useState, useMemo } from 'react';
@@ -651,7 +652,7 @@ const LeadsTable: React.FC = () => {
     <Box sx={{ width: '100%' }}>
       {/* Search Bar */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <InputBase
+          <InputBase
           placeholder="Search for..."
           value={searchTerm}
           onChange={handleSearchChange}
@@ -661,13 +662,13 @@ const LeadsTable: React.FC = () => {
               fontSize="small"
             />
           }
-          sx={{
+            sx={{
             width: 300,
             border: `1px solid ${theme.palette.divider}`,
             borderRadius: 1,
             px: 2,
             py: 1,
-            backgroundColor: 'white',
+              backgroundColor: theme.palette.background.paper,
             '& input': { padding: '0 !important' },
           }}
         />
@@ -682,14 +683,14 @@ const LeadsTable: React.FC = () => {
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
           sx={{
-            backgroundColor: theme.palette.grey[100],
+            backgroundColor: theme.palette.primary.main,
             '&:hover': {
-              backgroundColor: theme.palette.grey[200],
+              backgroundColor: theme.palette.primary.dark,
             },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.primary.contrastText }}>
               Regular Leads
             </Typography>
             <Chip 
@@ -870,7 +871,7 @@ const LeadsTable: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => window.location.href = `mailto:${lead.email}`}
-                          sx={{ color: '#1976d2', p: 0.5, ml: 'auto', flexShrink: 0 }}
+                          sx={{ color: 'info.main', p: 0.5, ml: 'auto', flexShrink: 0 }}
                         >
                           <EmailIcon fontSize="small" />
                         </IconButton>
@@ -890,7 +891,7 @@ const LeadsTable: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => window.open(`https://wa.me/${lead.number.replace(/\D/g, '')}`, '_blank')}
-                          sx={{ color: '#25D366', p: 0.5, ml: 'auto', flexShrink: 0 }}
+                          sx={{ color: 'success.main', p: 0.5, ml: 'auto', flexShrink: 0 }}
                         >
                           <WhatsAppIcon fontSize="small" />
                         </IconButton>
@@ -1154,23 +1155,27 @@ const LeadsTable: React.FC = () => {
           onChange={() => setHqLeadsExpanded(!hqLeadsExpanded)}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
+            expandIcon={<ExpandMoreIcon sx={{ color: theme.palette.common.white }} />}
             sx={{
-              backgroundColor: '#D4A017',
+              backgroundColor: theme.palette.warning.main,
               '&:hover': {
-                backgroundColor: '#C89812',
+                backgroundColor: theme.palette.warning.dark,
               },
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.common.white }}>
                 🏆 HQ Leads (Premium Brands)
               </Typography>
-              <Chip 
+                <Chip 
                 label={`${filteredHqLeads.length} Total`} 
                 color="default" 
                 size="small"
-                sx={{ fontWeight: 'bold', backgroundColor: 'rgba(255, 255, 255, 0.3)', color: 'white' }}
+                sx={{
+                  fontWeight: 'bold',
+                  backgroundColor: alpha(theme.palette.common.white, 0.3),
+                  color: theme.palette.common.white,
+                }}
               />
             </Box>
           </AccordionSummary>
@@ -1293,7 +1298,7 @@ const LeadsTable: React.FC = () => {
               </TableHead>
               <TableBody>
                 {currentHqLeads.map((lead) => (
-                  <TableRow key={lead.id} sx={{ backgroundColor: theme.palette.warning.light || '#fff8e1' }}>
+                  <TableRow key={lead.id} sx={{ backgroundColor: theme.palette.warning.light }}>
                     <TableCell>
                       <Typography>{lead.name || '-'}</Typography>
                     </TableCell>
@@ -1308,7 +1313,7 @@ const LeadsTable: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={() => window.location.href = `mailto:${lead.email}`}
-                            sx={{ color: '#1976d2', p: 0.5, ml: 'auto', flexShrink: 0 }}
+                            sx={{ color: 'info.main', p: 0.5, ml: 'auto', flexShrink: 0 }}
                           >
                             <EmailIcon fontSize="small" />
                           </IconButton>
@@ -1328,7 +1333,7 @@ const LeadsTable: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={() => window.open(`https://wa.me/${lead.number.replace(/\D/g, '')}`, '_blank')}
-                            sx={{ color: '#25D366', p: 0.5, ml: 'auto', flexShrink: 0 }}
+                            sx={{ color: 'success.main', p: 0.5, ml: 'auto', flexShrink: 0 }}
                           >
                             <WhatsAppIcon fontSize="small" />
                           </IconButton>
@@ -1409,7 +1414,7 @@ const LeadsTable: React.FC = () => {
                         },
                         position: 'sticky',
                         right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
-                        backgroundColor: theme.palette.warning.light || '#fff8e1',
+                        backgroundColor: theme.palette.warning.light,
                         zIndex: 3,
                         minWidth: NOTES_COL_WIDTH,
                         width: NOTES_COL_WIDTH,
@@ -1426,7 +1431,7 @@ const LeadsTable: React.FC = () => {
                       sx={{
                         position: 'sticky',
                         right: ACTION_COL_WIDTH,
-                        backgroundColor: theme.palette.warning.light || '#fff8e1',
+                        backgroundColor: theme.palette.warning.light,
                         zIndex: 3,
                         minWidth: STATUS_COL_WIDTH,
                         width: STATUS_COL_WIDTH,
@@ -1455,7 +1460,7 @@ const LeadsTable: React.FC = () => {
                       sx={{
                         position: 'sticky',
                         right: 0,
-                        backgroundColor: theme.palette.warning.light || '#fff8e1',
+                        backgroundColor: theme.palette.warning.light,
                         zIndex: 3,
                         minWidth: ACTION_COL_WIDTH,
                         width: ACTION_COL_WIDTH,

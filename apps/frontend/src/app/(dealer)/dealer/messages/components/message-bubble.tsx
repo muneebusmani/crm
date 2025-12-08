@@ -73,7 +73,7 @@ export default function MessageBubble({
             wordBreak: 'break-word',
             color: isOwnMessage ? 'common.white' : 'text.primary',
             '& a': {
-              color: isOwnMessage ? '#90caf9' : 'primary.main',
+              color: isOwnMessage ? 'primary.light' : 'primary.main',
               textDecoration: 'none',
               '&:hover': {
                 textDecoration: 'underline',
@@ -324,10 +324,10 @@ export default function MessageBubble({
               },
               minWidth: 'auto',
               ...(message?.type === 'quotation'
-                ? { backgroundColor: isOwnMessage ? '#1E4E6E' : '#e8f5e9' }
+                ? { backgroundColor: (theme: any) => isOwnMessage ? theme.palette.primary.dark : theme.palette.success.light }
                 : {}),
               ...(message?.type === 'invoice'
-                ? { backgroundColor: isOwnMessage ? '#B6B5B4' : '#fff3e0' }
+                ? { backgroundColor: (theme: any) => isOwnMessage ? theme.palette.grey[600] : theme.palette.warning.light }
                 : {}),
             }}
           >

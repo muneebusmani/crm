@@ -553,14 +553,14 @@ const HqLeadsAdminPage = () => {
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                    <TableCell><strong>ID</strong></TableCell>
-                    <TableCell><strong>Customer</strong></TableCell>
-                    <TableCell><strong>Contact</strong></TableCell>
-                    <TableCell><strong>Vehicle</strong></TableCell>
-                    <TableCell><strong>Description</strong></TableCell>
-                    <TableCell><strong>Received</strong></TableCell>
-                    <TableCell align="center"><strong>Actions</strong></TableCell>
+                  <TableRow sx={{ backgroundColor: (theme) => theme.palette.primary.main }}>
+                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>ID</strong></TableCell>
+                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Customer</strong></TableCell>
+                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Contact</strong></TableCell>
+                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Vehicle</strong></TableCell>
+                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Description</strong></TableCell>
+                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Received</strong></TableCell>
+                    <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Actions</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -660,12 +660,12 @@ const HqLeadsAdminPage = () => {
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell><strong>Dealer</strong></TableCell>
-                  <TableCell align="center"><strong>Daily Limit</strong></TableCell>
-                  <TableCell align="center"><strong>Assigned Today</strong></TableCell>
-                  <TableCell align="center"><strong>Status</strong></TableCell>
-                  <TableCell align="center"><strong>Actions</strong></TableCell>
+                <TableRow sx={{ backgroundColor: (theme) => theme.palette.primary.main }}>
+                  <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Dealer</strong></TableCell>
+                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Daily Limit</strong></TableCell>
+                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Assigned Today</strong></TableCell>
+                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Status</strong></TableCell>
+                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Actions</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -808,7 +808,7 @@ const HqLeadsAdminPage = () => {
         {selectedLead && (
           <Box sx={{ mt: 2 }}>
             {/* Lead Preview */}
-            <Paper variant="outlined" sx={{ p: 2, mb: 3, backgroundColor: '#fff8e1' }}>
+            <Paper variant="outlined" sx={{ p: 2, mb: 3, backgroundColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.warning.light }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Lead Details
               </Typography>
@@ -885,7 +885,7 @@ const HqLeadsAdminPage = () => {
 
             {/* Selected Dealer Preview */}
             {selectedDealerId && (
-              <Paper variant="outlined" sx={{ p: 2, backgroundColor: '#e8f5e9' }}>
+              <Paper variant="outlined" sx={{ p: 2, backgroundColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.success.light }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Selected Dealer
                 </Typography>

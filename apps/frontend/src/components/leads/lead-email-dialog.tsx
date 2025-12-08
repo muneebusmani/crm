@@ -210,7 +210,7 @@ const LeadEmailDialog: React.FC<LeadEmailDialogProps> = ({
           <Box
             sx={{
               p: 2,
-              backgroundColor: theme.palette.grey[50],
+              backgroundColor: theme.palette.action.hover,
               borderRadius: 1,
               border: `1px solid ${theme.palette.divider}`,
             }}
