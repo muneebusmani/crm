@@ -20,6 +20,14 @@ export const leadsApi = {
   delete: async (id: number): Promise<void> =>
     handleResponse(api.del(`${LEADS_BASE}/${id}`), true),
 
+  // Get HQ leads assigned to the current dealer
+  getMyHqLeads: async (): Promise<Lead[]> =>
+    handleResponse(api.get(`${LEADS_BASE}/hq/my-leads`)),
+
+  // Get dealer's HQ lead quota status
+  getMyHqQuota: async (): Promise<{ canAssign: boolean; assignedCount: number; dailyLimit: number }> =>
+    handleResponse(api.get(`${LEADS_BASE}/hq/my-quota`)),
+
   // Get uncontacted leads (leads that don't have any messages yet)
   getUncontacted: async (): Promise<Lead[]> => {
     try {

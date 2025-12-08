@@ -1,11 +1,17 @@
 'use client';
-import { createTheme } from '@mui/material/styles';
+import { createTheme, type PaletteMode } from '@mui/material/styles';
 
-const theme = createTheme({
+export const getTheme = (mode: PaletteMode) => createTheme({
   cssVariables: true,
+  palette: {
+    mode,
+  },
   typography: {
     fontFamily: 'var(--font-roboto)',
   },
 });
+
+// Default theme (light)
+const theme = getTheme('light');
 
 export default theme;

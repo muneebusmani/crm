@@ -139,7 +139,7 @@ const InvoiceDialog: React.FC = () => {
 
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
         <DialogContent>
-          <Paper elevation={0} sx={{ p: 3, bgcolor: '#fff', borderRadius: 2 }}>
+          <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
             {/* Header */}
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
@@ -160,14 +160,14 @@ const InvoiceDialog: React.FC = () => {
                   value={companyAddress}
                   onChange={(e) => setCompanyAddress(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -181,14 +181,14 @@ const InvoiceDialog: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -200,14 +200,14 @@ const InvoiceDialog: React.FC = () => {
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -219,14 +219,14 @@ const InvoiceDialog: React.FC = () => {
                   value={contactNo}
                   onChange={(e) => setContactNo(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -245,14 +245,14 @@ const InvoiceDialog: React.FC = () => {
                   value="#VL25000355"
                   disabled
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -265,14 +265,14 @@ const InvoiceDialog: React.FC = () => {
                   type="datetime-local"
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -295,14 +295,14 @@ const InvoiceDialog: React.FC = () => {
                   value={shippingName}
                   onChange={(e) => setShippingName(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -315,14 +315,14 @@ const InvoiceDialog: React.FC = () => {
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -334,14 +334,14 @@ const InvoiceDialog: React.FC = () => {
                   value={shippingPhone}
                   onChange={(e) => setShippingPhone(e.target.value)}
                   sx={{
-                    bgcolor: '#f8f9fa',
+                    bgcolor: 'action.hover',
                     borderRadius: 1,
                     '& .MuiOutlinedInput-root': {
                       '&:hover fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#ced4da',
+                        borderColor: 'divider',
                       },
                     },
                   }}
@@ -372,7 +372,7 @@ const InvoiceDialog: React.FC = () => {
                 <Paper
                   key={product.id}
                   elevation={0}
-                  sx={{ p: 2, bgcolor: '#f8f9fa', borderRadius: 1, mb: 2 }}
+                  sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1, mb: 2 }}
                 >
                   <Grid container spacing={2} alignItems="center">
                     <Grid size={{ xs: 1 }}>
@@ -393,12 +393,12 @@ const InvoiceDialog: React.FC = () => {
                           )
                         }
                         sx={{
-                          bgcolor: '#fff',
+                          bgcolor: 'background.paper',
                           borderRadius: 1,
                           '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': { borderColor: '#ced4da' },
+                            '&:hover fieldset': { borderColor: 'divider' },
                             '&.Mui-focused fieldset': {
-                              borderColor: '#ced4da',
+                              borderColor: 'divider',
                             },
                           },
                         }}
@@ -418,12 +418,12 @@ const InvoiceDialog: React.FC = () => {
                           )
                         }
                         sx={{
-                          bgcolor: '#fff',
+                          bgcolor: 'background.paper',
                           borderRadius: 1,
                           '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': { borderColor: '#ced4da' },
+                            '&:hover fieldset': { borderColor: 'divider' },
                             '&.Mui-focused fieldset': {
-                              borderColor: '#ced4da',
+                              borderColor: 'divider',
                             },
                           },
                         }}
@@ -446,12 +446,12 @@ const InvoiceDialog: React.FC = () => {
                           )
                         }
                         sx={{
-                          bgcolor: '#fff',
+                          bgcolor: 'background.paper',
                           borderRadius: 1,
                           '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': { borderColor: '#ced4da' },
+                            '&:hover fieldset': { borderColor: 'divider' },
                             '&.Mui-focused fieldset': {
-                              borderColor: '#ced4da',
+                              borderColor: 'divider',
                             },
                           },
                         }}
@@ -469,7 +469,7 @@ const InvoiceDialog: React.FC = () => {
                           size="small"
                           onClick={() => handleQuantityChange(product.id, -1)}
                           disabled={product.quantity <= 0}
-                          sx={{ bgcolor: '#f8f9fa', borderRadius: 1 }}
+                          sx={{ bgcolor: 'action.hover', borderRadius: 1 }}
                         >
                           –
                         </IconButton>
@@ -482,7 +482,7 @@ const InvoiceDialog: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleQuantityChange(product.id, 1)}
-                          sx={{ bgcolor: '#f8f9fa', borderRadius: 1 }}
+                          sx={{ bgcolor: 'action.hover', borderRadius: 1 }}
                         >
                           +
                         </IconButton>
@@ -500,12 +500,12 @@ const InvoiceDialog: React.FC = () => {
                         ).toFixed(2)}`}
                         disabled
                         sx={{
-                          bgcolor: '#fff',
+                          bgcolor: 'background.paper',
                           borderRadius: 1,
                           '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': { borderColor: '#ced4da' },
+                            '&:hover fieldset': { borderColor: 'divider' },
                             '&.Mui-focused fieldset': {
-                              borderColor: '#ced4da',
+                              borderColor: 'divider',
                             },
                           },
                         }}
@@ -536,12 +536,12 @@ const InvoiceDialog: React.FC = () => {
                 startIcon={<AddIcon />}
                 onClick={addProduct}
                 sx={{
-                  bgcolor: '#e9f0fb',
-                  color: '#0d6efd',
-                  border: '1px solid #0d6efd',
+                  bgcolor: 'primary.light',
+                  color: 'primary.main',
+                  border: (theme) => `1px solid ${theme.palette.primary.main}`,
                   '&:hover': {
-                    bgcolor: '#d0e0f5',
-                    border: '1px solid #0d6efd',
+                    bgcolor: 'primary.light',
+                    border: (theme) => `1px solid ${theme.palette.primary.main}`,
                   },
                   borderRadius: 1,
                 }}
@@ -568,11 +568,11 @@ const InvoiceDialog: React.FC = () => {
                       margin="dense"
                       disabled
                       sx={{
-                        bgcolor: '#f8f9fa',
+                        bgcolor: 'action.hover',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -592,11 +592,11 @@ const InvoiceDialog: React.FC = () => {
                       type="number"
                       slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
                       sx={{
-                        bgcolor: '#f8f9fa',
+                        bgcolor: 'action.hover',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -616,11 +616,11 @@ const InvoiceDialog: React.FC = () => {
                       type="number"
                       slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
                       sx={{
-                        bgcolor: '#f8f9fa',
+                        bgcolor: 'action.hover',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -640,11 +640,11 @@ const InvoiceDialog: React.FC = () => {
                       type="number"
                       slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
                       sx={{
-                        bgcolor: '#f8f9fa',
+                        bgcolor: 'action.hover',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -662,11 +662,11 @@ const InvoiceDialog: React.FC = () => {
                       margin="dense"
                       disabled
                       sx={{
-                        bgcolor: '#f8f9fa',
+                        bgcolor: 'action.hover',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -685,7 +685,7 @@ const InvoiceDialog: React.FC = () => {
             {[0, 1, 2].map((index) => (
               <Box
                 key={index}
-                sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: 1, mb: 2 }}
+                sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1, mb: 2 }}
               >
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   Bank Details {index + 1}
@@ -709,11 +709,11 @@ const InvoiceDialog: React.FC = () => {
                         handleBankChange(index, 'acc', e.target.value)
                       }
                       sx={{
-                        bgcolor: '#fff',
+                        bgcolor: 'background.paper',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -736,11 +736,11 @@ const InvoiceDialog: React.FC = () => {
                         handleBankChange(index, 'name', e.target.value)
                       }
                       sx={{
-                        bgcolor: '#fff',
+                        bgcolor: 'background.paper',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -763,11 +763,11 @@ const InvoiceDialog: React.FC = () => {
                         handleBankChange(index, 'bank', e.target.value)
                       }
                       sx={{
-                        bgcolor: '#fff',
+                        bgcolor: 'background.paper',
                         borderRadius: 1,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#ced4da' },
-                          '&.Mui-focused fieldset': { borderColor: '#ced4da' },
+                          '&:hover fieldset': { borderColor: 'divider' },
+                          '&.Mui-focused fieldset': { borderColor: 'divider' },
                         },
                       }}
                     />
@@ -788,7 +788,7 @@ const InvoiceDialog: React.FC = () => {
               rows={3}
               defaultValue={`All accounts are to be paid within 7 days from receipt of invoice. To be paid by cheque or credit card or direct payment online. If account is not paid within 7 days the credits details supplied as confirmation of work undertaken will be charged the agreed quoted fee noted above.`}
               sx={{
-                bgcolor: '#e3f2fd',
+                bgcolor: 'info.light',
                 borderRadius: 1,
                 '& .MuiInputBase-input': {
                   p: 1.5,
@@ -796,10 +796,10 @@ const InvoiceDialog: React.FC = () => {
                 },
                 '& .MuiOutlinedInput-root': {
                   '&:hover fieldset': {
-                    borderColor: '#b3d4fc',
+                    borderColor: 'info.main',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#b3d4fc',
+                    borderColor: 'info.main',
                   },
                 },
               }}
@@ -812,9 +812,9 @@ const InvoiceDialog: React.FC = () => {
                 sx={{
                   mt: 4,
                   p: 4,
-                  bgcolor: '#fff',
+                  bgcolor: 'background.paper',
                   borderRadius: 2,
-                  border: '1px solid #e0e0e0',
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                   maxWidth: '800px',
                   mx: 'auto',
                 }}
@@ -1003,8 +1003,8 @@ const InvoiceDialog: React.FC = () => {
                   color="primary"
                   onClick={() => setGenerated(true)}
                   sx={{
-                    bgcolor: '#0d6efd',
-                    '&:hover': { bgcolor: '#0b5ed7' },
+                    bgcolor: 'primary.main',
+                    '&:hover': { bgcolor: 'primary.dark' },
                     borderRadius: 1,
                   }}
                 >
@@ -1018,8 +1018,8 @@ const InvoiceDialog: React.FC = () => {
                   color="error"
                   onClick={handleClose}
                   sx={{
-                    bgcolor: '#dc3545',
-                    '&:hover': { bgcolor: '#c82333' },
+                    bgcolor: 'error.main',
+                    '&:hover': { bgcolor: 'error.dark' },
                     borderRadius: 1,
                   }}
                 >
@@ -1030,9 +1030,9 @@ const InvoiceDialog: React.FC = () => {
                   color="primary"
                   onClick={() => setGenerated(false)}
                   sx={{
-                    borderColor: '#0d6efd',
-                    color: '#0d6efd',
-                    '&:hover': { borderColor: '#0b5ed7' },
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    '&:hover': { borderColor: 'primary.dark' },
                     borderRadius: 1,
                   }}
                 >

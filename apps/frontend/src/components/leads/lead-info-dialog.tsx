@@ -247,7 +247,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
       <DialogContent>
         <Box sx={{ py: 2 }}>
           {/* Lead Header */}
-          <Paper sx={{ p: 3, mb: 3, backgroundColor: theme.palette.grey[50] }}>
+          <Paper sx={{ p: 3, mb: 3, backgroundColor: theme.palette.action.hover }}>
             <Typography variant="h5" gutterBottom>
               {localLead.name || 'Unnamed Lead'}
             </Typography>
@@ -456,7 +456,7 @@ const LeadInfoDialog: React.FC<LeadInfoDialogProps> = ({
           </Grid>
 
           {/* System Information */}
-          <Paper sx={{ p: 3, mt: 3, backgroundColor: theme.palette.grey[50] }}>
+          <Paper sx={{ p: 3, mt: 3, backgroundColor: theme.palette.action.hover }}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               System Information
             </Typography>

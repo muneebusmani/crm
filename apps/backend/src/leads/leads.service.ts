@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import { CustomError } from '../common/custom-error';
 import { AppLogger } from '../common/logger.service';
 import { Lead } from './entities/lead.entity';
-import { User, DealerTier } from 'src/user/entities';
+import { User, DealerTier, Dealer } from 'src/user/entities';
 import { VehicleDetails } from './entities/vehicle-details.entity';
 import { HqLeadDistribution, HqLeadSettings } from './entities';
 
@@ -44,6 +44,24 @@ export class LeadsService {
         'LeadsService',
       );
       throw new CustomError('Unable to create lead');
+    }
+  }
+
+  // Get all leads for admin (no filtering)
+  async getAllLeadsForAdmin(): Promise<Lead[]> {
+    try {
+      return await this.leadRepo.find({
+        where: { is_deleted: false },
+        relations: ['dealerLeads', 'dealerLeads.dealer'],
+        order: { createdAt: 'DESC' },
+      });
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to fetch all leads for admin',
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      );
+      throw new CustomError('Unable to fetch leads');
     }
   }
 
@@ -406,7 +424,7 @@ export class LeadsService {
     return dealerTier ? dealerTier.name : 'Bronze'; // Default to Bronze if no tier
   }
 
-  // Get daily limit for a package tier
+  // Get daily limit for a package tier (legacy - kept for compatibility)
   async getDailyLimitForTier(packageTier: string): Promise<number> {
     const setting = await this.userRepository.manager
       .createQueryBuilder(HqLeadSettings, 'hqLeadSettings')
@@ -416,12 +434,33 @@ export class LeadsService {
     return setting ? setting.dailyLimit : 2; // Default to 2 for Bronze if not found
   }
 
-  // Check if a dealer has reached their daily HQ lead limit
-  async checkHqLeadQuota(dealerId: number): Promise<{ canAssign: boolean, assignedCount: number, dailyLimit: number }> {
-    const packageTier = await this.getDealerPackageTier(dealerId);
-    const dailyLimit = await this.getDailyLimitForTier(packageTier);
+  // Get dealer's individual daily HQ lead limit
+  // Get dealer's daily HQ limit by Dealer entity ID
+  async getDealerDailyHqLimit(dealerEntityId: number): Promise<number> {
+    const dealer = await this.userRepository.manager
+      .createQueryBuilder(Dealer, 'dealer')
+      .where('dealer.id = :dealerId', { dealerId: dealerEntityId })
+      .getOne();
 
-    // If unlimited (-1 or a very high number), allow assignment
+    if (!dealer) {
+      throw new CustomError('Dealer not found', 404);
+    }
+
+    // Return the dealer's individual limit (default 0 = no HQ leads)
+    return dealer.dailyHqLeadLimit ?? 0;
+  }
+
+  // Check if a dealer has reached their daily HQ lead limit (using per-dealer limits)
+  // Note: This method expects Dealer entity ID, not User ID
+  async checkHqLeadQuota(dealerEntityId: number): Promise<{ canAssign: boolean, assignedCount: number, dailyLimit: number }> {
+    const dailyLimit = await this.getDealerDailyHqLimit(dealerEntityId);
+
+    // If limit is 0, dealer gets no HQ leads
+    if (dailyLimit === 0) {
+      return { canAssign: false, assignedCount: 0, dailyLimit: 0 };
+    }
+
+    // If unlimited (-1), allow assignment
     if (dailyLimit === -1) {
       return { canAssign: true, assignedCount: 0, dailyLimit: -1 };
     }
@@ -433,7 +472,7 @@ export class LeadsService {
     // Count how many HQ leads have been assigned to this dealer today
     const assignedToday = await this.userRepository.manager
       .createQueryBuilder(HqLeadDistribution, 'hqLeadDistribution')
-      .where('hqLeadDistribution.dealerId = :dealerId', { dealerId })
+      .where('hqLeadDistribution.dealerId = :dealerId', { dealerId: dealerEntityId })
       .andWhere('hqLeadDistribution.assignedDate = :today', { today })
       .getCount();
 
@@ -547,5 +586,108 @@ export class LeadsService {
       .execute();
 
     return { message: `HQ lead quota for dealer ${dealerId} has been reset for today` };
+  }
+
+  // Update a dealer's daily HQ lead limit (admin function)
+  async updateDealerHqLeadLimit(dealerId: number, dailyLimit: number) {
+    const dealer = await this.userRepository.manager
+      .createQueryBuilder(Dealer, 'dealer')
+      .where('dealer.id = :dealerId', { dealerId })
+      .getOne();
+
+    if (!dealer) {
+      throw new CustomError('Dealer not found', 404);
+    }
+
+    dealer.dailyHqLeadLimit = dailyLimit;
+    await this.userRepository.manager.save(Dealer, dealer);
+
+    return { 
+      message: `HQ lead limit for dealer ${dealerId} updated to ${dailyLimit === -1 ? 'Unlimited' : dailyLimit}`,
+      dealerId,
+      dailyHqLeadLimit: dailyLimit
+    };
+  }
+
+  // Get all dealers with their HQ lead limits and today's usage
+  async getAllDealersHqLeadStatus() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dealers = await this.userRepository.manager
+      .createQueryBuilder(Dealer, 'dealer')
+      .leftJoinAndSelect('dealer.user', 'user')
+      .select([
+        'dealer.id',
+        'dealer.name',
+        'dealer.dailyHqLeadLimit',
+        'user.id',
+        'user.name',
+      ])
+      .getMany();
+
+    // Get today's assignment counts for all dealers
+    const assignmentCounts = await this.userRepository.manager
+      .createQueryBuilder(HqLeadDistribution, 'dist')
+      .select('dist.dealerId', 'dealerId')
+      .addSelect('COUNT(*)', 'count')
+      .where('dist.assignedDate = :today', { today })
+      .groupBy('dist.dealerId')
+      .getRawMany();
+
+    const countsMap = new Map(assignmentCounts.map((a: { dealerId: number; count: string }) => [a.dealerId, parseInt(a.count)]));
+
+    return dealers.map(dealer => ({
+      dealerId: dealer.id,
+      dealerName: dealer.name,
+      dailyHqLeadLimit: dealer.dailyHqLeadLimit,
+      assignedToday: countsMap.get(dealer.id) || 0,
+      canReceiveMore: dealer.dailyHqLeadLimit === -1 || 
+        (dealer.dailyHqLeadLimit > 0 && (countsMap.get(dealer.id) || 0) < dealer.dailyHqLeadLimit)
+    }));
+  }
+
+  // Get HQ quota for a dealer (converts User ID to Dealer entity ID)
+  async getMyHqQuota(userId: number): Promise<{ canAssign: boolean, assignedCount: number, dailyLimit: number }> {
+    // First, get the Dealer entity ID from the User ID
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['dealer'],
+    });
+
+    if (!user || !user.dealer) {
+      throw new CustomError('Dealer profile not found', 404);
+    }
+
+    const dealerEntityId = user.dealer.id;
+
+    // Now check the quota using Dealer entity ID
+    return await this.checkHqLeadQuota(dealerEntityId);
+  }
+
+  // Get HQ leads assigned to a specific dealer (for dealer's view)
+  // Note: userId here is the User ID (from JWT), not Dealer entity ID
+  async getHqLeadsForDealer(userId: number) {
+    // First, get the Dealer entity ID from the User ID
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['dealer'],
+    });
+
+    if (!user || !user.dealer) {
+      throw new CustomError('Dealer profile not found', 404);
+    }
+
+    const dealerEntityId = user.dealer.id;
+
+    // Now query for HQ leads assigned to this dealer (by Dealer entity ID)
+    return await this.leadRepo.find({
+      where: {
+        isHqLead: true,
+        assigned_to: dealerEntityId.toString(),
+        is_deleted: false,
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 }

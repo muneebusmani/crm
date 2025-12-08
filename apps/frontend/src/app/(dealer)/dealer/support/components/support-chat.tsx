@@ -171,11 +171,11 @@ export default function SupportChat() {
           p: 2,
           borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor: theme.palette.primary.main,
-          color: 'white',
+          color: theme.palette.primary.contrastText,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ bgcolor: 'white', color: theme.palette.primary.main }}>
+          <Avatar sx={{ bgcolor: theme.palette.common.white, color: theme.palette.primary.main }}>
             <SupportIcon />
           </Avatar>
           <Box>
@@ -195,7 +195,7 @@ export default function SupportChat() {
           flex: 1,
           overflowY: 'auto',
           p: 3,
-          backgroundColor: theme.palette.grey[50],
+          backgroundColor: theme.palette.background.default,
         }}
       >
         {messages.length === 0 ? (
@@ -269,9 +269,9 @@ export default function SupportChat() {
                       sx={{
                         p: 1.5,
                         backgroundColor: isAdmin
-                          ? 'white'
+                          ? theme.palette.background.paper
                           : theme.palette.primary.main,
-                        color: isAdmin ? 'text.primary' : 'white',
+                        color: isAdmin ? 'text.primary' : theme.palette.primary.contrastText,
                         borderRadius: 2,
                         borderTopLeftRadius: isAdmin ? 0 : 2,
                         borderTopRightRadius: isAdmin ? 2 : 0,
@@ -332,7 +332,7 @@ export default function SupportChat() {
         sx={{
           p: 2,
           borderTop: `1px solid ${theme.palette.divider}`,
-          backgroundColor: 'white',
+          backgroundColor: theme.palette.background.paper,
         }}
       >
         <TextField
@@ -353,7 +353,7 @@ export default function SupportChat() {
                   disabled={!inputText.trim() || sending}
                   sx={{
                     bgcolor: theme.palette.primary.main,
-                    color: 'white',
+                    color: theme.palette.primary.contrastText,
                     '&:hover': {
                       bgcolor: theme.palette.primary.dark,
                     },
@@ -374,9 +374,9 @@ export default function SupportChat() {
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
-              backgroundColor: theme.palette.grey[50],
+              backgroundColor: theme.palette.action.hover,
               '& fieldset': {
-                borderColor: theme.palette.grey[300],
+                borderColor: theme.palette.divider,
               },
               '&:hover fieldset': {
                 borderColor: theme.palette.primary.main,

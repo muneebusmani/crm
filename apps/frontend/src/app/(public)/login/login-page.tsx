@@ -144,7 +144,7 @@ export default function LoginPage() {
               p: 4,
               borderRadius: 2,
               boxShadow: 24,
-              bgcolor: 'white',
+              bgcolor: 'background.paper',
               maxWidth: 400,
             }}
           >

@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { UpdateHqLeadSettingsDto } from './dto/update-hq-lead-settings.dto';
@@ -15,6 +16,7 @@ import { AdminGuard } from 'src/auth/guards/admin.guard';
 export class AdminHqLeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
+  // === Package Tier Settings (Legacy) ===
   @UseGuards(AdminGuard)
   @Get('settings')
   async getHqLeadSettings() {
@@ -41,18 +43,46 @@ export class AdminHqLeadsController {
     );
   }
 
+  // === Per-Dealer HQ Lead Limits (New Simple System) ===
+  
+  // Get all dealers with their HQ lead limits and today's usage
+  @UseGuards(AdminGuard)
+  @Get('dealers')
+  async getAllDealersHqStatus() {
+    return await this.leadsService.getAllDealersHqLeadStatus();
+  }
+
+  // Update a specific dealer's daily HQ lead limit
+  // dailyLimit: -1 = unlimited, 0 = no HQ leads, positive integer = specific limit
+  @UseGuards(AdminGuard)
+  @Put('dealers/:dealerId/limit')
+  async updateDealerHqLimit(
+    @Param('dealerId', ParseIntPipe) dealerId: number,
+    @Body('dailyLimit') dailyLimit: number,
+  ) {
+    return await this.leadsService.updateDealerHqLeadLimit(dealerId, dailyLimit);
+  }
+
+  // Check a dealer's current HQ lead quota status
+  @UseGuards(AdminGuard)
+  @Get('dealers/:dealerId/quota')
+  async getDealerQuotaStatus(@Param('dealerId', ParseIntPipe) dealerId: number) {
+    return await this.leadsService.checkHqLeadQuota(dealerId);
+  }
+
+  // === Assignment & Reset ===
   @UseGuards(AdminGuard)
   @Post('assign/:leadId/to/:dealerId')
   async assignHqLead(
-    @Param('leadId') leadId: number,
-    @Param('dealerId') dealerId: number,
+    @Param('leadId', ParseIntPipe) leadId: number,
+    @Param('dealerId', ParseIntPipe) dealerId: number,
   ) {
     return await this.leadsService.assignHqLeadToDealer(leadId, dealerId);
   }
 
   @UseGuards(AdminGuard)
   @Post('reset-quota/:dealerId')
-  async resetDealerQuota(@Param('dealerId') dealerId: number) {
+  async resetDealerQuota(@Param('dealerId', ParseIntPipe) dealerId: number) {
     return await this.leadsService.resetDealerHqLeadQuota(dealerId);
   }
 }

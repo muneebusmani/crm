@@ -21,7 +21,10 @@ import {
   RequestQuote as RequestQuoteIcon,
   SupportAgent as SupportAgentIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from '@mui/icons-material';
+import { useThemeMode } from '@/contexts/theme-context';
 import {
   alpha,
   Box,
@@ -227,6 +230,43 @@ const prefixRoutes = (
     ...item,
     path: item.path === '/' ? prefix : `${prefix}${item.path}`,
   }));
+
+// Theme Toggle Button Component
+const ThemeToggleButton: React.FC<{ isShrunk: boolean }> = ({ isShrunk }) => {
+  const { mode, toggleMode } = useThemeMode();
+  const theme = useTheme();
+  
+  return (
+    <ListItem disablePadding>
+      <Tooltip title={isShrunk ? (mode === 'light' ? 'Dark Mode' : 'Light Mode') : ''} placement="right">
+        <ListItemButton
+          onClick={toggleMode}
+          sx={{
+            borderRadius: 1,
+            my: 0.5,
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+            },
+            justifyContent: isShrunk ? 'center' : 'flex-start',
+            minHeight: 48,
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: isShrunk ? 0 : 40,
+              justifyContent: 'center',
+            }}
+          >
+            {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+          </ListItemIcon>
+          {!isShrunk && (
+            <ListItemText primary={mode === 'light' ? 'Dark Mode' : 'Light Mode'} sx={{ ml: 1 }} />
+          )}
+        </ListItemButton>
+      </Tooltip>
+    </ListItem>
+  );
+};
 
 // Bottom navigation is rendered at the footer of the sidebar.
 // We include a dealer-only entry to switch profiles above Logout.
@@ -530,6 +570,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Box>
           <Divider />
           <List sx={{ py: 1 }}>
+            <ThemeToggleButton isShrunk={isShrunk} />
             {getBottomNavigationItems(userType).map((item) => (
               <ListItem key={item.text} disablePadding>
                 <NavigationLink
@@ -645,7 +686,7 @@ const Layout: React.FC<{
         sx={{
           flexGrow: 1,
           width: { md: `calc(100% - ${currentWidth}px)` },
-          backgroundColor: theme.palette.grey[50],
+          backgroundColor: theme.palette.background.default,
           minHeight: '100vh',
           transition: theme.transitions.create('width'),
         }}

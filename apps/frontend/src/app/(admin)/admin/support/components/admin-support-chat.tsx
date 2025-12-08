@@ -319,7 +319,7 @@ export default function AdminSupportChat() {
             p: 2,
             borderBottom: `1px solid ${theme.palette.divider}`,
             backgroundColor: theme.palette.primary.main,
-            color: 'white',
+              color: theme.palette.common.white,
           }}
         >
           <Box
@@ -337,7 +337,7 @@ export default function AdminSupportChat() {
               size="small"
               onClick={refreshConversations}
               disabled={refreshing}
-              sx={{ color: 'white' }}
+              sx={{ color: theme.palette.common.white }}
             >
               <RefreshIcon
                 sx={{
@@ -448,7 +448,7 @@ export default function AdminSupportChat() {
               sx={{
                 p: 2,
                 borderBottom: `1px solid ${theme.palette.divider}`,
-                backgroundColor: 'white',
+                backgroundColor: theme.palette.background.paper,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -472,7 +472,7 @@ export default function AdminSupportChat() {
                 flex: 1,
                 overflowY: 'auto',
                 p: 3,
-                backgroundColor: theme.palette.grey[50],
+                backgroundColor: theme.palette.background.default,
               }}
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -512,8 +512,8 @@ export default function AdminSupportChat() {
                             p: 1.5,
                             backgroundColor: isAdmin
                               ? theme.palette.primary.main
-                              : 'white',
-                            color: isAdmin ? 'white' : 'text.primary',
+                              : theme.palette.background.paper,
+                            color: isAdmin ? theme.palette.getContrastText(theme.palette.primary.main) : theme.palette.text.primary,
                             borderRadius: 2,
                             borderTopRightRadius: isAdmin ? 0 : 2,
                             borderTopLeftRadius: isAdmin ? 2 : 0,
@@ -576,7 +576,7 @@ export default function AdminSupportChat() {
               sx={{
                 p: 2,
                 borderTop: `1px solid ${theme.palette.divider}`,
-                backgroundColor: 'white',
+                backgroundColor: theme.palette.background.paper,
               }}
             >
               <TextField
@@ -591,13 +591,13 @@ export default function AdminSupportChat() {
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
+                          <IconButton
                         color="primary"
                         onClick={handleSend}
                         disabled={!inputText.trim() || sending}
                         sx={{
-                          bgcolor: theme.palette.primary.main,
-                          color: 'white',
+                              bgcolor: theme.palette.primary.main,
+                              color: theme.palette.common.white,
                           '&:hover': {
                             bgcolor: theme.palette.primary.dark,
                           },
@@ -618,7 +618,7 @@ export default function AdminSupportChat() {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: theme.palette.grey[50],
+                    backgroundColor: theme.palette.background.paper,
                   },
                 }}
               />
