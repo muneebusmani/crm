@@ -61,6 +61,70 @@ import SendQuotationDialog from './send-quotation-dialog';
 import LeadNotesPanel from '../LeadNotesPanel';
 import { get, post, post2 } from '@/lib/api';
 
+const HighlightText = ({
+  text,
+  highlight,
+}: {
+  text: string;
+  highlight: string;
+}) => {
+  if (!highlight.trim()) {
+    return <span>{text}</span>;
+  }
+  const regex = new RegExp(
+    `(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+    'gi',
+  );
+  const parts = text.split(regex);
+  return (
+    <span>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: <index is stable>
+            key={i}
+            style={{
+              backgroundColor: '#fff59d', // Light yellow
+              color: 'black',
+              fontWeight: 'bold',
+              borderRadius: '2px',
+              padding: '0 2px',
+            }}
+          >
+            {part}
+          </span>
+        ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: <index is stable>
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </span>
+  );
+};
+
+const TruncatedCell = ({
+  text,
+  highlight = '',
+  limit = 10,
+}: {
+  text: string;
+  highlight?: string;
+  limit?: number;
+}) => {
+  if (!text || text === '-') return <span>-</span>;
+
+  const shouldTruncate = text.length > limit;
+  const displayText = shouldTruncate ? `${text.substring(0, limit)}...` : text;
+
+  return (
+    <Tooltip title={text} placement="top">
+      <span>
+        <HighlightText text={displayText} highlight={highlight} />
+      </span>
+    </Tooltip>
+  );
+};
+
 const LeadsTable: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,7 +134,7 @@ const LeadsTable: React.FC = () => {
 
   const theme = useTheme();
   const ACTION_COL_WIDTH = 160; // Reduced from 180 to decrease space between status and actions
-  const STATUS_COL_WIDTH = 180;
+  const STATUS_COL_WIDTH = 100;
   const NOTES_COL_WIDTH = 150;
   const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -80,7 +144,8 @@ const LeadsTable: React.FC = () => {
     assignedCount: number;
     dailyLimit: number;
   } | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [regularSearchTerm, setRegularSearchTerm] = useState('');
+  const [hqSearchTerm, setHqSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [hqPage, setHqPage] = useState(1);
@@ -327,31 +392,35 @@ const LeadsTable: React.FC = () => {
   const filteredLeads = useMemo(() => {
     return leads.filter(
       (lead) =>
-        (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lead.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.name || '')
+          .toLowerCase()
+          .includes(regularSearchTerm.toLowerCase()) ||
+        (lead.email || '')
+          .toLowerCase()
+          .includes(regularSearchTerm.toLowerCase()) ||
         (lead.vehicle_model || '')
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
+          .includes(regularSearchTerm.toLowerCase()) ||
         (lead.vehicle_reg || '')
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()),
+          .includes(regularSearchTerm.toLowerCase()),
     );
-  }, [leads, searchTerm]);
+  }, [leads, regularSearchTerm]);
 
   // Calculate filtered HQ leads (from separate hqLeads state)
   const filteredHqLeads = useMemo(() => {
     return hqLeads.filter(
       (lead) =>
-        (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lead.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.name || '').toLowerCase().includes(hqSearchTerm.toLowerCase()) ||
+        (lead.email || '').toLowerCase().includes(hqSearchTerm.toLowerCase()) ||
         (lead.vehicle_model || '')
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
+          .includes(hqSearchTerm.toLowerCase()) ||
         (lead.vehicle_reg || '')
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()),
+          .includes(hqSearchTerm.toLowerCase()),
     );
-  }, [hqLeads, searchTerm]);
+  }, [hqLeads, hqSearchTerm]);
 
   // Calculate current page leads for regular leads
   const currentLeads = useMemo(() => {
@@ -394,7 +463,7 @@ const LeadsTable: React.FC = () => {
               if (notes.length > 0) {
                 // Get the first 5 characters of the latest note
                 const latestNote = notes[0];
-                previews.set(lead.id!, latestNote.content.substring(0, 5));
+                previews.set(lead.id!, latestNote.content);
               } else {
                 previews.set(lead.id!, '...');
               }
@@ -428,7 +497,7 @@ const LeadsTable: React.FC = () => {
         const newPreviews = new Map(notePreviews);
         if (notes.length > 0) {
           const latestNote = notes[0];
-          newPreviews.set(leadId, latestNote.content.substring(0, 5));
+          newPreviews.set(leadId, latestNote.content);
         } else {
           newPreviews.set(leadId, '...');
         }
@@ -442,8 +511,14 @@ const LeadsTable: React.FC = () => {
     }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleRegularSearchChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setRegularSearchTerm(e.target.value);
+  };
+
+  const handleHqSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHqSearchTerm(e.target.value);
   };
 
   const handlePageChange = (
@@ -658,30 +733,6 @@ const LeadsTable: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      {/* Search Bar */}
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <InputBase
-          placeholder="Search for..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          startAdornment={
-            <SearchIcon
-              sx={{ color: theme.palette.text.secondary, ml: 1 }}
-              fontSize="small"
-            />
-          }
-          sx={{
-            width: 300,
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 1,
-            px: 2,
-            py: 1,
-            backgroundColor: theme.palette.background.paper,
-            '& input': { padding: '0 !important' },
-          }}
-        />
-      </Box>
-
       {/* Regular Leads Accordion */}
       <Accordion
         expanded={regularLeadsExpanded}
@@ -719,6 +770,31 @@ const LeadsTable: React.FC = () => {
               color="primary"
               size="small"
             />
+            <Box
+              onClick={(e) => e.stopPropagation()}
+              sx={{ ml: 'auto', mr: 2 }}
+            >
+              <InputBase
+                placeholder="Search Regular Leads..."
+                value={regularSearchTerm}
+                onChange={handleRegularSearchChange}
+                startAdornment={
+                  <SearchIcon
+                    sx={{ color: theme.palette.text.secondary, ml: 1 }}
+                    fontSize="small"
+                  />
+                }
+                sx={{
+                  width: 300,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  px: 2,
+                  py: 1,
+                  backgroundColor: theme.palette.background.paper,
+                  '& input': { padding: '0 !important' },
+                }}
+              />
+            </Box>
           </Box>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0 }}>
@@ -735,27 +811,30 @@ const LeadsTable: React.FC = () => {
                   '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
                   '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 240 }, // Email
                   '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
-                  '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // Make
-                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // Model
-                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // VRM
-                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Year
-                  '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 280 }, // Customer Notes
-                  '& th:nth-of-type(9), & td:nth-of-type(9)': { minWidth: 140 }, // Fuel Type
-                  '& th:nth-of-type(10), & td:nth-of-type(10)': {
+                  '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // VRM
+                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 140 }, // Post Code
+                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // Make
+                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Model
+                  '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 100 }, // Year
+                  '& th:nth-of-type(9), & td:nth-of-type(9)': {
                     minWidth: 180,
-                  }, // Engine Title
+                    textAlign: 'center',
+                  }, // Customer Notes
+                  '& th:nth-of-type(10), & td:nth-of-type(10)': {
+                    minWidth: 140,
+                  }, // Fuel Type
                   '& th:nth-of-type(11), & td:nth-of-type(11)': {
                     minWidth: 140,
-                  }, // Engine Capacity
+                    textAlign: 'center',
+                  }, // Engine Title
                   '& th:nth-of-type(12), & td:nth-of-type(12)': {
-                    minWidth: 180,
-                  }, // Recieved at
+                    minWidth: 90,
+                    textAlign: 'center',
+                  }, // Engine Capacity
                   '& th:nth-of-type(13), & td:nth-of-type(13)': {
-                    minWidth: STATUS_COL_WIDTH,
-                  }, // Status
-                  '& th:nth-of-type(14), & td:nth-of-type(14)': {
-                    minWidth: ACTION_COL_WIDTH,
-                  }, // Action
+                    minWidth: 140,
+                    textAlign: 'center',
+                  }, // Recieved at
                 }}
               >
                 <TableHead>
@@ -836,6 +915,7 @@ const LeadsTable: React.FC = () => {
                         width: NOTES_COL_WIDTH,
                         padding: '12px 8px',
                         borderRight: `1px solid ${theme.palette.divider}`,
+                        borderLeft: `1px solid ${theme.palette.divider}`,
                         textAlign: 'center',
                       }}
                     >
@@ -884,7 +964,12 @@ const LeadsTable: React.FC = () => {
                   {currentLeads.map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell>
-                        <Typography>{lead.name || '-'}</Typography>
+                        <Typography>
+                          <TruncatedCell
+                            text={lead.name || '-'}
+                            highlight={regularSearchTerm}
+                          />
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         {lead.email ? (
@@ -895,20 +980,12 @@ const LeadsTable: React.FC = () => {
                               gap: 0.5,
                             }}
                           >
-                            <Tooltip title={lead.email} placement="top">
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  maxWidth: 140,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  flex: 1,
-                                }}
-                              >
-                                {lead.email}
-                              </Typography>
-                            </Tooltip>
+                            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                              <TruncatedCell
+                                text={lead.email}
+                                highlight={regularSearchTerm}
+                              />
+                            </Box>
                             <IconButton
                               size="small"
                               onClick={() =>
@@ -937,11 +1014,9 @@ const LeadsTable: React.FC = () => {
                               gap: 0.5,
                             }}
                           >
-                            <Tooltip title={lead.number} placement="top">
-                              <Typography variant="body2" sx={{ flex: 1 }}>
-                                {lead.number}
-                              </Typography>
-                            </Tooltip>
+                            <Box sx={{ flex: 1 }}>
+                              <TruncatedCell text={lead.number} />
+                            </Box>
                             <IconButton
                               size="small"
                               onClick={() =>
@@ -965,48 +1040,55 @@ const LeadsTable: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {(
-                          lead.vehicle_vrm?.toUpperCase().trim() || '-'
-                        ).replace(/\s+/g, '') || '-'}
+                        <TruncatedCell
+                          text={
+                            (
+                              lead.vehicle_vrm?.toUpperCase().trim() || '-'
+                            ).replace(/\s+/g, '') || '-'
+                          }
+                          highlight={regularSearchTerm}
+                        />
                       </TableCell>
                       <TableCell>
-                        {(lead.postcode?.toUpperCase().trim() || '-').replace(
-                          /\s+/g,
-                          '',
-                        ) || '-'}
+                        <TruncatedCell
+                          text={
+                            (
+                              lead.postcode?.toUpperCase().trim() || '-'
+                            ).replace(/\s+/g, '') || '-'
+                          }
+                        />
                       </TableCell>
-                      <TableCell>{lead.vehicle_brand || '-'}</TableCell>
                       <TableCell>
-                        {lead.vehicle_model || lead.vehicle_series || '-'}
+                        <TruncatedCell text={lead.vehicle_brand || '-'} />
                       </TableCell>
-                      <TableCell>{lead.vehicle_reg || '-'}</TableCell>
                       <TableCell>
-                        <Tooltip
-                          title={lead.description}
-                          placement="top"
-                          componentsProps={{
-                            tooltip: {
-                              sx: {
-                                fontSize: '1.25rem', // Increase tooltip text size
-                              },
-                            },
-                          }}
-                        >
-                          <span>
-                            {lead.description
-                              ? lead.description.length > 15
-                                ? `${lead.description.slice(0, 15)}...`
-                                : lead.description
-                              : '-'}
-                          </span>
-                        </Tooltip>
+                        <TruncatedCell
+                          text={
+                            lead.vehicle_model || lead.vehicle_series || '-'
+                          }
+                          highlight={regularSearchTerm}
+                        />
                       </TableCell>
-                      <TableCell>{lead.fuelType || '-'}</TableCell>
-                      <TableCell>{lead.vehicle_title || '-'}</TableCell>
                       <TableCell>
-                        {lead.engin_capacity
-                          ? `${lead.engin_capacity}.0L`
-                          : '-'}
+                        <TruncatedCell text={lead.vehicle_reg || '-'} />
+                      </TableCell>
+                      <TableCell>
+                        <TruncatedCell text={lead.description || '-'} />
+                      </TableCell>
+                      <TableCell>
+                        <TruncatedCell text={lead.fuelType || '-'} />
+                      </TableCell>
+                      <TableCell>
+                        <TruncatedCell text={lead.vehicle_title || '-'} />
+                      </TableCell>
+                      <TableCell>
+                        <TruncatedCell
+                          text={
+                            lead.engin_capacity
+                              ? `${lead.engin_capacity}.0L`
+                              : '-'
+                          }
+                        />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
                         {new Date(
@@ -1032,9 +1114,9 @@ const LeadsTable: React.FC = () => {
                         }}
                         sx={{
                           cursor: 'pointer',
-                          '&:hover': {
-                            backgroundColor: theme.palette.action.hover,
-                          },
+                          // '&:hover': {
+                          //   backgroundColor: theme.palette.action.hover,
+                          // },
                           position: 'sticky',
                           right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
                           backgroundColor: theme.palette.background.paper,
@@ -1043,12 +1125,24 @@ const LeadsTable: React.FC = () => {
                           width: NOTES_COL_WIDTH,
                           padding: '12px 8px',
                           borderRight: `1px solid ${theme.palette.divider}`,
+                          borderLeft: `1px solid ${theme.palette.divider}`,
                           textAlign: 'center',
                         }}
                       >
-                        <Typography variant="body2" color="primary">
-                          {notePreviews.get(lead.id!) || '...'}
-                        </Typography>
+                        <Tooltip
+                          title={notePreviews.get(lead.id!) || ''}
+                          placement="top"
+                        >
+                          <Typography variant="body2" color="primary">
+                            {notePreviews.get(lead.id!)
+                              ? notePreviews.get(lead.id!) === '...'
+                                ? '...'
+                                : notePreviews.get(lead.id!)!.length > 5
+                                  ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
+                                  : notePreviews.get(lead.id!)
+                              : '...'}
+                          </Typography>
+                        </Tooltip>
                       </TableCell>
                       <TableCell
                         sx={{
@@ -1258,6 +1352,31 @@ const LeadsTable: React.FC = () => {
                   color: theme.palette.common.white,
                 }}
               />
+              <Box
+                onClick={(e) => e.stopPropagation()}
+                sx={{ ml: 'auto', mr: 2 }}
+              >
+                <InputBase
+                  placeholder="Search HQ Leads..."
+                  value={hqSearchTerm}
+                  onChange={handleHqSearchChange}
+                  startAdornment={
+                    <SearchIcon
+                      sx={{ color: theme.palette.text.secondary, ml: 1 }}
+                      fontSize="small"
+                    />
+                  }
+                  sx={{
+                    width: 300,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 1,
+                    px: 2,
+                    py: 1,
+                    backgroundColor: theme.palette.background.paper,
+                    '& input': { padding: '0 !important' },
+                  }}
+                />
+              </Box>
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
@@ -1273,46 +1392,50 @@ const LeadsTable: React.FC = () => {
                     '& th, & td': { whiteSpace: 'nowrap' },
                     '& th:nth-of-type(1), & td:nth-of-type(1)': {
                       minWidth: 180,
-                    },
+                    }, // Name
                     '& th:nth-of-type(2), & td:nth-of-type(2)': {
                       minWidth: 240,
-                    },
+                    }, // Email
                     '& th:nth-of-type(3), & td:nth-of-type(3)': {
                       minWidth: 160,
-                    },
+                    }, // Phone
                     '& th:nth-of-type(4), & td:nth-of-type(4)': {
                       minWidth: 140,
-                    },
+                    }, // VRM
                     '& th:nth-of-type(5), & td:nth-of-type(5)': {
-                      minWidth: 160,
-                    },
+                      minWidth: 140,
+                    }, // Post Code
                     '& th:nth-of-type(6), & td:nth-of-type(6)': {
                       minWidth: 140,
-                    },
+                    }, // Make
                     '& th:nth-of-type(7), & td:nth-of-type(7)': {
                       minWidth: 160,
-                    },
+                    }, // Model
                     '& th:nth-of-type(8), & td:nth-of-type(8)': {
-                      minWidth: 280,
-                    },
+                      minWidth: 100,
+                    }, // Year
                     '& th:nth-of-type(9), & td:nth-of-type(9)': {
-                      minWidth: 140,
-                    },
-                    '& th:nth-of-type(10), & td:nth-of-type(10)': {
                       minWidth: 180,
-                    },
+                      textAlign: 'center',
+                    }, // Customer Notes
+                    '& th:nth-of-type(10), & td:nth-of-type(10)': {
+                      minWidth: 140,
+                    }, // Fuel Type
                     '& th:nth-of-type(11), & td:nth-of-type(11)': {
                       minWidth: 140,
-                    },
+                      textAlign: 'center',
+                    }, // Engine Title
                     '& th:nth-of-type(12), & td:nth-of-type(12)': {
-                      minWidth: 180,
-                    },
+                      minWidth: 90,
+                      textAlign: 'center',
+                    }, // Engine Capacity
                     '& th:nth-of-type(13), & td:nth-of-type(13)': {
-                      minWidth: STATUS_COL_WIDTH,
-                    },
+                      minWidth: 140,
+                      textAlign: 'center',
+                    }, // Recieved at
                     '& th:nth-of-type(14), & td:nth-of-type(14)': {
                       minWidth: ACTION_COL_WIDTH,
-                    },
+                    }, // Action
                   }}
                 >
                   <TableHead>
@@ -1392,6 +1515,7 @@ const LeadsTable: React.FC = () => {
                           width: NOTES_COL_WIDTH,
                           padding: '12px 8px',
                           borderRight: `1px solid ${theme.palette.divider}`,
+                          borderLeft: `1px solid ${theme.palette.divider}`,
                           textAlign: 'center',
                         }}
                       >
@@ -1440,7 +1564,12 @@ const LeadsTable: React.FC = () => {
                     {currentHqLeads.map((lead) => (
                       <TableRow key={lead.id}>
                         <TableCell>
-                          <Typography>{lead.name || '-'}</Typography>
+                          <Typography>
+                            <TruncatedCell
+                              text={lead.name || '-'}
+                              highlight={hqSearchTerm}
+                            />
+                          </Typography>
                         </TableCell>
                         <TableCell>
                           {lead.email ? (
@@ -1451,20 +1580,12 @@ const LeadsTable: React.FC = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <Tooltip title={lead.email} placement="top">
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    maxWidth: 140,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    flex: 1,
-                                  }}
-                                >
-                                  {lead.email}
-                                </Typography>
-                              </Tooltip>
+                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                                <TruncatedCell
+                                  text={lead.email}
+                                  highlight={hqSearchTerm}
+                                />
+                              </Box>
                               <IconButton
                                 size="small"
                                 onClick={() =>
@@ -1493,11 +1614,9 @@ const LeadsTable: React.FC = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <Tooltip title={lead.number} placement="top">
-                                <Typography variant="body2" sx={{ flex: 1 }}>
-                                  {lead.number}
-                                </Typography>
-                              </Tooltip>
+                              <Box sx={{ flex: 1 }}>
+                                <TruncatedCell text={lead.number} />
+                              </Box>
                               <IconButton
                                 size="small"
                                 onClick={() =>
@@ -1521,48 +1640,55 @@ const LeadsTable: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {(
-                            lead.vehicle_vrm?.toUpperCase().trim() || '-'
-                          ).replace(/\s+/g, '') || '-'}
+                          <TruncatedCell
+                            text={
+                              (
+                                lead.vehicle_vrm?.toUpperCase().trim() || '-'
+                              ).replace(/\s+/g, '') || '-'
+                            }
+                            highlight={hqSearchTerm}
+                          />
                         </TableCell>
                         <TableCell>
-                          {(lead.postcode?.toUpperCase().trim() || '-').replace(
-                            /\s+/g,
-                            '',
-                          ) || '-'}
+                          <TruncatedCell
+                            text={
+                              (
+                                lead.postcode?.toUpperCase().trim() || '-'
+                              ).replace(/\s+/g, '') || '-'
+                            }
+                          />
                         </TableCell>
-                        <TableCell>{lead.vehicle_brand || '-'}</TableCell>
                         <TableCell>
-                          {lead.vehicle_model || lead.vehicle_series || '-'}
+                          <TruncatedCell text={lead.vehicle_brand || '-'} />
                         </TableCell>
-                        <TableCell>{lead.vehicle_reg || '-'}</TableCell>
                         <TableCell>
-                          <Tooltip
-                            title={lead.description}
-                            placement="top"
-                            componentsProps={{
-                              tooltip: {
-                                sx: {
-                                  fontSize: '1.25rem',
-                                },
-                              },
-                            }}
-                          >
-                            <span>
-                              {lead.description
-                                ? lead.description.length > 15
-                                  ? `${lead.description.slice(0, 15)}...`
-                                  : lead.description
-                                : '-'}
-                            </span>
-                          </Tooltip>
+                          <TruncatedCell
+                            text={
+                              lead.vehicle_model || lead.vehicle_series || '-'
+                            }
+                            highlight={hqSearchTerm}
+                          />
                         </TableCell>
-                        <TableCell>{lead.fuelType || '-'}</TableCell>
-                        <TableCell>{lead.vehicle_title || '-'}</TableCell>
                         <TableCell>
-                          {lead.engin_capacity
-                            ? `${lead.engin_capacity}.0L`
-                            : '-'}
+                          <TruncatedCell text={lead.vehicle_reg || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.description || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.fuelType || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.vehicle_title || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell
+                            text={
+                              lead.engin_capacity
+                                ? `${lead.engin_capacity}.0L`
+                                : '-'
+                            }
+                          />
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center' }}>
                           {new Date(
@@ -1588,9 +1714,9 @@ const LeadsTable: React.FC = () => {
                           }}
                           sx={{
                             cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: theme.palette.action.hover,
-                            },
+                            // '&:hover': {
+                            //   backgroundColor: theme.palette.action.hover,
+                            // },
                             position: 'sticky',
                             right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
                             backgroundColor: theme.palette.background.paper,
@@ -1599,12 +1725,24 @@ const LeadsTable: React.FC = () => {
                             width: NOTES_COL_WIDTH,
                             padding: '12px 8px',
                             borderRight: `1px solid ${theme.palette.divider}`,
+                            borderLeft: `1px solid ${theme.palette.divider}`,
                             textAlign: 'center',
                           }}
                         >
-                          <Typography variant="body2" color="primary">
-                            {notePreviews.get(lead.id!) || '...'}
-                          </Typography>
+                          <Tooltip
+                            title={notePreviews.get(lead.id!) || ''}
+                            placement="top"
+                          >
+                            <Typography variant="body2" color="primary">
+                              {notePreviews.get(lead.id!)
+                                ? notePreviews.get(lead.id!) === '...'
+                                  ? '...'
+                                  : notePreviews.get(lead.id!)!.length > 5
+                                    ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
+                                    : notePreviews.get(lead.id!)
+                                : '...'}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                         <TableCell
                           sx={{
