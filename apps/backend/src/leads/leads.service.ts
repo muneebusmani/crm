@@ -1,5 +1,5 @@
-import type { ApiResponse, CreateLeadDto, UpdateLeadDto } from '@crm/types';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import type { CreateLeadDto, UpdateLeadDto } from '@crm/types';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ActivityLogger } from 'src/common/activity-log.subscriber';
 import { Repository } from 'typeorm';

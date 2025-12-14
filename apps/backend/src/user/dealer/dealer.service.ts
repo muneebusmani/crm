@@ -112,12 +112,17 @@ export class DealerService {
         const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
 
         // If the public URL is different from a placeholder and seems valid, return it permanently
-        if (publicUrl && !publicUrl.includes('undefined') && !publicUrl.includes('null')) {
+        if (
+          publicUrl &&
+          !publicUrl.includes('undefined') &&
+          !publicUrl.includes('null')
+        ) {
           return publicUrl;
         }
 
         // Check if file is publicly accessible as a secondary verification
-        const isPublic = await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
+        const isPublic =
+          await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
         if (isPublic) {
           return publicUrl;
         }
@@ -416,81 +421,89 @@ export class DealerService {
     dto: UpdateDealerDto & { logo?: string },
     logoFile?: Multer.File,
   ) {
-    // Check if user exists and has dealer
-    const existingUser = await this.userRepository.findOne({
-      where: { id },
-      relations: ['dealer'],
-    });
+    try {
+      // Check if user exists and has dealer
+      const existingUser = await this.userRepository.findOne({
+        where: { id },
+        relations: ['dealer'],
+      });
 
-    if (!existingUser || !existingUser.dealer) {
-      throw new NotFoundException('Dealer not found');
-    }
-
-    // Update user fields
-    const updateUser: Partial<UpdateUserDto> = {};
-    if (dto.name !== undefined) updateUser.name = dto.name;
-    if (dto.email !== undefined) updateUser.email = dto.email;
-    if (dto.username !== undefined) updateUser.username = dto.username;
-    if (dto.password && dto.password.trim() !== '') {
-      updateUser.password = await bcrypt.hash(dto.password, 10);
-    }
-
-    if (Object.keys(updateUser).length > 0) {
-      await this.userRepository.update(id, updateUser);
-    }
-
-    // Handle logo - support both file upload and logo path
-    let logoUrl = existingUser.dealer.logo; // keep existing if no new file
-    if (logoFile) {
-      // Handle traditional file upload
-      const safeName = logoFile.originalname
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-\.]/g, '');
-      const filename = `${Date.now()}-${safeName}${extname(logoFile.originalname)}`;
-
-      const uploadDir = join(process.cwd(), 'uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      if (!existingUser || !existingUser.dealer) {
+        throw new NotFoundException('Dealer not found');
       }
 
-      const uploadPath = join(uploadDir, filename);
-      fs.writeFileSync(uploadPath, logoFile.buffer);
+      // Update user fields
+      const updateUser: Partial<UpdateUserDto> = {};
+      if (dto.name !== undefined) updateUser.name = dto.name;
+      if (dto.email !== undefined) updateUser.email = dto.email;
+      if (dto.username !== undefined) updateUser.username = dto.username;
+      if (dto.password && dto.password.trim() !== '') {
+        updateUser.password = await bcrypt.hash(dto.password, 10);
+      }
 
-      logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
-    } else if (dto.logo) {
-      // Handle logo path (e.g., from Supabase storage)
-      logoUrl = dto.logo;
+      if (Object.keys(updateUser).length > 0) {
+        await this.userRepository.update(id, updateUser);
+      }
+
+      // Handle logo - support both file upload and logo path
+      let logoUrl = existingUser.dealer.logo; // keep existing if no new file
+      if (logoFile) {
+        // Handle traditional file upload
+        const safeName = logoFile.originalname
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-\.]/g, '');
+        const filename = `${Date.now()}-${safeName}${extname(logoFile.originalname)}`;
+
+        const uploadDir = join(process.cwd(), 'uploads');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const uploadPath = join(uploadDir, filename);
+        fs.writeFileSync(uploadPath, logoFile.buffer);
+
+        logoUrl = `${process.env.BACKEND_URL}/uploads/${filename}`;
+      } else if (dto.logo) {
+        // Handle logo path (e.g., from Supabase storage)
+        logoUrl = dto.logo;
+      }
+
+      // Update dealer fields
+      const updateDealer: Partial<UpdateDealerDto> = {};
+      if (dto.name !== undefined) updateDealer.name = dto.name;
+      if (dto.owner !== undefined) updateDealer.owner = dto.owner;
+      if (dto.location !== undefined) updateDealer.location = dto.location;
+      if (dto.website !== undefined) updateDealer.website = dto.website;
+      if (dto.contactEmail !== undefined)
+        updateDealer.contactEmail = dto.contactEmail;
+      if (dto.tierId !== undefined) updateDealer.tierId = dto.tierId;
+      updateDealer['logo'] = logoUrl;
+
+      if (Object.keys(updateDealer).length > 0) {
+        await this.dealerRepository.update(
+          existingUser.dealer.id,
+          updateDealer,
+        );
+      }
+
+      // Return updated user with dealer relation
+      const updatedUser = await this.userRepository.findOne({
+        where: { id },
+        relations: ['dealer', 'dealer.dealerTierCredits.tier'],
+      });
+
+      // Convert logo path to signed URL before returning
+      if (updatedUser?.dealer?.logo) {
+        updatedUser.dealer.logo = await this.convertLogoToSignedUrl(
+          updatedUser.dealer.logo,
+        );
+      }
+
+      return updatedUser;
+    } catch (error) {
+      this.logger.error(`Error updating dealer ${id}:`, error);
+      throw error;
     }
-
-    // Update dealer fields
-    const updateDealer: Partial<UpdateDealerDto> = {};
-    if (dto.name !== undefined) updateDealer.name = dto.name;
-    if (dto.owner !== undefined) updateDealer.owner = dto.owner;
-    if (dto.location !== undefined) updateDealer.location = dto.location;
-    if (dto.website !== undefined) updateDealer.website = dto.website;
-    if (dto.contactEmail !== undefined)
-      updateDealer.contactEmail = dto.contactEmail;
-    if (dto.tierId !== undefined) updateDealer.tierId = dto.tierId;
-    updateDealer['logo'] = logoUrl;
-
-    if (Object.keys(updateDealer).length > 0) {
-      await this.dealerRepository.update(existingUser.dealer.id, updateDealer);
-    }
-
-    // Return updated user with dealer relation
-    const updatedUser = await this.userRepository.findOne({
-      where: { id },
-      relations: ['dealer', 'dealer.dealerTierCredits.tier'],
-    });
-
-    // Convert logo path to signed URL before returning
-    if (updatedUser?.dealer?.logo) {
-      updatedUser.dealer.logo = await this.convertLogoToSignedUrl(
-        updatedUser.dealer.logo,
-      );
-    }
-
-    return updatedUser;
   }
 
   /**
@@ -890,7 +903,10 @@ export class DealerService {
     if (existing) {
       // Only allow status updates that follow the progression: OPEN -> QUOTED -> WON
       // Prevent any downgrades like QUOTED -> OPEN, WON -> QUOTED, etc.
-      const shouldUpdate = this.isValidStatusTransition(existing.status, status);
+      const shouldUpdate = this.isValidStatusTransition(
+        existing.status,
+        status,
+      );
 
       if (shouldUpdate && existing.status !== status) {
         existing.status = status;
@@ -932,7 +948,10 @@ export class DealerService {
    * Valid transitions: OPEN -> QUOTED, OPEN -> WON, QUOTED -> WON
    * Invalid transitions: QUOTED -> OPEN, WON -> QUOTED, WON -> OPEN
    */
-  private isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
+  private isValidStatusTransition(
+    currentStatus: string,
+    newStatus: string,
+  ): boolean {
     if (currentStatus === newStatus) {
       return false; // No need to update if status is the same
     }
@@ -945,7 +964,8 @@ export class DealerService {
       [LeadStatus.CONTACT]: 0, // Assuming CONTACT is at same level as OPEN
     };
 
-    const currentOrder = statusOrder[currentStatus as keyof typeof statusOrder] ?? -1;
+    const currentOrder =
+      statusOrder[currentStatus as keyof typeof statusOrder] ?? -1;
     const newOrder = statusOrder[newStatus as keyof typeof statusOrder] ?? -1;
 
     // Only allow transitions to higher or same status levels

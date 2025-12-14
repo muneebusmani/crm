@@ -20,6 +20,7 @@ import { LeadsService } from './leads.service';
 import { LeadNotesService } from './lead-notes.service';
 import { AdminHqLeadsController } from './admin-hq-leads.controller';
 import { AdminLeadsController } from './admin-leads.controller';
+import { HqLeadResetModule } from 'src/hq-lead-reset/hq-lead-reset.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AdminLeadsController } from './admin-leads.controller';
       DealerTier,
     ]),
     ActivityLogModule,
+    HqLeadResetModule,
   ],
   providers: [
     LeadsGateway,
