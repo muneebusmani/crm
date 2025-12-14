@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -31,7 +32,7 @@ export class Dealer {
   @Column({ nullable: true })
   contactEmail!: string;
 
-  // Dealer’s current credits
+  // Dealer's current credits
   @Column({ type: 'int', default: 0 })
   credits!: number;
 
@@ -41,9 +42,32 @@ export class Dealer {
   @Column({ nullable: true })
   tierId!: number;
 
-  // Daily HQ lead limit: -1 = unlimited, 0 = no HQ leads, positive = specific limit
-  @Column({ type: 'int', default: 0 })
-  dailyHqLeadLimit!: number;
+  /**
+   * Relation to the dealer's tier (Bronze/Silver/Gold)
+   * The tier determines the default HQ lead quota via tier.hqLeadQuota
+   */
+  @ManyToOne('DealerTier')
+  @JoinColumn({ name: 'tierId' })
+  tier?: any;
+
+  /**
+   * Custom HQ lead quota override for this specific dealer.
+   * NULL = use tier default (Dealer.tier.hqLeadQuota)
+   * -1 = unlimited
+   * 0 = no HQ leads
+   * positive = specific daily limit
+   *
+   * Priority: customHqQuota > tier.hqLeadQuota
+   */
+  @Column({ type: 'int', nullable: true, name: 'customHqQuota' })
+  customHqQuota!: number | null;
+
+  /**
+   * Relation to HQ lead visibility records.
+   * Tracks which HQ leads this dealer can see.
+   */
+  @OneToMany('HqLeadVisibility', 'dealer')
+  hqLeadVisibility!: any[];
 
   @OneToMany('CompanyUser', 'dealer', { onDelete: 'CASCADE' })
   companyUsers!: any[];

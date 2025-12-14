@@ -14,13 +14,15 @@ export class DealerTierSeeder implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     const tiers = [
-      { name: 'Bronze', creditLimit: 200 },
-      { name: 'Silver', creditLimit: 400 },
-      { name: 'Gold', creditLimit: 600 },
+      { name: 'Bronze', creditLimit: 200, hqLeadQuota: 5 },
+      { name: 'Silver', creditLimit: 400, hqLeadQuota: 10 },
+      { name: 'Gold', creditLimit: 600, hqLeadQuota: -1 }, // -1 = unlimited
     ];
 
     for (const t of tiers) {
-      const exists = await this.dealerTierRepo.findOne({ where: { name: t.name } });
+      const exists = await this.dealerTierRepo.findOne({
+        where: { name: t.name },
+      });
       if (!exists) {
         // use save/create to ensure TypeORM respects entity lifecycle
         await this.dealerTierRepo.save(this.dealerTierRepo.create(t));

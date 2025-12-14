@@ -35,8 +35,8 @@ import {
   Divider,
 } from '@mui/material';
 import { get, post, put } from '@/lib/api';
-import { 
-  Add as AddIcon, 
+import {
+  Add as AddIcon,
   Assignment as AssignmentIcon,
   Person as PersonIcon,
   DirectionsCar as CarIcon,
@@ -60,7 +60,10 @@ interface HqLeadSetting {
 interface DealerHqStatus {
   dealerId: number;
   dealerName: string;
-  dailyHqLeadLimit: number;
+  tierName: string;
+  tierQuota: number;
+  customQuota: number | null;
+  effectiveQuota: number;
   assignedToday: number;
   canReceiveMore: boolean;
 }
@@ -85,16 +88,23 @@ const HqLeadsAdminPage = () => {
   const [loading, setLoading] = useState(false);
 
   const [dealerStatuses, setDealerStatuses] = useState<DealerStatus[]>([]);
-  
+
   // New states for improved HQ lead management
   const [unassignedHqLeads, setUnassignedHqLeads] = useState<Lead[]>([]);
-  const [dealerHqStatuses, setDealerHqStatuses] = useState<DealerHqStatus[]>([]);
+  const [dealerHqStatuses, setDealerHqStatuses] = useState<DealerHqStatus[]>(
+    [],
+  );
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedDealerId, setSelectedDealerId] = useState<number | null>(null);
-  const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null);
+  const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(
+    null,
+  );
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
-  const [editingDealerLimit, setEditingDealerLimit] = useState<{ dealerId: number; limit: number } | null>(null);
+  const [editingDealerLimit, setEditingDealerLimit] = useState<{
+    dealerId: number;
+    limit: number;
+  } | null>(null);
 
   const [leadIdToAssign, setLeadIdToAssign] = useState('');
   const [dealerIdToAssign, setDealerIdToAssign] = useState('');
@@ -131,8 +141,12 @@ const HqLeadsAdminPage = () => {
       const response = await get('/admin/leads');
       const allLeads = response.data || response;
       // Filter to only HQ leads that are not assigned
-      const unassigned = allLeads.filter((lead: Lead) => 
-        lead.isHqLead && (!lead.assigned_to || lead.assigned_to === '' || lead.assigned_to === null)
+      const unassigned = allLeads.filter(
+        (lead: Lead) =>
+          lead.isHqLead &&
+          (!lead.assigned_to ||
+            lead.assigned_to === '' ||
+            lead.assigned_to === null),
       );
       setUnassignedHqLeads(unassigned);
     } catch (error) {
@@ -161,7 +175,13 @@ const HqLeadsAdminPage = () => {
       fetchUnassignedHqLeads();
       fetchDealerHqStatuses();
     }
-  }, [activeTab, fetchHqLeadSettings, fetchDealerStatuses, fetchUnassignedHqLeads, fetchDealerHqStatuses]);
+  }, [
+    activeTab,
+    fetchHqLeadSettings,
+    fetchDealerStatuses,
+    fetchUnassignedHqLeads,
+    fetchDealerHqStatuses,
+  ]);
 
   const handleCreateSetting = async () => {
     if (!editingSetting) return;
@@ -234,9 +254,11 @@ const HqLeadsAdminPage = () => {
   // Handle assignment from dialog
   const handleAssignFromDialog = async () => {
     if (!selectedLead || !selectedDealerId) return;
-    
+
     try {
-      await post(`/admin/hq-leads/assign/${selectedLead.id}/to/${selectedDealerId}`);
+      await post(
+        `/admin/hq-leads/assign/${selectedLead.id}/to/${selectedDealerId}`,
+      );
       setAssignmentSuccess(`Successfully assigned lead to dealer!`);
       setAssignmentError(null);
       // Refresh data
@@ -249,15 +271,23 @@ const HqLeadsAdminPage = () => {
         setSelectedDealerId(null);
       }, 1500);
     } catch (error: any) {
-      setAssignmentError(error.message || 'Failed to assign lead. Dealer may have reached their daily limit.');
+      setAssignmentError(
+        error.message ||
+          'Failed to assign lead. Dealer may have reached their daily limit.',
+      );
       setAssignmentSuccess(null);
     }
   };
 
   // Update dealer's daily HQ lead limit
-  const handleUpdateDealerLimit = async (dealerId: number, newLimit: number) => {
+  const handleUpdateDealerLimit = async (
+    dealerId: number,
+    newLimit: number,
+  ) => {
     try {
-      await put(`/admin/hq-leads/dealers/${dealerId}/limit`, { dailyLimit: newLimit });
+      await put(`/admin/hq-leads/dealers/${dealerId}/limit`, {
+        dailyLimit: newLimit,
+      });
       setEditingDealerLimit(null);
       fetchDealerHqStatuses();
     } catch (error) {
@@ -538,67 +568,163 @@ const HqLeadsAdminPage = () => {
       {/* Unassigned HQ Leads Section */}
       <Card>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
             <Typography variant="h6">
               Unassigned HQ Leads ({unassignedHqLeads.length})
             </Typography>
-            <IconButton onClick={() => { fetchUnassignedHqLeads(); fetchDealerHqStatuses(); }} title="Refresh">
+            <IconButton
+              onClick={() => {
+                fetchUnassignedHqLeads();
+                fetchDealerHqStatuses();
+              }}
+              title="Refresh"
+            >
               <RefreshIcon />
             </IconButton>
           </Box>
-          
+
           {unassignedHqLeads.length === 0 ? (
             <Alert severity="info">No unassigned HQ leads at the moment.</Alert>
           ) : (
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: (theme) => theme.palette.primary.main }}>
-                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>ID</strong></TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Customer</strong></TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Contact</strong></TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Vehicle</strong></TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Description</strong></TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Received</strong></TableCell>
-                    <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Actions</strong></TableCell>
+                  <TableRow
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.primary.main,
+                    }}
+                  >
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>ID</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Customer</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Contact</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Vehicle</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Description</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Received</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Actions</strong>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {unassignedHqLeads.map((lead) => (
                     <TableRow key={lead.id} hover>
                       <TableCell>
-                        <Chip label={`#${lead.id}`} size="small" color="warning" />
+                        <Chip
+                          label={`#${lead.id}`}
+                          size="small"
+                          color="warning"
+                        />
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
                           <PersonIcon fontSize="small" color="action" />
-                          <Typography variant="body2">{lead.name || 'N/A'}</Typography>
+                          <Typography variant="body2">
+                            {lead.name || 'N/A'}
+                          </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                          }}
+                        >
                           {lead.email && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
                               <EmailIcon fontSize="small" color="action" />
-                              <Typography variant="caption">{lead.email}</Typography>
+                              <Typography variant="caption">
+                                {lead.email}
+                              </Typography>
                             </Box>
                           )}
                           {lead.number && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
                               <PhoneIcon fontSize="small" color="action" />
-                              <Typography variant="caption">{lead.number}</Typography>
+                              <Typography variant="caption">
+                                {lead.number}
+                              </Typography>
                             </Box>
                           )}
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
                           <CarIcon fontSize="small" color="primary" />
                           <Box>
                             <Typography variant="body2" fontWeight="bold">
-                              {lead.vehicle_brand || ''} {lead.vehicle_model || lead.vehicle_series || ''}
+                              {lead.vehicle_brand || ''}{' '}
+                              {lead.vehicle_model || lead.vehicle_series || ''}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               {lead.vehicle_vrm || lead.vehicle_reg || 'No VRM'}
                             </Typography>
                           </Box>
@@ -606,25 +732,32 @@ const HqLeadsAdminPage = () => {
                       </TableCell>
                       <TableCell>
                         <Tooltip title={lead.description || 'No description'}>
-                          <Typography variant="caption" sx={{ 
-                            maxWidth: 200, 
-                            display: 'block',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              maxWidth: 200,
+                              display: 'block',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {lead.description || '-'}
                           </Typography>
                         </Tooltip>
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption">
-                          {lead.createdAt ? new Date(lead.createdAt as unknown as string).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : '-'}
+                          {lead.createdAt
+                            ? new Date(
+                                lead.createdAt as unknown as string,
+                              ).toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '-'}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
@@ -651,31 +784,118 @@ const HqLeadsAdminPage = () => {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Dealer Daily HQ Lead Limits
+            Dealer HQ Lead Quotas (Tier-Based)
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Set individual daily limits for each dealer. Use -1 for unlimited, 0 for no HQ leads.
+            Quotas are based on dealer tiers. Custom overrides take priority.
+            Use NULL to revert to tier default, -1 for unlimited, 0 for no HQ
+            leads.
           </Typography>
-          
+
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: (theme) => theme.palette.primary.main }}>
-                  <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Dealer</strong></TableCell>
-                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Daily Limit</strong></TableCell>
-                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Assigned Today</strong></TableCell>
-                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Status</strong></TableCell>
-                  <TableCell align="center" sx={{ color: (theme) => theme.palette.primary.contrastText }}><strong>Actions</strong></TableCell>
+                <TableRow
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.primary.main,
+                  }}
+                >
+                  <TableCell
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Dealer</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Tier</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Tier Quota</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Custom Override</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Effective</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Assigned Today</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Status</strong>
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: (theme) => theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <strong>Actions</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {dealerHqStatuses.map((dealer) => (
                   <TableRow key={dealer.dealerId} hover>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
                         <PersonIcon fontSize="small" color="action" />
-                        <Typography variant="body2">{dealer.dealerName}</Typography>
+                        <Typography variant="body2">
+                          {dealer.dealerName}
+                        </Typography>
                       </Box>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={dealer.tierName}
+                        size="small"
+                        color={
+                          dealer.tierName === 'Gold'
+                            ? 'warning'
+                            : dealer.tierName === 'Silver'
+                              ? 'default'
+                              : 'primary'
+                        }
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Typography variant="body2" color="text.secondary">
+                        {dealer.tierQuota === -1 ? '∞' : dealer.tierQuota}
+                      </Typography>
                     </TableCell>
                     <TableCell align="center">
                       {editingDealerLimit?.dealerId === dealer.dealerId ? (
@@ -683,21 +903,50 @@ const HqLeadsAdminPage = () => {
                           type="number"
                           size="small"
                           value={editingDealerLimit.limit}
-                          onChange={(e) => setEditingDealerLimit({ 
-                            ...editingDealerLimit, 
-                            limit: parseInt(e.target.value, 10) 
-                          })}
+                          onChange={(e) =>
+                            setEditingDealerLimit({
+                              ...editingDealerLimit,
+                              limit: parseInt(e.target.value, 10),
+                            })
+                          }
                           sx={{ width: 80 }}
                           inputProps={{ min: -1 }}
+                          placeholder="NULL"
                         />
+                      ) : dealer.customQuota === null ? (
+                        <Typography variant="caption" color="text.secondary">
+                          —
+                        </Typography>
                       ) : (
                         <Chip
-                          label={dealer.dailyHqLeadLimit === -1 ? '∞ Unlimited' : dealer.dailyHqLeadLimit}
+                          label={
+                            dealer.customQuota === -1 ? '∞' : dealer.customQuota
+                          }
                           size="small"
-                          color={dealer.dailyHqLeadLimit === -1 ? 'success' : dealer.dailyHqLeadLimit === 0 ? 'default' : 'primary'}
-                          variant={dealer.dailyHqLeadLimit === 0 ? 'outlined' : 'filled'}
+                          color="info"
+                          variant="filled"
                         />
                       )}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={
+                          dealer.effectiveQuota === -1
+                            ? '∞ Unlimited'
+                            : dealer.effectiveQuota
+                        }
+                        size="small"
+                        color={
+                          dealer.effectiveQuota === -1
+                            ? 'success'
+                            : dealer.effectiveQuota === 0
+                              ? 'default'
+                              : 'primary'
+                        }
+                        variant={
+                          dealer.effectiveQuota === 0 ? 'outlined' : 'filled'
+                        }
+                      />
                     </TableCell>
                     <TableCell align="center">
                       <Typography variant="body2" fontWeight="bold">
@@ -706,18 +955,41 @@ const HqLeadsAdminPage = () => {
                     </TableCell>
                     <TableCell align="center">
                       {dealer.canReceiveMore ? (
-                        <Chip icon={<CheckCircleIcon />} label="Available" size="small" color="success" variant="outlined" />
+                        <Chip
+                          icon={<CheckCircleIcon />}
+                          label="Available"
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                        />
                       ) : (
-                        <Chip icon={<WarningIcon />} label="At Limit" size="small" color="warning" variant="outlined" />
+                        <Chip
+                          icon={<WarningIcon />}
+                          label="At Limit"
+                          size="small"
+                          color="warning"
+                          variant="outlined"
+                        />
                       )}
                     </TableCell>
                     <TableCell align="center">
                       {editingDealerLimit?.dealerId === dealer.dealerId ? (
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 1,
+                            justifyContent: 'center',
+                          }}
+                        >
                           <Button
                             size="small"
                             variant="contained"
-                            onClick={() => handleUpdateDealerLimit(dealer.dealerId, editingDealerLimit.limit)}
+                            onClick={() =>
+                              handleUpdateDealerLimit(
+                                dealer.dealerId,
+                                editingDealerLimit.limit,
+                              )
+                            }
                           >
                             Save
                           </Button>
@@ -729,13 +1001,24 @@ const HqLeadsAdminPage = () => {
                           </Button>
                         </Box>
                       ) : (
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 1,
+                            justifyContent: 'center',
+                          }}
+                        >
                           <Button
                             size="small"
                             variant="outlined"
-                            onClick={() => setEditingDealerLimit({ dealerId: dealer.dealerId, limit: dealer.dailyHqLeadLimit })}
+                            onClick={() =>
+                              setEditingDealerLimit({
+                                dealerId: dealer.dealerId,
+                                limit: dealer.customQuota ?? dealer.tierQuota,
+                              })
+                            }
                           >
-                            Edit Limit
+                            Override
                           </Button>
                           <Button
                             size="small"
@@ -786,7 +1069,12 @@ const HqLeadsAdminPage = () => {
               size="small"
               sx={{ width: 120 }}
             />
-            <Button type="submit" variant="outlined" color="primary" size="small">
+            <Button
+              type="submit"
+              variant="outlined"
+              color="primary"
+              size="small"
+            >
               Assign
             </Button>
           </Box>
@@ -797,7 +1085,12 @@ const HqLeadsAdminPage = () => {
 
   // Assignment Dialog
   const renderAssignmentDialog = () => (
-    <Dialog open={assignDialogOpen} onClose={() => setAssignDialogOpen(false)} maxWidth="sm" fullWidth>
+    <Dialog
+      open={assignDialogOpen}
+      onClose={() => setAssignDialogOpen(false)}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AssignmentIcon color="primary" />
@@ -808,33 +1101,68 @@ const HqLeadsAdminPage = () => {
         {selectedLead && (
           <Box sx={{ mt: 2 }}>
             {/* Lead Preview */}
-            <Paper variant="outlined" sx={{ p: 2, mb: 3, backgroundColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.warning.light }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                mb: 3,
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.background.paper
+                    : theme.palette.warning.light,
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
                 Lead Details
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary">Customer</Typography>
-                  <Typography variant="body2" fontWeight="bold">{selectedLead.name || 'N/A'}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary">Contact</Typography>
-                  <Typography variant="body2">{selectedLead.email || selectedLead.number || 'N/A'}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary">Vehicle</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Customer
+                  </Typography>
                   <Typography variant="body2" fontWeight="bold">
-                    {selectedLead.vehicle_brand} {selectedLead.vehicle_model || selectedLead.vehicle_series}
+                    {selectedLead.name || 'N/A'}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary">VRM</Typography>
-                  <Typography variant="body2">{selectedLead.vehicle_vrm || selectedLead.vehicle_reg || 'N/A'}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Contact
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedLead.email || selectedLead.number || 'N/A'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Vehicle
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {selectedLead.vehicle_brand}{' '}
+                    {selectedLead.vehicle_model || selectedLead.vehicle_series}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    VRM
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedLead.vehicle_vrm ||
+                      selectedLead.vehicle_reg ||
+                      'N/A'}
+                  </Typography>
                 </Grid>
                 {selectedLead.description && (
                   <Grid item xs={12}>
-                    <Typography variant="caption" color="text.secondary">Description</Typography>
-                    <Typography variant="body2">{selectedLead.description}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Description
+                    </Typography>
+                    <Typography variant="body2">
+                      {selectedLead.description}
+                    </Typography>
                   </Grid>
                 )}
               </Grid>
@@ -852,13 +1180,20 @@ const HqLeadsAdminPage = () => {
                 onChange={(e) => setSelectedDealerId(e.target.value as number)}
               >
                 {dealerHqStatuses
-                  .filter(d => d.canReceiveMore)
+                  .filter((d) => d.canReceiveMore)
                   .map((dealer) => (
                     <MenuItem key={dealer.dealerId} value={dealer.dealerId}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Typography>{dealer.dealerName}</Typography>
-                        <Chip 
-                          label={`${dealer.assignedToday}/${dealer.dailyHqLeadLimit === -1 ? '∞' : dealer.dailyHqLeadLimit}`}
+                        <Chip
+                          label={`${dealer.assignedToday}/${dealer.effectiveQuota === -1 ? '∞' : dealer.effectiveQuota}`}
                           size="small"
                           color="success"
                         />
@@ -867,13 +1202,26 @@ const HqLeadsAdminPage = () => {
                   ))}
                 <Divider />
                 {dealerHqStatuses
-                  .filter(d => !d.canReceiveMore)
+                  .filter((d) => !d.canReceiveMore)
                   .map((dealer) => (
-                    <MenuItem key={dealer.dealerId} value={dealer.dealerId} disabled>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                        <Typography color="text.secondary">{dealer.dealerName}</Typography>
-                        <Chip 
-                          label={`At Limit (${dealer.assignedToday}/${dealer.dailyHqLeadLimit})`}
+                    <MenuItem
+                      key={dealer.dealerId}
+                      value={dealer.dealerId}
+                      disabled
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography color="text.secondary">
+                          {dealer.dealerName}
+                        </Typography>
+                        <Chip
+                          label={`At Limit (${dealer.assignedToday}/${dealer.effectiveQuota})`}
                           size="small"
                           color="warning"
                         />
@@ -885,18 +1233,39 @@ const HqLeadsAdminPage = () => {
 
             {/* Selected Dealer Preview */}
             {selectedDealerId && (
-              <Paper variant="outlined" sx={{ p: 2, backgroundColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.success.light }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.background.paper
+                      : theme.palette.success.light,
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
                   Selected Dealer
                 </Typography>
                 {(() => {
-                  const dealer = dealerHqStatuses.find(d => d.dealerId === selectedDealerId);
+                  const dealer = dealerHqStatuses.find(
+                    (d) => d.dealerId === selectedDealerId,
+                  );
                   if (!dealer) return null;
                   return (
                     <Box>
-                      <Typography variant="body1" fontWeight="bold">{dealer.dealerName}</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {dealer.dealerName}
+                      </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Quota: {dealer.assignedToday} / {dealer.dailyHqLeadLimit === -1 ? 'Unlimited' : dealer.dailyHqLeadLimit} today
+                        Quota: {dealer.assignedToday} /{' '}
+                        {dealer.effectiveQuota === -1
+                          ? 'Unlimited'
+                          : dealer.effectiveQuota}{' '}
+                        today
                       </Typography>
                     </Box>
                   );
@@ -906,18 +1275,22 @@ const HqLeadsAdminPage = () => {
 
             {/* Success/Error Messages */}
             {assignmentSuccess && (
-              <Alert severity="success" sx={{ mt: 2 }}>{assignmentSuccess}</Alert>
+              <Alert severity="success" sx={{ mt: 2 }}>
+                {assignmentSuccess}
+              </Alert>
             )}
             {assignmentError && (
-              <Alert severity="error" sx={{ mt: 2 }}>{assignmentError}</Alert>
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {assignmentError}
+              </Alert>
             )}
           </Box>
         )}
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={handleAssignFromDialog}
           disabled={!selectedDealerId || !!assignmentSuccess}
         >
@@ -946,7 +1319,7 @@ const HqLeadsAdminPage = () => {
       {activeTab === 0 && renderContent(renderSettingsContent())}
       {activeTab === 1 && renderContent(renderDealerManagementContent())}
       {activeTab === 2 && renderContent(renderManualManagementContent())}
-      
+
       {renderAssignmentDialog()}
     </Box>
   );
