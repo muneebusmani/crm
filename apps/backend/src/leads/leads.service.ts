@@ -133,6 +133,99 @@ export class LeadsService {
     }
   }
 
+  // Server-side paginated leads with search
+  async findAllPaginated(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ): Promise<{
+    data: Lead[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      // Get dealer entity ID for status calculation
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['dealer'],
+      });
+
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      const dealerEntityId = user.dealer?.id;
+
+      // Build query with search and pagination
+      const queryBuilder = this.leadRepo
+        .createQueryBuilder('lead')
+        .leftJoinAndSelect('lead.dealerLeads', 'dealerLeads')
+        .leftJoinAndSelect('dealerLeads.dealer', 'dealer')
+        .where('lead.is_deleted = :isDeleted', { isDeleted: false })
+        .andWhere('lead.isHqLead = :isHq', { isHq: false }); // Exclude HQ leads
+
+      // Add search filter if provided
+      if (search && search.trim()) {
+        const searchTerm = `%${search.trim().toLowerCase()}%`;
+        queryBuilder.andWhere(
+          '(LOWER(lead.name) LIKE :search OR LOWER(lead.email) LIKE :search OR LOWER(lead.vehicle_model) LIKE :search OR LOWER(lead.vehicle_reg) LIKE :search)',
+          { search: searchTerm },
+        );
+      }
+
+      // Get total count for pagination
+      const total = await queryBuilder.getCount();
+
+      // Apply pagination and ordering
+      const leads = await queryBuilder
+        .orderBy('lead.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany();
+
+      // Map leads to include per-dealer status
+      const mappedLeads = leads.map((lead) => {
+        const dealerLead = lead.dealerLeads
+          .filter((dl) => dl.dealer.id === userId)
+          .slice(-1)[0];
+
+        const leadWon =
+          lead.wonByDealerId !== null && lead.wonByDealerId !== undefined;
+
+        let status: string;
+        if (leadWon) {
+          status = lead.wonByDealerId === dealerEntityId ? 'WON' : 'LOST';
+        } else {
+          status = dealerLead ? dealerLead.status : 'NEW';
+        }
+
+        return {
+          ...lead,
+          status,
+        } as Lead;
+      });
+
+      return {
+        data: mappedLeads,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to fetch paginated leads',
+        error instanceof Error ? error.stack : '',
+        'LeadsService',
+      );
+      if (error instanceof CustomError) throw error;
+      throw new CustomError('Unable to fetch leads');
+    }
+  }
+
   async findAllForDealer(dealerId: number): Promise<Lead[]> {
     try {
       return await this.leadRepo.find({
@@ -791,6 +884,68 @@ export class LeadsService {
       .getMany();
 
     return visibleLeads;
+  }
+
+  // Get HQ leads visible to a dealer with server-side pagination and search
+  async getHqLeadsForDealerPaginated(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ): Promise<{
+    data: Lead[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    // First, get the Dealer entity ID from the User ID
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['dealer'],
+    });
+
+    if (!user || !user.dealer) {
+      throw new CustomError('Dealer profile not found', 404);
+    }
+
+    const dealerEntityId = user.dealer.id;
+
+    // Build query for HQ leads visible to this dealer
+    const queryBuilder = this.userRepository.manager
+      .createQueryBuilder(Lead, 'lead')
+      .innerJoin('lead.hqVisibility', 'v', 'v.dealerId = :dealerId', {
+        dealerId: dealerEntityId,
+      })
+      .where('lead.isHqLead = true')
+      .andWhere('lead.is_deleted = false');
+
+    // Add search filter if provided
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        '(LOWER(lead.name) LIKE :search OR LOWER(lead.email) LIKE :search OR LOWER(lead.vehicle_model) LIKE :search OR LOWER(lead.vehicle_reg) LIKE :search)',
+        { search: searchTerm },
+      );
+    }
+
+    // Get total count
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination and ordering
+    const leads = await queryBuilder
+      .orderBy('lead.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      data: leads,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   // Get HQ leads that are not visible to ANY dealer (truly unassigned)

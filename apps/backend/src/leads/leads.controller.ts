@@ -16,6 +16,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
   UsePipes,
@@ -55,8 +56,39 @@ export class LeadsController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async find(@Req() req): Promise<ApiResponse<Lead[]>> {
+  async find(
+    @Req() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ): Promise<
+    ApiResponse<
+      | Lead[]
+      | {
+          data: Lead[];
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        }
+    >
+  > {
     const dealerId = req.user.id;
+
+    // If pagination params provided, use paginated method
+    if (page || limit) {
+      const pageNum = parseInt(page || '1', 10);
+      const limitNum = Math.min(parseInt(limit || '10', 10), 100); // Cap at 100
+      const result = await this.leadsService.findAllPaginated(
+        dealerId,
+        pageNum,
+        limitNum,
+        search,
+      );
+      return this.buildResponse(result);
+    }
+
+    // Otherwise return all leads (backward compatible)
     const result = await this.leadsService.findAll(dealerId);
     return this.buildResponse(result);
   }
@@ -125,8 +157,39 @@ export class LeadsController {
   // Get HQ leads assigned to the logged-in dealer
   @UseGuards(JwtAuthGuard, DealerGuard)
   @Get('hq/my-leads')
-  async getMyHqLeads(@Req() req): Promise<ApiResponse<Lead[]>> {
+  async getMyHqLeads(
+    @Req() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ): Promise<
+    ApiResponse<
+      | Lead[]
+      | {
+          data: Lead[];
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        }
+    >
+  > {
     const dealerId = req.user.id;
+
+    // If pagination params provided, use paginated method
+    if (page || limit) {
+      const pageNum = parseInt(page || '1', 10);
+      const limitNum = Math.min(parseInt(limit || '10', 10), 100); // Cap at 100
+      const result = await this.leadsService.getHqLeadsForDealerPaginated(
+        dealerId,
+        pageNum,
+        limitNum,
+        search,
+      );
+      return this.buildResponse(result);
+    }
+
+    // Otherwise return all HQ leads (backward compatible)
     const result = await this.leadsService.getHqLeadsForDealer(dealerId);
     return this.buildResponse(result);
   }
