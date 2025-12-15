@@ -95,6 +95,13 @@ export class AdminHqLeadsController {
     return await this.leadsService.resetDealerHqLeadQuota(dealerId);
   }
 
+  // Get unassigned HQ leads (not visible to any dealer)
+  @UseGuards(AdminGuard)
+  @Get('unassigned')
+  async getUnassignedHqLeads() {
+    return await this.leadsService.getUnassignedHqLeads();
+  }
+
   // === Backfill Operations ===
 
   /**

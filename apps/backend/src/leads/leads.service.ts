@@ -13,6 +13,7 @@ import {
   HqLeadSettings,
   HqLeadVisibility,
 } from './entities';
+import { UpdateHqLeadSettingsDto } from './dto/update-hq-lead-settings.dto';
 
 @Injectable()
 export class LeadsService {
@@ -790,6 +791,18 @@ export class LeadsService {
       .getMany();
 
     return visibleLeads;
+  }
+
+  // Get HQ leads that are not visible to ANY dealer (truly unassigned)
+  async getUnassignedHqLeads(): Promise<Lead[]> {
+    return await this.leadRepo
+      .createQueryBuilder('lead')
+      .leftJoin('lead.hqVisibility', 'v')
+      .where('lead.isHqLead = :isHq', { isHq: true })
+      .andWhere('lead.is_deleted = :isDeleted', { isDeleted: false })
+      .andWhere('v.leadId IS NULL')
+      .orderBy('lead.createdAt', 'DESC')
+      .getMany();
   }
 
   // Create HQ lead visibility record (helper method)

@@ -137,29 +137,18 @@ export class HqLeadBackfillService {
           continue;
         }
 
-        // Find missed HQ leads for this dealer (oldest first)
-        // Get IDs of leads already visible to this dealer
-        const existingVisibility = await this.visibilityRepository.find({
-          where: { dealerId: dealer.id },
-          select: ['leadId'],
-        });
-        const existingLeadIds = existingVisibility.map((v) => v.leadId);
-
         // Find HQ leads not visible to this dealer, ordered by creation date (oldest first)
-        const missedLeadsQuery = this.leadRepository
+        const missedLeads = await this.leadRepository
           .createQueryBuilder('lead')
+          .leftJoin('lead.hqVisibility', 'v', 'v.dealerId = :dealerId', {
+            dealerId: dealer.id,
+          })
           .where('lead.isHqLead = :isHq', { isHq: true })
           .andWhere('lead.is_deleted = :isDeleted', { isDeleted: false })
+          .andWhere('v.leadId IS NULL') // Not visible to this dealer
           .orderBy('lead.createdAt', 'ASC')
-          .take(remainingQuota);
-
-        if (existingLeadIds.length > 0) {
-          missedLeadsQuery.andWhere('lead.id NOT IN (:...existingLeadIds)', {
-            existingLeadIds,
-          });
-        }
-
-        const missedLeads = await missedLeadsQuery.getMany();
+          .take(remainingQuota)
+          .getMany();
 
         if (missedLeads.length === 0) {
           continue;

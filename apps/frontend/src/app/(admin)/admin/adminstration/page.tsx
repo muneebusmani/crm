@@ -70,16 +70,6 @@ interface DealerHqStatus {
   canReceiveMore: boolean;
 }
 
-interface DealerStatus {
-  id: number;
-  name: string;
-  email: string;
-  status: string;
-  packageTier: string;
-  assignedCount: number;
-  dailyLimit: number;
-}
-
 const TAB_KEYS = {
   QUOTAS: 'quotas',
   ASSIGNMENT: 'assignment',
@@ -112,7 +102,6 @@ const HqLeadsAdminPage = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [dealerStatuses, setDealerStatuses] = useState<DealerStatus[]>([]);
   const [unassignedHqLeads, setUnassignedHqLeads] = useState<Lead[]>([]);
   const [dealerHqStatuses, setDealerHqStatuses] = useState<DealerHqStatus[]>(
     [],
@@ -133,7 +122,8 @@ const HqLeadsAdminPage = () => {
   const [dealerIdToAssign, setDealerIdToAssign] = useState('');
 
   // Handle tab change with query params
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  // Handle tab change with query params
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     const tabKey =
       newValue === 0
@@ -156,31 +146,11 @@ const HqLeadsAdminPage = () => {
     }
   }, []);
 
-  const fetchDealerStatuses = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await get('/admins/dealers-status');
-      setDealerStatuses(response.data);
-    } catch (error) {
-      console.error('Error fetching dealer statuses:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const fetchUnassignedHqLeads = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await get('/admin/leads');
-      const allLeads = response.data || response;
-      const unassigned = allLeads.filter(
-        (lead: Lead) =>
-          lead.isHqLead &&
-          (!lead.assigned_to ||
-            lead.assigned_to === '' ||
-            lead.assigned_to === null),
-      );
-      setUnassignedHqLeads(unassigned);
+      const response = await get('/admin/hq-leads/unassigned');
+      setUnassignedHqLeads(response.data || response);
     } catch (error) {
       console.error('Error fetching unassigned HQ leads:', error);
     } finally {
@@ -295,9 +265,11 @@ const HqLeadsAdminPage = () => {
         setSelectedLead(null);
         setSelectedDealerId(null);
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An unknown error occurred';
       setAssignmentError(
-        error.message ||
+        message ||
           'Failed to assign lead. Dealer may have reached their daily limit.',
       );
       setAssignmentSuccess(null);
