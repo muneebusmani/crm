@@ -40,7 +40,7 @@ import {
   Tooltip,
   Typography,
   useTheme,
-} from "@mui/material";
+} from '@mui/material';
 import axios from 'axios';
 import Image from 'next/image';
 import type React from 'react';
@@ -353,10 +353,19 @@ const Dealers = ({ token }: { token: string }) => {
         {
           method: 'PUT',
           body: formData, // send as FormData
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
       );
 
-      if (!response.ok) throw new Error('Failed to update dealer');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Update failed:', errorData);
+        throw new Error(
+          errorData.message || errorData.error || 'Failed to update dealer',
+        );
+      }
 
       const updatedDealer = await response.json();
 
@@ -410,9 +419,9 @@ const Dealers = ({ token }: { token: string }) => {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admins/dealer/${dealerId}/status`,
         {
-          method: "PATCH",
+          method: 'PATCH',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ status: newStatus }),
@@ -420,7 +429,7 @@ const Dealers = ({ token }: { token: string }) => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update dealer status");
+        throw new Error('Failed to update dealer status');
       }
 
       const updatedDealer = await response.json();
@@ -433,7 +442,7 @@ const Dealers = ({ token }: { token: string }) => {
         ),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status");
+      setError(err instanceof Error ? err.message : 'Failed to update status');
     }
   };
 
@@ -876,16 +885,18 @@ const Dealers = ({ token }: { token: string }) => {
                             }}
                             size="small"
                             sx={{
-                              "& .MuiOutlinedInput-notchedOutline": {
-                                border: "none",
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                border: 'none',
                               },
-                              "& .MuiSelect-select": {
-                                padding: "5px",
-                                fontSize: "0.875rem",
+                              '& .MuiSelect-select': {
+                                padding: '5px',
+                                fontSize: '0.875rem',
                               },
                             }}
                           >
-                            <MenuItem value={UserStatus.ACTIVE}>Active</MenuItem>
+                            <MenuItem value={UserStatus.ACTIVE}>
+                              Active
+                            </MenuItem>
                             <MenuItem value={UserStatus.IN_ACTIVE}>
                               Inactive
                             </MenuItem>

@@ -5,21 +5,20 @@ import {
   Box,
   Container,
   Typography,
-  Card,
-  CardContent,
-  CardActionArea,
   Avatar,
   CircularProgress,
   Alert,
-  Button,
+  useTheme,
+  alpha,
 } from '@mui/material';
-import { Business, PersonOutline } from '@mui/icons-material';
+import { Add as AddIcon, CheckCircle } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import type { CompanyUser } from '@crm/types';
 import { selectProfileAction } from '@/actions/selectProfileAction';
 
 export default function SelectProfilePage() {
   const router = useRouter();
+  const theme = useTheme();
   const [profiles, setProfiles] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +26,7 @@ export default function SelectProfilePage() {
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(
     null,
   );
+
   const handleSelectProfile = async (profileId: number) => {
     setSelecting(profileId);
     try {
@@ -34,7 +34,6 @@ export default function SelectProfilePage() {
 
       if (result.success) {
         // Force a full page reload to ensure cookies are properly set in middleware
-        // This is necessary in production builds where Next.js caching can cause issues
         window.location.href = '/dealer';
       } else {
         setError(result.message || 'Failed to select profile');
@@ -45,9 +44,9 @@ export default function SelectProfilePage() {
       setSelecting(null);
     }
   };
+
   const fetchProfiles = useCallback(async () => {
     try {
-      // Fetch profiles
       const response = await fetch('/api/company-users', {
         credentials: 'include',
       });
@@ -59,7 +58,6 @@ export default function SelectProfilePage() {
       const data = await response.json();
       setProfiles(data);
 
-      // Get currently selected profile ID from server-side cookies
       const selectedResponse = await fetch('/api/selected-profile', {
         credentials: 'include',
       });
@@ -70,17 +68,13 @@ export default function SelectProfilePage() {
           setSelectedProfileId(selectedData.id);
         }
       }
-
-      // Auto-select if only one profile (default)
-      // if (data.length === 1) {
-      //   handleSelectProfile(data[0].id);
-      // }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load profiles');
     } finally {
       setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     fetchProfiles();
   }, [fetchProfiles]);
@@ -92,6 +86,7 @@ export default function SelectProfilePage() {
         justifyContent="center"
         alignItems="center"
         minHeight="100vh"
+        bgcolor="background.default"
       >
         <CircularProgress />
       </Box>
@@ -99,154 +94,207 @@ export default function SelectProfilePage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 8 }}>
-      <Box textAlign="center" mb={6}>
-        <Business sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-        <Typography variant="h4" gutterBottom>
-          Select Your Profile
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Choose a profile to continue to the dealer portal
-        </Typography>
-      </Box>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default', // Or specific grey like Chrome's #f1f3f4 if desired, but default is safer
+        py: 4,
+      }}
+    >
+      <Container maxWidth="md">
+        <Box textAlign="center" mb={6}>
+          <Typography
+            variant="h4"
+            fontWeight="500"
+            gutterBottom
+            sx={{ color: 'text.primary' }}
+          >
+            Who is using this device?
+          </Typography>
+        </Box>
 
-      {/* Manage profiles entry point */}
-      <Box display="flex" justifyContent="flex-end" mb={2}>
-        <Button
-          variant="outlined"
-          onClick={() => router.push('/dealer/profiles')}
+        {error && (
+          <Alert severity="error" sx={{ mb: 4, maxWidth: 400, mx: 'auto' }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 4,
+            mb: 6,
+          }}
         >
-          Manage Profiles
-        </Button>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 4 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-          gap: 3,
-        }}
-      >
-        {profiles.map((profile) => (
-          <Box key={profile.id}>
-            <Card
-              elevation={selecting === profile.id ? 8 : 2}
+          {profiles.map((profile) => (
+            <Box
+              key={profile.id}
+              onClick={() => handleSelectProfile(profile.id)}
               sx={{
-                transition: 'all 0.3s',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
                 '&:hover': {
-                  elevation: 6,
-                  transform: 'translateY(-4px)',
+                  transform: 'scale(1.05)',
+                  '& .profile-avatar': {
+                    boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  },
+                  '& .profile-name': {
+                    color: 'primary.main',
+                  },
                 },
-                border: selectedProfileId === profile.id ? 2 : 0,
-                borderColor: 'primary.main',
-                position: 'relative',
+                opacity:
+                  selecting !== null && selecting !== profile.id ? 0.5 : 1,
+                pointerEvents: selecting !== null ? 'none' : 'auto',
               }}
             >
-              {selectedProfileId === profile.id && (
-                <Box
+              <Box sx={{ position: 'relative', mb: 2 }}>
+                <Avatar
+                  className="profile-avatar"
                   sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    bgcolor: 'success.main',
-                    color: 'success.contrastText',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
+                    width: 100,
+                    height: 100,
+                    bgcolor: 'grey.200',
+                    color: 'grey.700',
+                    fontSize: '2.5rem',
+                    transition: 'box-shadow 0.2s',
+                    border:
+                      selectedProfileId === profile.id
+                        ? `4px solid ${theme.palette.primary.main}`
+                        : 'none',
                   }}
                 >
-                  SELECTED
-                </Box>
+                  {profile.name.charAt(0).toUpperCase()}
+                </Avatar>
+                {selecting === profile.id && (
+                  <CircularProgress
+                    size={100}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      color: 'primary.main',
+                    }}
+                  />
+                )}
+                {selectedProfileId === profile.id && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: 'success.main',
+                      color: 'white',
+                      borderRadius: '50%',
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid white',
+                    }}
+                  >
+                    <CheckCircle fontSize="small" />
+                  </Box>
+                )}
+              </Box>
+              <Typography
+                className="profile-name"
+                variant="h6"
+                fontWeight="400"
+                sx={{
+                  color: 'text.primary',
+                  transition: 'color 0.2s',
+                  maxWidth: 200,
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {profile.name}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  maxWidth: 200,
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {profile.email}
+              </Typography>
+              {profile.position && (
+                <Typography variant="caption" color="text.secondary">
+                  {profile.position}
+                </Typography>
               )}
               {profile.is_default && selectedProfileId !== profile.id && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    bgcolor: 'grey.400',
-                    color: (theme) => theme.palette.getContrastText(theme.palette.grey[400]),
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                  }}
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'primary.main', fontWeight: 'bold', mt: 0.5 }}
                 >
                   DEFAULT
-                </Box>
+                </Typography>
               )}
+            </Box>
+          ))}
 
-              <CardActionArea
-                onClick={() => handleSelectProfile(profile.id)}
-                disabled={selecting !== null}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <Avatar
-                      sx={{
-                        width: 56,
-                        height: 56,
-                        bgcolor: 'primary.main',
-                      }}
-                    >
-                      <PersonOutline fontSize="large" />
-                    </Avatar>
-
-                    <Box flex={1}>
-                      <Typography variant="h6" gutterBottom>
-                        {profile.name}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        gutterBottom
-                      >
-                        {profile.email}
-                      </Typography>
-                      {profile.position && (
-                        <Typography variant="caption" color="text.secondary">
-                          {profile.position}
-                        </Typography>
-                      )}
-                    </Box>
-
-                    {selecting === profile.id && <CircularProgress size={24} />}
-                  </Box>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-        ))}
-      </Box>
-
-      {profiles.length === 0 && !error && (
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          mt={4}
-          gap={2}
-        >
-          <Alert severity="warning" sx={{ width: '100%' }}>
-            No profiles found.
-          </Alert>
-          <Button
-            variant="contained"
+          {/* Add Profile / Manage Option styled similarly */}
+          <Box
             onClick={() => router.push('/dealer/profiles')}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                '& .add-avatar': {
+                  bgcolor: 'grey.300',
+                },
+                '& .add-text': {
+                  color: 'text.primary',
+                },
+              },
+            }}
           >
-            Create or Manage Profiles
-          </Button>
+            <Avatar
+              className="add-avatar"
+              sx={{
+                width: 100,
+                height: 100,
+                bgcolor: 'grey.100',
+                color: 'text.secondary',
+                mb: 2,
+                transition: 'background-color 0.2s',
+              }}
+            >
+              <AddIcon sx={{ fontSize: 40 }} />
+            </Avatar>
+            <Typography
+              className="add-text"
+              variant="h6"
+              fontWeight="400"
+              color="text.secondary"
+              sx={{ transition: 'color 0.2s' }}
+            >
+              Add / Manage
+            </Typography>
+          </Box>
         </Box>
-      )}
-    </Container>
+      </Container>
+    </Box>
   );
 }

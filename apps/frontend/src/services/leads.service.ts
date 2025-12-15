@@ -8,6 +8,26 @@ const LEADS_BASE = '/leads';
 export const leadsApi = {
   getAll: async (): Promise<Lead[]> => handleResponse(api.get(LEADS_BASE)),
 
+  getAllPaginated: async (params: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{
+    data: Lead[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const queryParams = new URLSearchParams();
+    queryParams.set('page', params.page.toString());
+    queryParams.set('limit', params.limit.toString());
+    if (params.search) {
+      queryParams.set('search', params.search);
+    }
+    return handleResponse(api.get(`${LEADS_BASE}?${queryParams.toString()}`));
+  },
+
   getOne: async (id: number): Promise<Lead> =>
     handleResponse(api.get(`${LEADS_BASE}/${id}`)),
 
@@ -25,8 +45,11 @@ export const leadsApi = {
     handleResponse(api.get(`${LEADS_BASE}/hq/my-leads`)),
 
   // Get dealer's HQ lead quota status
-  getMyHqQuota: async (): Promise<{ canAssign: boolean; assignedCount: number; dailyLimit: number }> =>
-    handleResponse(api.get(`${LEADS_BASE}/hq/my-quota`)),
+  getMyHqQuota: async (): Promise<{
+    canAssign: boolean;
+    assignedCount: number;
+    dailyLimit: number;
+  }> => handleResponse(api.get(`${LEADS_BASE}/hq/my-quota`)),
 
   // Get uncontacted leads (leads that don't have any messages yet)
   getUncontacted: async (): Promise<Lead[]> => {

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('access_token')?.value;
@@ -10,16 +10,25 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leads/hq/my-leads`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
+    // Extract pagination params from the request
+    const searchParams = request.nextUrl.searchParams;
+    const page = searchParams.get('page');
+    const limit = searchParams.get('limit');
+    const search = searchParams.get('search');
+
+    // Build URL with query params
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/leads/hq/my-leads`);
+    if (page) url.searchParams.set('page', page);
+    if (limit) url.searchParams.set('limit', limit);
+    if (search) url.searchParams.set('search', search);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-    );
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       const error = await response.json();

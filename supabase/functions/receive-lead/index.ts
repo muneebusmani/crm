@@ -147,14 +147,120 @@ serve(async (req) => {
       );
     }
 
-    console.log('Lead saved successfully:', data);
+    const savedLead = data[0];
+    console.log('Lead saved successfully:', savedLead);
+
+    // If this is an HQ lead, distribute to eligible dealers
+    // Note: This is a fallback - the Postgres trigger should handle this automatically
+    let distributedCount = 0;
+    if (isHq && savedLead?.id) {
+      try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+        // Get all dealers with their tier info
+        const { data: dealers, error: dealerError } = await supabaseClient
+          .from('dealer')
+          .select(`
+            id,
+            customHqQuota,
+            tier:dealer_tier(hqLeadQuota)
+          `);
+
+        if (dealerError) {
+          console.error('Error fetching dealers:', dealerError);
+        } else if (dealers) {
+          for (const dealer of dealers) {
+            // Calculate effective quota
+            const customQuota = dealer.customHqQuota;
+            const tierQuota = dealer.tier?.hqLeadQuota ?? 0;
+            const effectiveQuota =
+              customQuota !== null ? customQuota : tierQuota;
+
+            // Skip dealers with no HQ access
+            if (effectiveQuota === 0) continue;
+
+            // Check if unlimited or has quota available
+            if (effectiveQuota === -1) {
+              // Unlimited - assign directly
+              const { error: insertError } = await supabaseClient
+                .from('hq_lead_visibility')
+                .upsert(
+                  {
+                    leadId: savedLead.id,
+                    dealerId: dealer.id,
+                    assignedDate: today,
+                    isManualOverride: false,
+                  },
+                  { onConflict: 'leadId,dealerId' },
+                );
+
+              if (!insertError) distributedCount++;
+              else
+                console.log(
+                  `Dealer ${dealer.id} already has access or error:`,
+                  insertError,
+                );
+            } else {
+              // Check quota - count today's assignments
+              const { count, error: countError } = await supabaseClient
+                .from('hq_lead_visibility')
+                .select('*', { count: 'exact', head: true })
+                .eq('dealerId', dealer.id)
+                .eq('assignedDate', today);
+
+              if (countError) {
+                console.error(
+                  `Error counting quota for dealer ${dealer.id}:`,
+                  countError,
+                );
+                continue;
+              }
+
+              const todayCount = count ?? 0;
+              if (todayCount < effectiveQuota) {
+                const { error: insertError } = await supabaseClient
+                  .from('hq_lead_visibility')
+                  .upsert(
+                    {
+                      leadId: savedLead.id,
+                      dealerId: dealer.id,
+                      assignedDate: today,
+                      isManualOverride: false,
+                    },
+                    { onConflict: 'leadId,dealerId' },
+                  );
+
+                if (!insertError) {
+                  distributedCount++;
+                  console.log(
+                    `Assigned lead ${savedLead.id} to dealer ${dealer.id} (${todayCount + 1}/${effectiveQuota})`,
+                  );
+                }
+              } else {
+                console.log(
+                  `Dealer ${dealer.id} at quota limit (${todayCount}/${effectiveQuota})`,
+                );
+              }
+            }
+          }
+          console.log(
+            `HQ Lead ${savedLead.id} distributed to ${distributedCount} dealers`,
+          );
+        }
+      } catch (distError) {
+        console.error('Error distributing HQ lead:', distError);
+        // Don't fail the request - lead was saved successfully
+      }
+    }
 
     // Return success response
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Lead received and saved',
-        leadId: data[0]?.id,
+        leadId: savedLead?.id,
+        isHqLead: isHq,
+        distributedTo: distributedCount,
       }),
       {
         status: 200,

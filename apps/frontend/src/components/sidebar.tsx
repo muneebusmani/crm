@@ -145,12 +145,12 @@ const NavigationLink: React.FC<{
     alignItems: 'center',
     borderRadius: 1,
     my: pl ? 0.25 : 0.5,
-    backgroundColor: isActive ? theme.palette.primary.main : 'transparent',
-    color: isActive ? theme.palette.primary.contrastText : 'inherit',
+    backgroundColor: isActive ? theme.palette.primary.dark : 'transparent',
+    color: theme.palette.primary.contrastText,
     '&:hover': {
       backgroundColor: isActive
         ? theme.palette.primary.dark
-        : alpha(theme.palette.primary.main, 0.1),
+        : alpha(theme.palette.primary.contrastText, 0.1),
     },
     justifyContent: 'center',
     minHeight: 48,
@@ -166,7 +166,7 @@ const NavigationLink: React.FC<{
         <ListItemButton sx={{ ...baseSx, ...sx }}>
           <ListItemIcon
             sx={{
-              color: isActive ? theme.palette.primary.contrastText : 'inherit',
+              color: theme.palette.primary.contrastText,
               minWidth: pl ? 20 : isShrunk ? 0 : 40,
               justifyContent: 'center',
             }}
@@ -245,7 +245,7 @@ const ThemeToggleButton: React.FC<{ isShrunk: boolean }> = ({ isShrunk }) => {
             borderRadius: 1,
             my: 0.5,
             '&:hover': {
-              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              backgroundColor: alpha(theme.palette.primary.contrastText, 0.1),
             },
             justifyContent: isShrunk ? 'center' : 'flex-start',
             minHeight: 48,
@@ -255,6 +255,7 @@ const ThemeToggleButton: React.FC<{ isShrunk: boolean }> = ({ isShrunk }) => {
             sx={{
               minWidth: isShrunk ? 0 : 40,
               justifyContent: 'center',
+              color: theme.palette.primary.contrastText,
             }}
           >
             {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
@@ -429,13 +430,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 borderRadius: 1,
                 my: 0.5,
                 backgroundColor: active
-                  ? theme.palette.primary.main
+                  ? theme.palette.primary.dark
                   : 'transparent',
-                color: active ? theme.palette.primary.contrastText : 'inherit',
+                color: theme.palette.primary.contrastText,
                 '&:hover': {
                   backgroundColor: active
                     ? theme.palette.primary.dark
-                    : alpha(theme.palette.primary.main, 0.1),
+                    : alpha(theme.palette.primary.contrastText, 0.1),
                 },
                 justifyContent: isShrunk ? 'center' : 'flex-start',
                 minHeight: 48,
@@ -443,9 +444,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <ListItemIcon
                 sx={{
-                  color: active
-                    ? theme.palette.primary.contrastText
-                    : 'inherit',
+                  color: theme.palette.primary.contrastText,
                   minWidth: isShrunk ? 0 : 40,
                   justifyContent: 'center',
                 }}
@@ -509,9 +508,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-          borderColor: theme.palette.divider,
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
+          borderColor: alpha(theme.palette.primary.contrastText, 0.12),
           transition: theme.transitions.create(['background-color', 'color']),
         }}
         onMouseEnter={handleMouseEnter}
@@ -523,7 +522,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             px: 3,
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            borderBottom: `1px solid ${alpha(theme.palette.primary.contrastText, 0.12)}`,
             minHeight: 64,
           }}
         >
@@ -617,7 +616,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             width: DRAWER_WIDTH,
             border: 'none',
             boxShadow: theme.shadows[8],
-            backgroundColor: theme.palette.background.paper,
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
           },
         }}
       >
@@ -634,10 +634,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               boxSizing: 'border-box',
               width: currentWidth,
               border: 'none',
-              borderRight: `1px solid ${theme.palette.divider}`,
+              borderRight: `1px solid ${alpha(theme.palette.primary.contrastText, 0.12)}`,
               overflowX: 'hidden',
               transition: theme.transitions.create('width'),
-              backgroundColor: theme.palette.background.paper,
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
             },
           }}
           open

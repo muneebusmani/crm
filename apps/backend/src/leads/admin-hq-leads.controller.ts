@@ -11,10 +11,14 @@ import {
 import { LeadsService } from './leads.service';
 import { UpdateHqLeadSettingsDto } from './dto/update-hq-lead-settings.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { HqLeadBackfillService } from 'src/hq-lead-reset/hq-lead-backfill.service';
 
 @Controller('admin/hq-leads')
 export class AdminHqLeadsController {
-  constructor(private readonly leadsService: LeadsService) {}
+  constructor(
+    private readonly leadsService: LeadsService,
+    private readonly backfillService: HqLeadBackfillService,
+  ) {}
 
   // === Package Tier Settings (Legacy) ===
   @UseGuards(AdminGuard)
@@ -44,7 +48,7 @@ export class AdminHqLeadsController {
   }
 
   // === Per-Dealer HQ Lead Limits (New Simple System) ===
-  
+
   // Get all dealers with their HQ lead limits and today's usage
   @UseGuards(AdminGuard)
   @Get('dealers')
@@ -60,13 +64,18 @@ export class AdminHqLeadsController {
     @Param('dealerId', ParseIntPipe) dealerId: number,
     @Body('dailyLimit') dailyLimit: number,
   ) {
-    return await this.leadsService.updateDealerHqLeadLimit(dealerId, dailyLimit);
+    return await this.leadsService.updateDealerHqLeadLimit(
+      dealerId,
+      dailyLimit,
+    );
   }
 
   // Check a dealer's current HQ lead quota status
   @UseGuards(AdminGuard)
   @Get('dealers/:dealerId/quota')
-  async getDealerQuotaStatus(@Param('dealerId', ParseIntPipe) dealerId: number) {
+  async getDealerQuotaStatus(
+    @Param('dealerId', ParseIntPipe) dealerId: number,
+  ) {
     return await this.leadsService.checkHqLeadQuota(dealerId);
   }
 
@@ -84,5 +93,40 @@ export class AdminHqLeadsController {
   @Post('reset-quota/:dealerId')
   async resetDealerQuota(@Param('dealerId', ParseIntPipe) dealerId: number) {
     return await this.leadsService.resetDealerHqLeadQuota(dealerId);
+  }
+
+  // Get unassigned HQ leads (not visible to any dealer)
+  @UseGuards(AdminGuard)
+  @Get('unassigned')
+  async getUnassignedHqLeads() {
+    return await this.leadsService.getUnassignedHqLeads();
+  }
+
+  // === Backfill Operations ===
+
+  /**
+   * Trigger manual backfill of missed HQ leads.
+   * This assigns all HQ leads that dealers missed (due to quota limits) when they were created.
+   * Leads are assigned oldest-first, and count against today's quota.
+   */
+  @UseGuards(AdminGuard)
+  @Post('backfill')
+  async triggerBackfill() {
+    return await this.backfillService.triggerManualBackfill();
+  }
+
+  /**
+   * Get the status of the last backfill run.
+   */
+  @UseGuards(AdminGuard)
+  @Get('backfill/status')
+  async getBackfillStatus() {
+    const isRunning = this.backfillService.isBackfillRunning();
+    const lastRun = this.backfillService.getLastRunSummary();
+
+    return {
+      isRunning,
+      lastRun,
+    };
   }
 }

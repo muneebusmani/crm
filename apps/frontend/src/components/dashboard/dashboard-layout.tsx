@@ -144,6 +144,7 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
           totalRevenue={stats.overview.totalRevenue}
           pendingQuotations={stats.overview.pendingQuotations}
           userType={userType}
+          monthlyTrends={stats.monthlyTrends}
         />
       </Box>
 

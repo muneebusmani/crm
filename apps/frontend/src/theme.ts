@@ -5,6 +5,12 @@ export const getTheme = (mode: PaletteMode) => createTheme({
   cssVariables: true,
   palette: {
     mode,
+    primary: {
+      main: '#415189',
+      ...(mode === 'dark' && {
+        main: '#5c6da8', // Slightly lighter/desaturated for dark mode legibility
+      }),
+    },
   },
   typography: {
     fontFamily: 'var(--font-roboto)',

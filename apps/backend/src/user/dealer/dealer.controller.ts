@@ -17,6 +17,9 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
@@ -29,6 +32,8 @@ import { DealerService } from './dealer.service';
 
 @Controller('dealers')
 export class DealerController {
+  private readonly logger = new Logger(DealerController.name);
+
   constructor(private readonly dealerService: DealerService) {}
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
     try {
@@ -98,7 +103,22 @@ export class DealerController {
     @Body() dto: UpdateDealerDto & { logo?: string },
     @UploadedFile() file?: Multer.File,
   ) {
-    return this.dealerService.updateDealer(id, dto, file);
+    try {
+      return await this.dealerService.updateDealer(id, dto, file);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : '';
+      this.logger.error(
+        `Failed to update dealer ${id}: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        errorMessage || 'Failed to update dealer',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @Delete(':id')
