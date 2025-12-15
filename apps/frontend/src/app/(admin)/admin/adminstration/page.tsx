@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
   Typography,
@@ -45,6 +46,7 @@ import {
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import type { Lead } from '@crm/types';
 
@@ -78,8 +80,31 @@ interface DealerStatus {
   dailyLimit: number;
 }
 
+const TAB_KEYS = {
+  QUOTAS: 'quotas',
+  ASSIGNMENT: 'assignment',
+  LEGACY: 'legacy',
+} as const;
+
 const HqLeadsAdminPage = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') || TAB_KEYS.QUOTAS;
+
+  const getTabIndex = (tab: string) => {
+    switch (tab) {
+      case TAB_KEYS.QUOTAS:
+        return 0;
+      case TAB_KEYS.ASSIGNMENT:
+        return 1;
+      case TAB_KEYS.LEGACY:
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabIndex(tabParam));
   const [settings, setSettings] = useState<HqLeadSetting[]>([]);
   const [editingSetting, setEditingSetting] = useState<HqLeadSetting | null>(
     null,
@@ -88,8 +113,6 @@ const HqLeadsAdminPage = () => {
   const [loading, setLoading] = useState(false);
 
   const [dealerStatuses, setDealerStatuses] = useState<DealerStatus[]>([]);
-
-  // New states for improved HQ lead management
   const [unassignedHqLeads, setUnassignedHqLeads] = useState<Lead[]>([]);
   const [dealerHqStatuses, setDealerHqStatuses] = useState<DealerHqStatus[]>(
     [],
@@ -109,11 +132,22 @@ const HqLeadsAdminPage = () => {
   const [leadIdToAssign, setLeadIdToAssign] = useState('');
   const [dealerIdToAssign, setDealerIdToAssign] = useState('');
 
+  // Handle tab change with query params
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+    const tabKey =
+      newValue === 0
+        ? TAB_KEYS.QUOTAS
+        : newValue === 1
+          ? TAB_KEYS.ASSIGNMENT
+          : TAB_KEYS.LEGACY;
+    router.push(`/admin/adminstration?tab=${tabKey}`);
+  };
+
   const fetchHqLeadSettings = useCallback(async () => {
     setLoading(true);
     try {
       const response = await get('/admin/hq-leads/settings');
-      // WARN: Don't change response structure here, it is used in other places, this works perfectly according to the helpers
       setSettings(response);
     } catch (error) {
       console.error('Error fetching HQ lead settings:', error);
@@ -134,13 +168,11 @@ const HqLeadsAdminPage = () => {
     }
   }, []);
 
-  // Fetch unassigned HQ leads (leads marked as HQ but not yet assigned)
   const fetchUnassignedHqLeads = useCallback(async () => {
     setLoading(true);
     try {
       const response = await get('/admin/leads');
       const allLeads = response.data || response;
-      // Filter to only HQ leads that are not assigned
       const unassigned = allLeads.filter(
         (lead: Lead) =>
           lead.isHqLead &&
@@ -156,7 +188,6 @@ const HqLeadsAdminPage = () => {
     }
   }, []);
 
-  // Fetch dealer HQ statuses (with per-dealer limits)
   const fetchDealerHqStatuses = useCallback(async () => {
     try {
       const response = await get('/admin/hq-leads/dealers');
@@ -168,17 +199,16 @@ const HqLeadsAdminPage = () => {
 
   useEffect(() => {
     if (activeTab === 0) {
-      fetchHqLeadSettings();
+      fetchDealerHqStatuses();
     } else if (activeTab === 1) {
-      fetchDealerStatuses();
-    } else if (activeTab === 2) {
       fetchUnassignedHqLeads();
       fetchDealerHqStatuses();
+    } else if (activeTab === 2) {
+      fetchHqLeadSettings();
     }
   }, [
     activeTab,
     fetchHqLeadSettings,
-    fetchDealerStatuses,
     fetchUnassignedHqLeads,
     fetchDealerHqStatuses,
   ]);
@@ -215,8 +245,7 @@ const HqLeadsAdminPage = () => {
     try {
       await post(`/admin/hq-leads/reset-quota/${dealerId}`);
       alert(`Dealer ${dealerId}'s quota reset successfully`);
-      fetchDealerStatuses(); // Refresh the list
-      fetchDealerHqStatuses(); // Also refresh HQ statuses
+      fetchDealerHqStatuses();
     } catch (error) {
       console.error('Error resetting dealer quota:', error);
     }
@@ -242,7 +271,6 @@ const HqLeadsAdminPage = () => {
     }
   };
 
-  // Open assign dialog with selected lead
   const handleOpenAssignDialog = (lead: Lead) => {
     setSelectedLead(lead);
     setSelectedDealerId(null);
@@ -251,7 +279,6 @@ const HqLeadsAdminPage = () => {
     setAssignDialogOpen(true);
   };
 
-  // Handle assignment from dialog
   const handleAssignFromDialog = async () => {
     if (!selectedLead || !selectedDealerId) return;
 
@@ -261,10 +288,8 @@ const HqLeadsAdminPage = () => {
       );
       setAssignmentSuccess(`Successfully assigned lead to dealer!`);
       setAssignmentError(null);
-      // Refresh data
       fetchUnassignedHqLeads();
       fetchDealerHqStatuses();
-      // Close dialog after short delay
       setTimeout(() => {
         setAssignDialogOpen(false);
         setSelectedLead(null);
@@ -279,7 +304,6 @@ const HqLeadsAdminPage = () => {
     }
   };
 
-  // Update dealer's daily HQ lead limit
   const handleUpdateDealerLimit = async (
     dealerId: number,
     newLimit: number,
@@ -298,7 +322,7 @@ const HqLeadsAdminPage = () => {
 
   const handleAddNewClick = () => {
     const newEmptySetting: HqLeadSetting = {
-      id: -1, // Temporary ID
+      id: -1,
       packageTier: '',
       dailyLimit: 0,
       isActive: true,
@@ -330,242 +354,9 @@ const HqLeadsAdminPage = () => {
     return children;
   };
 
-  const renderSettingsContent = () => (
-    <Card>
-      <CardContent>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-          }}
-        >
-          <Typography variant="h6">Package Settings</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddNewClick}
-            disabled={isAdding}
-          >
-            Add New
-          </Button>
-        </Box>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Package</TableCell>
-                <TableCell>Daily Limit</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {isAdding && editingSetting && (
-                <TableRow>
-                  <TableCell>
-                    <FormControl size="small" fullWidth>
-                      <InputLabel>Tier</InputLabel>
-                      <Select
-                        value={editingSetting.packageTier}
-                        label="Tier"
-                        onChange={(e) =>
-                          setEditingSetting({
-                            ...editingSetting,
-                            packageTier: e.target.value,
-                          })
-                        }
-                      >
-                        <MenuItem value="Bronze">Bronze</MenuItem>
-                        <MenuItem value="Silver">Silver</MenuItem>
-                        <MenuItem value="Gold">Gold</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      type="number"
-                      label="Limit"
-                      size="small"
-                      value={editingSetting.dailyLimit}
-                      onChange={(e) =>
-                        setEditingSetting({
-                          ...editingSetting,
-                          dailyLimit: parseInt(e.target.value, 10) || 0,
-                        })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={editingSetting.isActive}
-                      onChange={(e) =>
-                        setEditingSetting({
-                          ...editingSetting,
-                          isActive: e.target.checked,
-                        })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Button
-                      size="small"
-                      variant="contained"
-                      onClick={handleCreateSetting}
-                      sx={{ mr: 1 }}
-                    >
-                      Save
-                    </Button>
-                    <Button size="small" onClick={handleCancelAdd}>
-                      Cancel
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )}
-              {settings.map((setting) => (
-                <TableRow key={setting.id}>
-                  <TableCell>{setting.packageTier}</TableCell>
-                  <TableCell>
-                    {editingSetting?.id === setting.id ? (
-                      <TextField
-                        type="number"
-                        value={editingSetting.dailyLimit}
-                        onChange={(e) =>
-                          setEditingSetting({
-                            ...editingSetting,
-                            dailyLimit: parseInt(e.target.value, 10) || 0,
-                          })
-                        }
-                        size="small"
-                      />
-                    ) : setting.dailyLimit === -1 ? (
-                      'Unlimited'
-                    ) : (
-                      setting.dailyLimit
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={
-                        editingSetting?.id === setting.id
-                          ? editingSetting.isActive
-                          : setting.isActive
-                      }
-                      onChange={async (e) => {
-                        const newIsActive = e.target.checked;
-                        if (editingSetting?.id === setting.id) {
-                          setEditingSetting({
-                            ...editingSetting,
-                            isActive: newIsActive,
-                          });
-                        } else {
-                          const updatedSetting = {
-                            ...setting,
-                            isActive: newIsActive,
-                          };
-                          try {
-                            await put(
-                              `/admin/hq-leads/settings/${setting.packageTier}`,
-                              updatedSetting,
-                            );
-                            fetchHqLeadSettings();
-                          } catch (error) {
-                            console.error('Error updating setting:', error);
-                          }
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    {editingSetting?.id === setting.id ? (
-                      <>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={handleUpdateSetting}
-                          sx={{ mr: 1 }}
-                        >
-                          Save
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => setEditingSetting(null)}
-                        >
-                          Cancel
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        size="small"
-                        onClick={() => setEditingSetting(setting)}
-                        disabled={isAdding}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
-  );
-
-  const renderDealerManagementContent = () => (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Dealer HQ Lead Status
-        </Typography>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Dealer Name</TableCell>
-                <TableCell>Package Tier</TableCell>
-                <TableCell>Today's Quota</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {dealerStatuses.map((dealer) => (
-                <TableRow key={dealer.id}>
-                  <TableCell>
-                    {dealer.name} ({dealer.email})
-                  </TableCell>
-                  <TableCell>{dealer.packageTier}</TableCell>
-                  <TableCell>
-                    {`${dealer.assignedCount} / ${
-                      dealer.dailyLimit === -1 ? '∞' : dealer.dailyLimit
-                    }`}
-                  </TableCell>
-                  <TableCell>{dealer.status}</TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="outlined"
-                      color="warning"
-                      size="small"
-                      onClick={() => handleResetQuota(dealer.id)}
-                    >
-                      Reset Quota
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
-  );
-
-  const renderManualManagementContent = () => (
+  // TAB 1: Dealer Quotas Management
+  const renderQuotasContent = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Unassigned HQ Leads Section */}
       <Card>
         <CardContent>
           <Box
@@ -576,221 +367,71 @@ const HqLeadsAdminPage = () => {
               mb: 2,
             }}
           >
-            <Typography variant="h6">
-              Unassigned HQ Leads ({unassignedHqLeads.length})
-            </Typography>
-            <IconButton
-              onClick={() => {
-                fetchUnassignedHqLeads();
-                fetchDealerHqStatuses();
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Dealer HQ Lead Quotas
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Manage tier-based quotas and custom overrides for each dealer.
+                Quotas reset daily at midnight.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PlayArrowIcon />}
+              onClick={async () => {
+                if (
+                  !confirm(
+                    'Run backfill now? This will assign all missed HQ leads to eligible dealers.',
+                  )
+                ) {
+                  return;
+                }
+                try {
+                  const response = await fetch('/api/admin/hq-leads/backfill', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Backfill failed');
+                  }
+
+                  const result = await response.json();
+                  alert(
+                    `Backfill complete!\\n\\nLeads assigned: ${result.totalLeadsAssigned}\\nDealers processed: ${result.dealersProcessed}`,
+                  );
+
+                  await fetchDealerHqStatuses();
+                } catch (error) {
+                  console.error('Error running backfill:', error);
+                  alert(
+                    'Error running backfill: ' +
+                      (error instanceof Error
+                        ? error.message
+                        : 'Unknown error'),
+                  );
+                }
               }}
-              title="Refresh"
             >
-              <RefreshIcon />
-            </IconButton>
+              Run Backfill Now
+            </Button>
           </Box>
 
-          {unassignedHqLeads.length === 0 ? (
-            <Alert severity="info">No unassigned HQ leads at the moment.</Alert>
-          ) : (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow
-                    sx={{
-                      backgroundColor: (theme) => theme.palette.primary.main,
-                    }}
-                  >
-                    <TableCell
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>ID</strong>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>Customer</strong>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>Contact</strong>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>Vehicle</strong>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>Description</strong>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>Received</strong>
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        color: (theme) => theme.palette.primary.contrastText,
-                      }}
-                    >
-                      <strong>Actions</strong>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {unassignedHqLeads.map((lead) => (
-                    <TableRow key={lead.id} hover>
-                      <TableCell>
-                        <Chip
-                          label={`#${lead.id}`}
-                          size="small"
-                          color="warning"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <PersonIcon fontSize="small" color="action" />
-                          <Typography variant="body2">
-                            {lead.name || 'N/A'}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 0.5,
-                          }}
-                        >
-                          {lead.email && (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                              }}
-                            >
-                              <EmailIcon fontSize="small" color="action" />
-                              <Typography variant="caption">
-                                {lead.email}
-                              </Typography>
-                            </Box>
-                          )}
-                          {lead.number && (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                              }}
-                            >
-                              <PhoneIcon fontSize="small" color="action" />
-                              <Typography variant="caption">
-                                {lead.number}
-                              </Typography>
-                            </Box>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <CarIcon fontSize="small" color="primary" />
-                          <Box>
-                            <Typography variant="body2" fontWeight="bold">
-                              {lead.vehicle_brand || ''}{' '}
-                              {lead.vehicle_model || lead.vehicle_series || ''}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {lead.vehicle_vrm || lead.vehicle_reg || 'No VRM'}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title={lead.description || 'No description'}>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              maxWidth: 200,
-                              display: 'block',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {lead.description || '-'}
-                          </Typography>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption">
-                          {lead.createdAt
-                            ? new Date(
-                                lead.createdAt as unknown as string,
-                              ).toLocaleDateString('en-GB', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          startIcon={<AssignmentIcon />}
-                          onClick={() => handleOpenAssignDialog(lead)}
-                        >
-                          Assign
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dealer Limits Management Section */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Dealer HQ Lead Quotas (Tier-Based)
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Quotas are based on dealer tiers. Custom overrides take priority.
-            Use NULL to revert to tier default, -1 for unlimited, 0 for no HQ
-            leads.
-          </Typography>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Automatic Backfill:</strong> Runs daily at 1:00 AM UK time
+              to assign missed leads.
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <strong>Quota Rules:</strong> Gold = Unlimited, Silver = 10/day,
+              Bronze = 5/day. Custom overrides take priority.
+            </Typography>
+          </Alert>
 
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
@@ -1038,8 +679,232 @@ const HqLeadsAdminPage = () => {
           </TableContainer>
         </CardContent>
       </Card>
+    </Box>
+  );
 
-      {/* Legacy Manual Input (hidden but available) */}
+  // TAB 2: Manual Assignment
+  const renderAssignmentContent = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card>
+        <CardContent>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="h6">Unassigned HQ Leads</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {unassignedHqLeads.length} leads waiting for assignment
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={() => {
+                fetchUnassignedHqLeads();
+                fetchDealerHqStatuses();
+              }}
+              title="Refresh"
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+
+          {unassignedHqLeads.length === 0 ? (
+            <Alert severity="success">
+              All HQ leads have been assigned! 🎉
+            </Alert>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.primary.main,
+                    }}
+                  >
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>ID</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Customer</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Contact</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Vehicle</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Description</strong>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Received</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Actions</strong>
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {unassignedHqLeads.map((lead) => (
+                    <TableRow key={lead.id} hover>
+                      <TableCell>
+                        <Chip
+                          label={`#${lead.id}`}
+                          size="small"
+                          color="warning"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <PersonIcon fontSize="small" color="action" />
+                          <Typography variant="body2">
+                            {lead.name || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                          }}
+                        >
+                          {lead.email && (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              <EmailIcon fontSize="small" color="action" />
+                              <Typography variant="caption">
+                                {lead.email}
+                              </Typography>
+                            </Box>
+                          )}
+                          {lead.number && (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              <PhoneIcon fontSize="small" color="action" />
+                              <Typography variant="caption">
+                                {lead.number}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <CarIcon fontSize="small" color="primary" />
+                          <Box>
+                            <Typography variant="body2" fontWeight="bold">
+                              {lead.vehicle_brand || ''}{' '}
+                              {lead.vehicle_model || lead.vehicle_series || ''}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {lead.vehicle_vrm || lead.vehicle_reg || 'No VRM'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title={lead.description || 'No description'}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              maxWidth: 200,
+                              display: 'block',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {lead.description || '-'}
+                          </Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="caption">
+                          {lead.createdAt
+                            ? new Date(
+                                lead.createdAt as unknown as string,
+                              ).toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          color="primary"
+                          startIcon={<AssignmentIcon />}
+                          onClick={() => handleOpenAssignDialog(lead)}
+                        >
+                          Assign
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Manual Override */}
       <Card sx={{ opacity: 0.7 }}>
         <CardContent>
           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -1083,6 +948,199 @@ const HqLeadsAdminPage = () => {
     </Box>
   );
 
+  // TAB 3: Legacy Settings
+  const renderLegacyContent = () => (
+    <Card>
+      <CardContent>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <Typography variant="body2">
+            <strong>Legacy System:</strong> This tier-based system is being
+            replaced by the new dealer-specific quotas. Use the "Dealer Quotas"
+            tab for modern quota management.
+          </Typography>
+        </Alert>
+
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
+          }}
+        >
+          <Typography variant="h6">Package Tier Settings</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddNewClick}
+            disabled={isAdding}
+          >
+            Add New
+          </Button>
+        </Box>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Package</TableCell>
+                <TableCell>Daily Limit</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {isAdding && editingSetting && (
+                <TableRow>
+                  <TableCell>
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Tier</InputLabel>
+                      <Select
+                        value={editingSetting.packageTier}
+                        label="Tier"
+                        onChange={(e) =>
+                          setEditingSetting({
+                            ...editingSetting,
+                            packageTier: e.target.value,
+                          })
+                        }
+                      >
+                        <MenuItem value="Bronze">Bronze</MenuItem>
+                        <MenuItem value="Silver">Silver</MenuItem>
+                        <MenuItem value="Gold">Gold</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      type="number"
+                      label="Limit"
+                      size="small"
+                      value={editingSetting.dailyLimit}
+                      onChange={(e) =>
+                        setEditingSetting({
+                          ...editingSetting,
+                          dailyLimit: parseInt(e.target.value, 10) || 0,
+                        })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={editingSetting.isActive}
+                      onChange={(e) =>
+                        setEditingSetting({
+                          ...editingSetting,
+                          isActive: e.target.checked,
+                        })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={handleCreateSetting}
+                      sx={{ mr: 1 }}
+                    >
+                      Save
+                    </Button>
+                    <Button size="small" onClick={handleCancelAdd}>
+                      Cancel
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )}
+              {settings.map((setting) => (
+                <TableRow key={setting.id}>
+                  <TableCell>{setting.packageTier}</TableCell>
+                  <TableCell>
+                    {editingSetting?.id === setting.id ? (
+                      <TextField
+                        type="number"
+                        value={editingSetting.dailyLimit}
+                        onChange={(e) =>
+                          setEditingSetting({
+                            ...editingSetting,
+                            dailyLimit: parseInt(e.target.value, 10) || 0,
+                          })
+                        }
+                        size="small"
+                      />
+                    ) : setting.dailyLimit === -1 ? (
+                      'Unlimited'
+                    ) : (
+                      setting.dailyLimit
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={
+                        editingSetting?.id === setting.id
+                          ? editingSetting.isActive
+                          : setting.isActive
+                      }
+                      onChange={async (e) => {
+                        const newIsActive = e.target.checked;
+                        if (editingSetting?.id === setting.id) {
+                          setEditingSetting({
+                            ...editingSetting,
+                            isActive: newIsActive,
+                          });
+                        } else {
+                          const updatedSetting = {
+                            ...setting,
+                            isActive: newIsActive,
+                          };
+                          try {
+                            await put(
+                              `/admin/hq-leads/settings/${setting.packageTier}`,
+                              updatedSetting,
+                            );
+                            fetchHqLeadSettings();
+                          } catch (error) {
+                            console.error('Error updating setting:', error);
+                          }
+                        }
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    {editingSetting?.id === setting.id ? (
+                      <>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={handleUpdateSetting}
+                          sx={{ mr: 1 }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => setEditingSetting(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="small"
+                        onClick={() => setEditingSetting(setting)}
+                        disabled={isAdding}
+                      >
+                        Edit
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </CardContent>
+    </Card>
+  );
+
   // Assignment Dialog
   const renderAssignmentDialog = () => (
     <Dialog
@@ -1100,7 +1158,6 @@ const HqLeadsAdminPage = () => {
       <DialogContent>
         {selectedLead && (
           <Box sx={{ mt: 2 }}>
-            {/* Lead Preview */}
             <Paper
               variant="outlined"
               sx={{
@@ -1168,7 +1225,6 @@ const HqLeadsAdminPage = () => {
               </Grid>
             </Paper>
 
-            {/* Dealer Selection */}
             <Typography variant="subtitle2" gutterBottom>
               Select Dealer to Assign
             </Typography>
@@ -1231,7 +1287,6 @@ const HqLeadsAdminPage = () => {
               </Select>
             </FormControl>
 
-            {/* Selected Dealer Preview */}
             {selectedDealerId && (
               <Paper
                 variant="outlined"
@@ -1273,7 +1328,6 @@ const HqLeadsAdminPage = () => {
               </Paper>
             )}
 
-            {/* Success/Error Messages */}
             {assignmentSuccess && (
               <Alert severity="success" sx={{ mt: 2 }}>
                 {assignmentSuccess}
@@ -1303,22 +1357,26 @@ const HqLeadsAdminPage = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        HQ Leads Management
+        HQ Leads Administration
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Manage dealer quotas, assign leads, and configure HQ lead distribution
+        settings.
       </Typography>
 
       <Tabs
         value={activeTab}
-        onChange={(e, newValue) => setActiveTab(newValue)}
-        sx={{ mb: 3 }}
+        onChange={handleTabChange}
+        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
       >
-        <Tab label="Package Settings (Legacy)" />
-        <Tab label="Dealer Overview" />
-        <Tab label="HQ Lead Assignment" />
+        <Tab label="Dealer Quotas & Backfill" />
+        <Tab label="Manual Assignment" />
+        <Tab label="Legacy Settings" />
       </Tabs>
 
-      {activeTab === 0 && renderContent(renderSettingsContent())}
-      {activeTab === 1 && renderContent(renderDealerManagementContent())}
-      {activeTab === 2 && renderContent(renderManualManagementContent())}
+      {activeTab === 0 && renderContent(renderQuotasContent())}
+      {activeTab === 1 && renderContent(renderAssignmentContent())}
+      {activeTab === 2 && renderContent(renderLegacyContent())}
 
       {renderAssignmentDialog()}
     </Box>
