@@ -7,7 +7,7 @@ export async function POST(
 ) {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
+    const token = cookieStore.get('access_token')?.value;
     const { leadId, dealerId } = await params;
 
     if (!token) {
