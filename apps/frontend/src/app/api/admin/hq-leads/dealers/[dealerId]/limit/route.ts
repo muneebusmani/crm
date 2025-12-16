@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
+    const token = cookieStore.get('access_token')?.value;
     const { dealerId } = await params;
 
     if (!token) {

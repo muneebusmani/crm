@@ -940,30 +940,33 @@ const LeadsTable: React.FC = () => {
                   '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
                   '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 240 }, // Email
                   '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
-                  '& th:nth-of-type(4), & td:nth-of-type(4)': { minWidth: 140 }, // VRM
-                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 140 }, // Post Code
-                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 140 }, // Make
-                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 160 }, // Model
-                  '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 100 }, // Year
+                  '& th:nth-of-type(4), & td:nth-of-type(4)': {
+                    minWidth: 140,
+                    textAlign: 'center',
+                  }, // Received at
+                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // VRM
+                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 120 }, // Post Code
+                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 120 }, // Make
+                  '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 120 }, // Model
                   '& th:nth-of-type(9), & td:nth-of-type(9)': {
-                    minWidth: 180,
+                    minWidth: 60,
                     textAlign: 'center',
-                  }, // Customer Notes
+                  }, // Year
                   '& th:nth-of-type(10), & td:nth-of-type(10)': {
-                    minWidth: 140,
-                  }, // Fuel Type
+                    minWidth: 200,
+                  }, // Customer Notes
                   '& th:nth-of-type(11), & td:nth-of-type(11)': {
-                    minWidth: 140,
+                    minWidth: 90,
                     textAlign: 'center',
-                  }, // Engine Title
+                  }, // Fuel Type
                   '& th:nth-of-type(12), & td:nth-of-type(12)': {
                     minWidth: 90,
                     textAlign: 'center',
-                  }, // Engine Capacity
+                  }, // Engine Title
                   '& th:nth-of-type(13), & td:nth-of-type(13)': {
-                    minWidth: 140,
+                    minWidth: 90,
                     textAlign: 'center',
-                  }, // Recieved at
+                  }, // Engine Capacity
                 }}
               >
                 <TableHead>
@@ -981,6 +984,11 @@ const LeadsTable: React.FC = () => {
                     <TableCell>
                       <Typography variant="subtitle2" fontWeight="bold">
                         Phone
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ textAlign: 'center' }}>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Received at
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -1029,11 +1037,7 @@ const LeadsTable: React.FC = () => {
                         Engine Capacity
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ textAlign: 'center' }}>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Recieved at
-                      </Typography>
-                    </TableCell>
+
                     <TableCell
                       sx={{
                         position: 'sticky',
@@ -1156,7 +1160,7 @@ const LeadsTable: React.FC = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <Box sx={{ flex: 1 }}>
+                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
                                 <TruncatedCell text={lead.number} />
                               </Box>
                               <IconButton
@@ -1180,6 +1184,23 @@ const LeadsTable: React.FC = () => {
                           ) : (
                             '-'
                           )}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          {new Date(
+                            lead.createdAt as unknown as string,
+                          ).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                          <br />
+                          {new Date(
+                            lead.createdAt as unknown as string,
+                          ).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          })}
                         </TableCell>
                         <TableCell>
                           <TruncatedCell
@@ -1231,23 +1252,6 @@ const LeadsTable: React.FC = () => {
                                 : '-'
                             }
                           />
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          {new Date(
-                            lead.createdAt as unknown as string,
-                          ).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })}
-                          <br />
-                          {new Date(
-                            lead.createdAt as unknown as string,
-                          ).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          })}
                         </TableCell>
                         <TableCell
                           onClick={() => {
@@ -1550,38 +1554,38 @@ const LeadsTable: React.FC = () => {
                     }, // Phone
                     '& th:nth-of-type(4), & td:nth-of-type(4)': {
                       minWidth: 140,
-                    }, // VRM
+                      textAlign: 'center',
+                    }, // Received at
                     '& th:nth-of-type(5), & td:nth-of-type(5)': {
                       minWidth: 140,
-                    }, // Post Code
+                    }, // VRM
                     '& th:nth-of-type(6), & td:nth-of-type(6)': {
                       minWidth: 140,
-                    }, // Make
+                    }, // Post Code
                     '& th:nth-of-type(7), & td:nth-of-type(7)': {
+                      minWidth: 140,
+                    }, // Make
+                    '& th:nth-of-type(8), & td:nth-of-type(8)': {
                       minWidth: 160,
                     }, // Model
-                    '& th:nth-of-type(8), & td:nth-of-type(8)': {
+                    '& th:nth-of-type(9), & td:nth-of-type(9)': {
                       minWidth: 100,
                     }, // Year
-                    '& th:nth-of-type(9), & td:nth-of-type(9)': {
+                    '& th:nth-of-type(10), & td:nth-of-type(10)': {
                       minWidth: 180,
                       textAlign: 'center',
                     }, // Customer Notes
-                    '& th:nth-of-type(10), & td:nth-of-type(10)': {
+                    '& th:nth-of-type(11), & td:nth-of-type(11)': {
                       minWidth: 140,
                     }, // Fuel Type
-                    '& th:nth-of-type(11), & td:nth-of-type(11)': {
+                    '& th:nth-of-type(12), & td:nth-of-type(12)': {
                       minWidth: 140,
                       textAlign: 'center',
                     }, // Engine Title
-                    '& th:nth-of-type(12), & td:nth-of-type(12)': {
+                    '& th:nth-of-type(13), & td:nth-of-type(13)': {
                       minWidth: 90,
                       textAlign: 'center',
                     }, // Engine Capacity
-                    '& th:nth-of-type(13), & td:nth-of-type(13)': {
-                      minWidth: 140,
-                      textAlign: 'center',
-                    }, // Recieved at
                     '& th:nth-of-type(14), & td:nth-of-type(14)': {
                       minWidth: ACTION_COL_WIDTH,
                     }, // Action
@@ -1602,6 +1606,11 @@ const LeadsTable: React.FC = () => {
                       <TableCell>
                         <Typography variant="subtitle2" fontWeight="bold">
                           Phone
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Received at
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -1649,11 +1658,7 @@ const LeadsTable: React.FC = () => {
                           Engine Capacity
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          Received at
-                        </Typography>
-                      </TableCell>
+
                       <TableCell
                         sx={{
                           position: 'sticky',
@@ -1776,7 +1781,7 @@ const LeadsTable: React.FC = () => {
                                   gap: 0.5,
                                 }}
                               >
-                                <Box sx={{ flex: 1 }}>
+                                <Box sx={{ flex: 1, overflow: 'hidden' }}>
                                   <TruncatedCell text={lead.number} />
                                 </Box>
                                 <IconButton
@@ -1800,6 +1805,23 @@ const LeadsTable: React.FC = () => {
                             ) : (
                               '-'
                             )}
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center' }}>
+                            {new Date(
+                              lead.createdAt as unknown as string,
+                            ).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                            <br />
+                            {new Date(
+                              lead.createdAt as unknown as string,
+                            ).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                            })}
                           </TableCell>
                           <TableCell>
                             <TruncatedCell
@@ -1851,23 +1873,6 @@ const LeadsTable: React.FC = () => {
                                   : '-'
                               }
                             />
-                          </TableCell>
-                          <TableCell sx={{ textAlign: 'center' }}>
-                            {new Date(
-                              lead.createdAt as unknown as string,
-                            ).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                            })}
-                            <br />
-                            {new Date(
-                              lead.createdAt as unknown as string,
-                            ).toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit',
-                            })}
                           </TableCell>
                           <TableCell
                             onClick={() => {

@@ -47,6 +47,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
   PlayArrow as PlayArrowIcon,
+  AccountBalanceWallet as CreditIcon,
 } from '@mui/icons-material';
 import type { Lead } from '@crm/types';
 
@@ -73,8 +74,18 @@ interface DealerHqStatus {
 const TAB_KEYS = {
   QUOTAS: 'quotas',
   ASSIGNMENT: 'assignment',
+  CREDITS: 'credits',
   LEGACY: 'legacy',
 } as const;
+
+interface DealerCreditStatus {
+  dealerId: number;
+  dealerName: string;
+  tierName: string;
+  currentCredit: number;
+  creditLimit: number;
+  lastResetAt: string | null;
+}
 
 const HqLeadsAdminPage = () => {
   const router = useRouter();
@@ -87,8 +98,10 @@ const HqLeadsAdminPage = () => {
         return 0;
       case TAB_KEYS.ASSIGNMENT:
         return 1;
-      case TAB_KEYS.LEGACY:
+      case TAB_KEYS.CREDITS:
         return 2;
+      case TAB_KEYS.LEGACY:
+        return 3;
       default:
         return 0;
     }
@@ -122,6 +135,16 @@ const HqLeadsAdminPage = () => {
   const [dealerIdToAssign, setDealerIdToAssign] = useState('');
 
   // Handle tab change with query params
+  // Credit state
+  const [creditStatuses, setCreditStatuses] = useState<DealerCreditStatus[]>(
+    [],
+  );
+  const [creditLoading, setCreditLoading] = useState(false);
+  const [resettingDealerId, setResettingDealerId] = useState<number | null>(
+    null,
+  );
+  const [resettingAll, setResettingAll] = useState(false);
+
   // Handle tab change with query params
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -130,7 +153,9 @@ const HqLeadsAdminPage = () => {
         ? TAB_KEYS.QUOTAS
         : newValue === 1
           ? TAB_KEYS.ASSIGNMENT
-          : TAB_KEYS.LEGACY;
+          : newValue === 2
+            ? TAB_KEYS.CREDITS
+            : TAB_KEYS.LEGACY;
     router.push(`/admin/adminstration?tab=${tabKey}`);
   };
 
@@ -167,6 +192,18 @@ const HqLeadsAdminPage = () => {
     }
   }, []);
 
+  const fetchCreditStatuses = useCallback(async () => {
+    setCreditLoading(true);
+    try {
+      const response = await get('/dealer-tiers/credits/status');
+      setCreditStatuses(response.data || response || []);
+    } catch (error) {
+      console.error('Error fetching credit statuses:', error);
+    } finally {
+      setCreditLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 0) {
       fetchDealerHqStatuses();
@@ -174,6 +211,8 @@ const HqLeadsAdminPage = () => {
       fetchUnassignedHqLeads();
       fetchDealerHqStatuses();
     } else if (activeTab === 2) {
+      fetchCreditStatuses();
+    } else if (activeTab === 3) {
       fetchHqLeadSettings();
     }
   }, [
@@ -181,6 +220,7 @@ const HqLeadsAdminPage = () => {
     fetchHqLeadSettings,
     fetchUnassignedHqLeads,
     fetchDealerHqStatuses,
+    fetchCreditStatuses,
   ]);
 
   const handleCreateSetting = async () => {
@@ -306,6 +346,46 @@ const HqLeadsAdminPage = () => {
   const handleCancelAdd = () => {
     setIsAdding(false);
     setEditingSetting(null);
+  };
+
+  // Credit reset handlers
+  const handleResetDealerCredits = async (dealerId: number) => {
+    setResettingDealerId(dealerId);
+    try {
+      await post(`/dealer-tiers/credits/reset/${dealerId}`);
+      alert(`Credits reset successfully for dealer ${dealerId}`);
+      fetchCreditStatuses();
+    } catch (error) {
+      console.error('Error resetting dealer credits:', error);
+      alert('Failed to reset dealer credits');
+    } finally {
+      setResettingDealerId(null);
+    }
+  };
+
+  const handleResetAllCredits = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to reset credits for ALL dealers? This action cannot be undone.',
+      )
+    ) {
+      return;
+    }
+    setResettingAll(true);
+    try {
+      const result = (await post('/dealer-tiers/credits/reset-all')) as {
+        resetCount?: number;
+      };
+      alert(
+        `Credits reset successfully for ${result.resetCount || 'all'} dealers`,
+      );
+      fetchCreditStatuses();
+    } catch (error) {
+      console.error('Error resetting all credits:', error);
+      alert('Failed to reset all credits');
+    } finally {
+      setResettingAll(false);
+    }
   };
 
   const renderContent = (children: React.ReactNode) => {
@@ -920,7 +1000,223 @@ const HqLeadsAdminPage = () => {
     </Box>
   );
 
-  // TAB 3: Legacy Settings
+  // TAB 3: Monthly Credits Management
+  const renderCreditsContent = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card>
+        <CardContent>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CreditIcon color="primary" />
+              <Typography variant="h6">Dealer Monthly Credits</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Tooltip title="Refresh credit data">
+                <IconButton
+                  onClick={fetchCreditStatuses}
+                  disabled={creditLoading}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handleResetAllCredits}
+                disabled={resettingAll}
+                startIcon={
+                  resettingAll ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    <RefreshIcon />
+                  )
+                }
+              >
+                {resettingAll ? 'Resetting...' : 'Reset All Credits'}
+              </Button>
+            </Box>
+          </Box>
+
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              Credits are automatically reset on the{' '}
+              <strong>1st of each month at midnight</strong>. Use the reset
+              buttons below for manual resets when needed.
+            </Typography>
+          </Alert>
+
+          {creditLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.primary.main,
+                    }}
+                  >
+                    <TableCell
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Dealer</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Tier</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Current Credits</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Credit Limit</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Last Reset</strong>
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: (theme) => theme.palette.primary.contrastText,
+                      }}
+                    >
+                      <strong>Actions</strong>
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {creditStatuses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        <Typography color="text.secondary" py={2}>
+                          No dealer credit data available
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    creditStatuses.map((dealer) => (
+                      <TableRow key={dealer.dealerId} hover>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <PersonIcon fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              {dealer.dealerName}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={dealer.tierName}
+                            size="small"
+                            color={
+                              dealer.tierName === 'Gold'
+                                ? 'warning'
+                                : dealer.tierName === 'Silver'
+                                  ? 'default'
+                                  : 'primary'
+                            }
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={dealer.currentCredit}
+                            size="small"
+                            color={
+                              dealer.currentCredit <= 10
+                                ? 'error'
+                                : dealer.currentCredit <= 50
+                                  ? 'warning'
+                                  : 'success'
+                            }
+                            variant="filled"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="body2" color="text.secondary">
+                            {dealer.creditLimit}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="caption" color="text.secondary">
+                            {dealer.lastResetAt
+                              ? new Date(
+                                  dealer.lastResetAt,
+                                ).toLocaleDateString()
+                              : 'Never'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            onClick={() =>
+                              handleResetDealerCredits(dealer.dealerId)
+                            }
+                            disabled={resettingDealerId === dealer.dealerId}
+                            startIcon={
+                              resettingDealerId === dealer.dealerId ? (
+                                <CircularProgress size={14} />
+                              ) : (
+                                <RefreshIcon fontSize="small" />
+                              )
+                            }
+                          >
+                            {resettingDealerId === dealer.dealerId
+                              ? 'Resetting...'
+                              : 'Reset'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  );
+
+  // TAB 4: Legacy Settings
   const renderLegacyContent = () => (
     <Card>
       <CardContent>
@@ -1343,12 +1639,14 @@ const HqLeadsAdminPage = () => {
       >
         <Tab label="Dealer Quotas & Backfill" />
         <Tab label="Manual Assignment" />
+        <Tab label="Monthly Credits" />
         <Tab label="Legacy Settings" />
       </Tabs>
 
       {activeTab === 0 && renderContent(renderQuotasContent())}
       {activeTab === 1 && renderContent(renderAssignmentContent())}
-      {activeTab === 2 && renderContent(renderLegacyContent())}
+      {activeTab === 2 && renderContent(renderCreditsContent())}
+      {activeTab === 3 && renderContent(renderLegacyContent())}
 
       {renderAssignmentDialog()}
     </Box>

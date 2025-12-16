@@ -4,22 +4,19 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
+    const token = cookieStore.get('access_token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/leads`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-    );
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       const error = await response.json();

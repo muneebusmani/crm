@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity('dealer_tier_credit')
 export class DealerTierCredit {
@@ -23,6 +29,10 @@ export class DealerTierCredit {
 
   @Column()
   tierId!: number;
+
+  // Track when credits were last reset (for monthly reset audit)
+  @Column({ type: 'timestamp', nullable: true })
+  lastResetAt!: Date | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at!: Date;
