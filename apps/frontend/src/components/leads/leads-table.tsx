@@ -938,7 +938,7 @@ const LeadsTable: React.FC = () => {
                   tableLayout: 'auto',
                   '& th, & td': { whiteSpace: 'nowrap' },
                   '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
-                  '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 240 }, // Email
+                  '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 160 }, // Email
                   '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
                   '& th:nth-of-type(4), & td:nth-of-type(4)': {
                     minWidth: 140,
@@ -1547,7 +1547,7 @@ const LeadsTable: React.FC = () => {
                       minWidth: 180,
                     }, // Name
                     '& th:nth-of-type(2), & td:nth-of-type(2)': {
-                      minWidth: 240,
+                      minWidth: 160,
                     }, // Email
                     '& th:nth-of-type(3), & td:nth-of-type(3)': {
                       minWidth: 160,
