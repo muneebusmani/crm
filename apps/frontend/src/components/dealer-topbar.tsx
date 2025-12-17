@@ -14,6 +14,7 @@ interface DealerTopbarProps {
   dealerName?: string;
   dealerEmail?: string;
   loading?: boolean;
+  pageName?: string;
 }
 
 const DealerTopbar: React.FC<DealerTopbarProps> = ({
@@ -22,6 +23,7 @@ const DealerTopbar: React.FC<DealerTopbarProps> = ({
   dealerName,
   dealerEmail,
   loading = false,
+  pageName,
 }) => {
   const theme = useTheme();
 
@@ -94,143 +96,172 @@ const DealerTopbar: React.FC<DealerTopbarProps> = ({
       sx={{
         display: 'flex',
         alignItems: 'stretch',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         px: 3,
         py: 1.5,
         backgroundColor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
         minHeight: 64,
-        gap: 0,
+        gap: 2,
       }}
     >
-      {/* Tier Card */}
+      {/* Page Name - Left Aligned */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1.5,
-          px: 2.5,
-          py: 1,
-          minWidth: 120,
-          height: '100%',
+          minWidth: 200,
         }}
       >
-        {tierStyle.icon && (
-          <Box sx={{ color: tierStyle.color, display: 'flex' }}>
-            {tierStyle.icon}
-          </Box>
-        )}
-        <Box>
-          <Typography
-            variant="caption"
-            sx={{
-              color: theme.palette.text.secondary,
-              fontSize: '0.7rem',
-              display: 'block',
-              lineHeight: 1.2,
-            }}
-          >
-            Tier
-          </Typography>
-          <Typography
-            variant="body2"
-            fontWeight="700"
-            sx={{
-              color: theme.palette.text.primary,
-              fontSize: '0.875rem',
-              lineHeight: 1.2,
-            }}
-          >
-            {tierStyle.label}
-          </Typography>
-        </Box>
+        <Typography
+          variant="h6"
+          fontWeight="600"
+          sx={{
+            color: theme.palette.text.primary,
+            fontSize: '1.125rem',
+          }}
+        >
+          {pageName || 'Dashboard'}
+        </Typography>
       </Box>
 
-      <Divider orientation="vertical" flexItem />
-
-      {/* Credits Card */}
+      {/* Right Side - Tier, Credits, Dealer Info */}
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1.5,
-          px: 2.5,
-          py: 1,
-          minWidth: 120,
-          height: '100%',
+          alignItems: 'stretch',
+          gap: 0,
         }}
       >
-        <AccountBalance sx={{ fontSize: 20, color: getCreditsColor() }} />
-        <Box>
-          <Typography
-            variant="caption"
-            sx={{
-              color: theme.palette.text.secondary,
-              fontSize: '0.7rem',
-              display: 'block',
-              lineHeight: 1.2,
-            }}
-          >
-            Credits
-          </Typography>
-          <Typography
-            variant="body2"
-            fontWeight="700"
-            sx={{
-              color: getCreditsColor(),
-              fontSize: '0.875rem',
-              lineHeight: 1.2,
-            }}
-          >
-            {credits ?? 0}
-          </Typography>
-        </Box>
-      </Box>
-      {/* Dealer Info Card */}
-      <Divider orientation="vertical" flexItem />
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          px: 2,
-          py: 1,
-          height: '100%',
-        }}
-      >
-        <Box sx={{ textAlign: 'right' }}>
-          <Typography
-            variant="body2"
-            fontWeight="600"
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontSize: '0.875rem',
-              display: 'inline',
-            }}
-          >
-            {dealerName || 'Dealer'}
-          </Typography>
-        </Box>
+        {/* Tier Card */}
         <Box
           sx={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            backgroundColor: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: theme.palette.primary.contrastText,
-            fontWeight: 'bold',
-            fontSize: '1rem',
-            flexShrink: 0,
+            gap: 1.5,
+            px: 2.5,
+            py: 1,
+            minWidth: 120,
+            height: '100%',
           }}
         >
-          {dealerName?.charAt(0).toUpperCase() || 'D'}
+          {tierStyle.icon && (
+            <Box sx={{ color: tierStyle.color, display: 'flex' }}>
+              {tierStyle.icon}
+            </Box>
+          )}
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{
+                color: theme.palette.text.secondary,
+                fontSize: '0.7rem',
+                display: 'block',
+                lineHeight: 1.2,
+              }}
+            >
+              Tier
+            </Typography>
+            <Typography
+              variant="body2"
+              fontWeight="700"
+              sx={{
+                color: theme.palette.text.primary,
+                fontSize: '0.875rem',
+                lineHeight: 1.2,
+              }}
+            >
+              {tierStyle.label}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Divider orientation="vertical" flexItem />
+
+        {/* Credits Card */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1.5,
+            px: 2.5,
+            py: 1,
+            minWidth: 120,
+            height: '100%',
+          }}
+        >
+          <AccountBalance sx={{ fontSize: 20, color: getCreditsColor() }} />
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{
+                color: theme.palette.text.secondary,
+                fontSize: '0.7rem',
+                display: 'block',
+                lineHeight: 1.2,
+              }}
+            >
+              Credits
+            </Typography>
+            <Typography
+              variant="body2"
+              fontWeight="700"
+              sx={{
+                color: getCreditsColor(),
+                fontSize: '0.875rem',
+                lineHeight: 1.2,
+              }}
+            >
+              {credits ?? 0}
+            </Typography>
+          </Box>
+        </Box>
+        {/* Dealer Info Card */}
+        <Divider orientation="vertical" flexItem />
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 2,
+            py: 1,
+            height: '100%',
+          }}
+        >
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography
+              variant="body2"
+              fontWeight="600"
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: '0.875rem',
+                display: 'inline',
+              }}
+            >
+              {dealerName || 'Dealer'}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              backgroundColor: theme.palette.primary.main,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: theme.palette.primary.contrastText,
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              flexShrink: 0,
+            }}
+          >
+            {dealerName?.charAt(0).toUpperCase() || 'D'}
+          </Box>
         </Box>
       </Box>
     </Box>

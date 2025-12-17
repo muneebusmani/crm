@@ -44,6 +44,21 @@ const DealerTopbarWrapper = () => {
 
   const shouldShowTopbar = !excludedRoutes.includes(pathname);
 
+  // Get page name from pathname - dynamically infer from route
+  const getPageName = (path: string): string => {
+    const pathSegments = path.split('/').filter(Boolean);
+
+    // Extract the segment after 'dealer' (e.g., /dealer/leads -> leads)
+    const dealerIndex = pathSegments.indexOf('dealer');
+    if (dealerIndex !== -1 && pathSegments.length > dealerIndex + 1) {
+      const routeSegment = pathSegments[dealerIndex + 1];
+      // Capitalize first letter
+      return routeSegment.charAt(0).toUpperCase() + routeSegment.slice(1);
+    }
+
+    return 'Dashboard';
+  };
+
   useEffect(() => {
     if (!shouldShowTopbar) return;
 
@@ -93,6 +108,7 @@ const DealerTopbarWrapper = () => {
       dealerName={dealerName}
       dealerEmail={dealerEmail}
       loading={loading}
+      pageName={getPageName(pathname)}
     />
   );
 };
