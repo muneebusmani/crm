@@ -72,8 +72,13 @@ export class User {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updated_at!: Date;
-  
-  @Column({ nullable: true })
-  refreshToken!: string
 
+  @Column({ nullable: true })
+  refreshToken!: string;
+
+  @Column({ name: 'allowed_devices', type: 'int', nullable: true })
+  allowedDevices!: number | null; // NULL = unlimited devices
+
+  @OneToMany('UserDevice', 'user')
+  devices!: any[];
 }

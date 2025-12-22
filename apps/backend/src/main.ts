@@ -1,6 +1,5 @@
 // import { ValidationPipe } from '@nestjs/common';
-/** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
-import { ConfigService } from '@nestjs/config';
+/** biome-ignore-all lint/correctness/useHookAtTopLevel: NestJS bootstrap pattern */
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -11,6 +10,7 @@ import { join } from 'path';
 import { AppLogger } from './common/logger.service';
 import { LogLevel } from '@nestjs/common';
 import { SupabaseStorageService } from './common/supabase-storage.service';
+import { HttpExceptionFilter } from './common/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -32,6 +32,9 @@ async function bootstrap() {
     );
   }
 
+  // Register global exception filter for consistent error responses
+  app.useGlobalFilters(new HttpExceptionFilter());
+
   app.setGlobalPrefix('api/v1');
 
   // Increase body size limit for file uploads (10MB)
@@ -48,7 +51,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(join(__dirname, "..", "api"), app, document);
+  SwaggerModule.setup(join(__dirname, '..', 'api'), app, document);
   // app.useGlobalPipes(
   //   new ValidationPipe({
   //     whitelist: true,
@@ -58,14 +61,12 @@ async function bootstrap() {
   // );
   // app.useGlobalPipes(new ZodValidationPipe());
 
-
-
   app.use(cookieParser());
   app.enableCors({
-    origin: [frontendUrl, "http://localhost:3000", "http://localhost:3001"],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    origin: [frontendUrl, 'http://localhost:3000', 'http://localhost:3001'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-    allowedHeaders: "Content-Type, Authorization",
+    allowedHeaders: 'Content-Type, Authorization',
   });
   app.use(
     '/uploads',

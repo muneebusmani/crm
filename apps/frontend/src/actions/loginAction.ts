@@ -3,18 +3,33 @@
 'use server';
 
 import { type Login, type LoginDto, UserType } from '@crm/types';
-import axios from 'axios';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { post2 } from '@/lib/api';
+
+// Error code to user-friendly message mapping
+const errorMessages: Record<string, string> = {
+  INVALID_CREDENTIALS: 'Invalid email or password.',
+  ACCOUNT_SUSPENDED: 'Your account has been suspended by the administrator.',
+  ACCOUNT_INACTIVE: 'Your account is inactive. Please contact support.',
+  DEVICE_LIMIT_REACHED:
+    'You have reached the maximum number of allowed devices. Please contact support.',
+};
 
 export async function loginAction(_, formData: FormData) {
   try {
     const formdata: LoginDto = {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
+      deviceFingerprint: formData.get('deviceFingerprint') as
+        | string
+        | undefined,
     };
-    // const data = await post2(
+
+    console.log(
+      '[LoginAction] Attempting login with fingerprint:',
+      formdata.deviceFingerprint?.substring(0, 16) + '...',
+    );
+
     const {
       user: { type: userType, id },
       accessToken,
@@ -52,18 +67,72 @@ export async function loginAction(_, formData: FormData) {
     const target = redirectMap[userType];
     if (target) {
       return { success: true, target, message: 'Login successful' };
-      // redirect(target);
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    // Handle Next.js redirect errors
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
       throw error;
     }
-    if (axios.isAxiosError(error)) {
-      console.error(error.response?.data);
-      return { message: error.response?.data };
-    } else {
-      console.error(error);
-      return { message: error };
+
+    console.error('[LoginAction] Login error:', error);
+
+    // Extract error details from various error formats
+    let errorCode: string | undefined;
+    let message = 'Login failed. Please try again.';
+    let statusCode: number | undefined;
+
+    // Handle next-axis errors (they have response data attached)
+    if (error && typeof error === 'object') {
+      const err = error as Record<string, unknown>;
+
+      // Try to extract from error.response (axios-style)
+      if (err.response && typeof err.response === 'object') {
+        const response = err.response as Record<string, unknown>;
+        statusCode = response.status as number;
+        if (response.data && typeof response.data === 'object') {
+          const data = response.data as Record<string, unknown>;
+          errorCode = data.errorCode as string;
+          message = (data.message as string) || message;
+        }
+      }
+      // Try to extract from error.data directly (next-axis style)
+      else if (err.data && typeof err.data === 'object') {
+        const data = err.data as Record<string, unknown>;
+        errorCode = data.errorCode as string;
+        message = (data.message as string) || message;
+      }
+      // Try to extract from error itself (thrown HttpException format)
+      else if (err.errorCode || err.message) {
+        errorCode = err.errorCode as string;
+        message = (err.message as string) || message;
+      }
+      // Error might have statusCode directly
+      else if (err.statusCode) {
+        statusCode = err.statusCode as number;
+        message = (err.message as string) || message;
+      }
     }
+
+    // If error is a string
+    if (typeof error === 'string') {
+      message = error;
+    }
+
+    // Map error code to user-friendly message
+    if (errorCode && errorMessages[errorCode]) {
+      message = errorMessages[errorCode];
+    }
+
+    console.error('[LoginAction] Parsed error:', {
+      errorCode,
+      message,
+      statusCode,
+    });
+
+    return {
+      success: false,
+      errorCode,
+      message,
+    };
   }
 }
