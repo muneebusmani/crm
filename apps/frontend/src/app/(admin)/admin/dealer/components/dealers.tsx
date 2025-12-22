@@ -9,6 +9,7 @@ import {
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Devices as DevicesIcon,
   Edit as EditIcon,
   FilterList as FilterListIcon,
   ImportExport as ImportExportIcon,
@@ -46,6 +47,7 @@ import Image from 'next/image';
 import type React from 'react';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import AddDealerDialog from './add-dealer-dialog';
+import DealerDeviceManager from './dealer-device-manager';
 import { get } from '@/lib/api';
 
 type Dealers = User & { dealer: Dealer };
@@ -66,6 +68,8 @@ const Dealers = ({ token }: { token: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [deviceManagerDealer, setDeviceManagerDealer] =
+    useState<DealerFlatData | null>(null);
 
   useEffect(() => {
     const fetchDealers = async () => {
@@ -470,6 +474,41 @@ const Dealers = ({ token }: { token: string }) => {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status');
+    }
+  };
+
+  const handleDeviceLimitChange = async (
+    dealerId: number,
+    newLimit: number | null,
+  ) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admins/dealer/${dealerId}/device-limit`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ limit: newLimit }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update device limit');
+      }
+
+      setDealers((prevDealers) =>
+        prevDealers.map((dealer) =>
+          dealer.id === dealerId
+            ? { ...dealer, allowedDevices: newLimit }
+            : dealer,
+        ),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to update device limit',
+      );
     }
   };
 
@@ -902,29 +941,53 @@ const Dealers = ({ token }: { token: string }) => {
                         <TableCell>{dealer.owner}</TableCell>
                         <TableCell>{dealer.location}</TableCell>
                         <TableCell>
-                          <Typography
-                            variant="body2"
+                          <Select
+                            value={
+                              dealer.allowedDevices === null
+                                ? 'unlimited'
+                                : dealer.allowedDevices
+                            }
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              const value = e.target.value;
+                              handleDeviceLimitChange(
+                                dealer.id as number,
+                                value === 'unlimited' ? null : Number(value),
+                              );
+                            }}
+                            size="small"
                             sx={{
-                              color:
-                                dealer.allowedDevices === null
-                                  ? 'text.secondary'
-                                  : dealer.allowedDevices === 0
-                                    ? 'error.main'
-                                    : 'text.primary',
-                              fontStyle:
-                                dealer.allowedDevices === null
-                                  ? 'italic'
-                                  : 'normal',
-                              fontWeight:
-                                dealer.allowedDevices !== null ? 500 : 400,
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                border: 'none',
+                              },
+                              '& .MuiSelect-select': {
+                                padding: '5px',
+                                fontSize: '0.875rem',
+                                color:
+                                  dealer.allowedDevices === null
+                                    ? 'text.secondary'
+                                    : dealer.allowedDevices === 0
+                                      ? 'error.main'
+                                      : 'text.primary',
+                                fontStyle:
+                                  dealer.allowedDevices === null
+                                    ? 'italic'
+                                    : 'normal',
+                              },
                             }}
                           >
-                            {dealer.allowedDevices === null
-                              ? 'Unlimited'
-                              : dealer.allowedDevices === 0
-                                ? '0 (Blocked)'
-                                : `${dealer.allowedDevices} ${dealer.allowedDevices === 1 ? 'Device' : 'Devices'}`}
-                          </Typography>
+                            <MenuItem value="unlimited">
+                              <em>Unlimited</em>
+                            </MenuItem>
+                            <MenuItem value={0} sx={{ color: 'error.main' }}>
+                              0 (Blocked)
+                            </MenuItem>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                              <MenuItem key={n} value={n}>
+                                {n} {n === 1 ? 'Device' : 'Devices'}
+                              </MenuItem>
+                            ))}
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <Select
@@ -1000,6 +1063,18 @@ const Dealers = ({ token }: { token: string }) => {
                                 }}
                               >
                                 <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Manage Devices">
+                              <IconButton
+                                size="small"
+                                color="secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeviceManagerDealer(dealer);
+                                }}
+                              >
+                                <DevicesIcon />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Delete">
@@ -1202,6 +1277,18 @@ const Dealers = ({ token }: { token: string }) => {
         initialData={isEditing && editData ? editData : undefined}
         isEditing={isEditing}
       />
+
+      {/* Device Management Dialog */}
+      {deviceManagerDealer && (
+        <DealerDeviceManager
+          dealerId={deviceManagerDealer.id as number}
+          dealerName={
+            deviceManagerDealer.name || deviceManagerDealer.owner || 'Dealer'
+          }
+          open={!!deviceManagerDealer}
+          onClose={() => setDeviceManagerDealer(null)}
+        />
+      )}
     </Box>
   );
 };

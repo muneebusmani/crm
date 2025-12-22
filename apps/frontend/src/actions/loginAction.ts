@@ -3,8 +3,7 @@
 'use server';
 
 import { type Login, type LoginDto, UserType } from '@crm/types';
-import { cookies } from 'next/headers';
-import { post2 } from '@/lib/api';
+import { cookies, headers } from 'next/headers';
 
 // Error code to user-friendly message mapping
 const errorMessages: Record<string, string> = {
@@ -25,16 +24,60 @@ export async function loginAction(_, formData: FormData) {
         | undefined,
     };
 
-    console.log(
-      '[LoginAction] Attempting login with fingerprint:',
-      formdata.deviceFingerprint?.substring(0, 16) + '...',
-    );
+    // Get client headers to forward to backend
+    const headersList = await headers();
+    const clientUserAgent = headersList.get('user-agent') || '';
+    const clientIp =
+      headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      headersList.get('x-real-ip') ||
+      headersList.get('cf-connecting-ip') || // Cloudflare
+      '';
 
-    const {
-      user: { type: userType, id },
-      accessToken,
-      refreshToken,
-    } = await post2<Login, LoginDto>(`/auth/login`, formdata);
+    console.log('[LoginAction] Attempting login:', {
+      fingerprint: formdata.deviceFingerprint?.substring(0, 16) + '...',
+      clientUserAgent: clientUserAgent.substring(0, 50) + '...',
+      clientIp,
+    });
+
+    // Make direct fetch call to forward headers properly
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': clientUserAgent,
+        'X-Forwarded-For': clientIp,
+        'X-Real-IP': clientIp,
+      },
+      body: JSON.stringify(formdata),
+    });
+
+    const data = await response.json();
+
+    // Handle error responses
+    if (!response.ok) {
+      console.error('[LoginAction] API error response:', {
+        status: response.status,
+        data,
+      });
+
+      const errorCode = data.errorCode;
+      const message =
+        errorMessages[errorCode] ||
+        data.message ||
+        'Login failed. Please try again.';
+
+      return {
+        success: false,
+        errorCode,
+        message,
+      };
+    }
+
+    // Success - extract user data
+    const { user, accessToken, refreshToken } = data as Login;
+    const userType = user.type;
+    const id = user.id;
 
     const expiryMap: Record<UserType | 'DEFAULT', number> = {
       [UserType.ADMIN]: 24 * 60 * 60, // 24 hrs
@@ -52,6 +95,7 @@ export async function loginAction(_, formData: FormData) {
       path: '/',
       sameSite: 'strict' as const,
     };
+
     if (!accessToken) console.error('Token not sent from API');
 
     cookieStore.set('id', id.toString(), commonOptions);
@@ -68,71 +112,19 @@ export async function loginAction(_, formData: FormData) {
     if (target) {
       return { success: true, target, message: 'Login successful' };
     }
+
+    return { success: false, message: 'Unknown user type' };
   } catch (error: unknown) {
     // Handle Next.js redirect errors
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
       throw error;
     }
 
-    console.error('[LoginAction] Login error:', error);
-
-    // Extract error details from various error formats
-    let errorCode: string | undefined;
-    let message = 'Login failed. Please try again.';
-    let statusCode: number | undefined;
-
-    // Handle next-axis errors (they have response data attached)
-    if (error && typeof error === 'object') {
-      const err = error as Record<string, unknown>;
-
-      // Try to extract from error.response (axios-style)
-      if (err.response && typeof err.response === 'object') {
-        const response = err.response as Record<string, unknown>;
-        statusCode = response.status as number;
-        if (response.data && typeof response.data === 'object') {
-          const data = response.data as Record<string, unknown>;
-          errorCode = data.errorCode as string;
-          message = (data.message as string) || message;
-        }
-      }
-      // Try to extract from error.data directly (next-axis style)
-      else if (err.data && typeof err.data === 'object') {
-        const data = err.data as Record<string, unknown>;
-        errorCode = data.errorCode as string;
-        message = (data.message as string) || message;
-      }
-      // Try to extract from error itself (thrown HttpException format)
-      else if (err.errorCode || err.message) {
-        errorCode = err.errorCode as string;
-        message = (err.message as string) || message;
-      }
-      // Error might have statusCode directly
-      else if (err.statusCode) {
-        statusCode = err.statusCode as number;
-        message = (err.message as string) || message;
-      }
-    }
-
-    // If error is a string
-    if (typeof error === 'string') {
-      message = error;
-    }
-
-    // Map error code to user-friendly message
-    if (errorCode && errorMessages[errorCode]) {
-      message = errorMessages[errorCode];
-    }
-
-    console.error('[LoginAction] Parsed error:', {
-      errorCode,
-      message,
-      statusCode,
-    });
+    console.error('[LoginAction] Unexpected error:', error);
 
     return {
       success: false,
-      errorCode,
-      message,
+      message: 'Network error. Please try again.',
     };
   }
 }

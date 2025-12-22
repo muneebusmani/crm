@@ -19,7 +19,11 @@ export class UserDevice {
   @Column({ name: 'user_id' })
   userId!: number;
 
-  @ManyToOne(() => User, (user) => user.devices, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => User,
+    (user) => user.devices,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
@@ -34,6 +38,9 @@ export class UserDevice {
 
   @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress!: string | null;
+
+  @Column({ name: 'location', type: 'varchar', length: 255, nullable: true })
+  location!: string | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

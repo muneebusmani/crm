@@ -28,6 +28,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
+    console.log('[HttpExceptionFilter] Caught exception:', {
+      name: exception.name,
+      status,
+      response: exceptionResponse,
+    });
+
     let errorCode: string | undefined;
     let message: string;
 

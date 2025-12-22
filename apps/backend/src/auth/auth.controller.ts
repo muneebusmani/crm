@@ -32,13 +32,32 @@ export class AuthController {
     @Body() dto: LoginDto & { deviceFingerprint?: string },
     @Req() req: Request,
   ): Promise<Login> {
+    // Extract real client IP from proxy headers (priority order)
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const realIp = req.headers['x-real-ip'];
+    const cfConnectingIp = req.headers['cf-connecting-ip']; // Cloudflare
+
+    let clientIp: string;
+    if (forwardedFor) {
+      // x-forwarded-for can be comma-separated, take the first (original client)
+      clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)
+        .split(',')[0]
+        .trim();
+    } else if (realIp) {
+      clientIp = Array.isArray(realIp) ? realIp[0] : realIp;
+    } else if (cfConnectingIp) {
+      clientIp = Array.isArray(cfConnectingIp)
+        ? cfConnectingIp[0]
+        : cfConnectingIp;
+    } else {
+      clientIp = req.ip || req.socket?.remoteAddress || 'unknown';
+    }
+
     // Extract device info from request
     const deviceInfo: LoginDeviceInfo = {
       fingerprint: dto.deviceFingerprint,
       userAgent: req.headers['user-agent'] as string,
-      ipAddress: (req.ip ||
-        req.headers['x-forwarded-for'] ||
-        req.socket?.remoteAddress) as string,
+      ipAddress: clientIp,
     };
 
     // Log for debugging
@@ -48,8 +67,10 @@ export class AuthController {
       fingerprintPreview: dto.deviceFingerprint
         ? dto.deviceFingerprint.substring(0, 16) + '...'
         : 'NONE',
-      userAgent: deviceInfo.userAgent?.substring(0, 50) + '...',
-      ipAddress: deviceInfo.ipAddress,
+      userAgent: deviceInfo.userAgent?.substring(0, 60) + '...',
+      ipAddress: clientIp,
+      rawForwardedFor: forwardedFor,
+      rawRealIp: realIp,
     });
 
     const { user, accessToken, refreshToken } = await this.authService.login(
