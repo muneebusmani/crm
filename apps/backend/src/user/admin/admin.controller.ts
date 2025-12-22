@@ -3,8 +3,7 @@ import type {
   CreateAdminDto,
   UpdateAdminDto,
   UpdateDealerStatusDto,
-  User,
-} from "@crm/types";
+} from '@crm/types';
 import {
   Body,
   Controller,
@@ -67,13 +66,50 @@ export class AdminController {
     return this.adminService.deleteAdmin(id);
   }
 
-  @Patch("dealer/:id/status")
+  @Patch('dealer/:id/status')
   async updateDealerStatus(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDealerStatusDto,
   ) {
     const user = this.adminService.updateDealerStatus(id, dto.status);
     return this.buildResponse(user);
   }
 
+  /**
+   * Update device limit for a dealer.
+   * @param id - Dealer user ID
+   * @param limit - Number of allowed devices (null = unlimited)
+   */
+  @Patch('dealer/:id/device-limit')
+  @UseGuards(AdminGuard)
+  async updateDeviceLimit(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { limit: number | null },
+  ) {
+    const result = await this.adminService.updateDeviceLimit(id, dto.limit);
+    return this.buildResponse(result);
+  }
+
+  /**
+   * Get all devices for a dealer.
+   */
+  @Get('dealer/:id/devices')
+  @UseGuards(AdminGuard)
+  async getDealerDevices(@Param('id', ParseIntPipe) id: number) {
+    const devices = await this.adminService.getDealerDevices(id);
+    return this.buildResponse(devices);
+  }
+
+  /**
+   * Deactivate a specific device for a dealer.
+   */
+  @Delete('dealer/:dealerId/devices/:deviceId')
+  @UseGuards(AdminGuard)
+  async deactivateDevice(
+    @Param('dealerId', ParseIntPipe) dealerId: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
+  ) {
+    await this.adminService.deactivateDevice(dealerId, deviceId);
+    return this.buildResponse({ message: 'Device deactivated successfully' });
+  }
 }

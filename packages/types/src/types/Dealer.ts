@@ -30,6 +30,7 @@ export interface DealerFlatData {
   tierId?: number;
   tierName?: string;
   status: UserStatus;
+  allowedDevices?: number | null; // NULL = unlimited, positive int = limit
 }
 
 export interface Tier {

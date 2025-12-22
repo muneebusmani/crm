@@ -21,8 +21,16 @@ export function isUnauthorizedError(error: unknown): boolean {
 }
 
 /**
- * Check if the request is to the refresh endpoint (to prevent infinite loops)
+ * Check if the request is to an auth endpoint that should skip token refresh logic.
+ * This includes:
+ * - /auth/refresh (to prevent infinite loops)
+ * - /auth/login (login errors should be handled by the action, not redirect)
+ * - /auth/register
  */
 export function isRefreshRequest(url: string): boolean {
-  return url.includes('/auth/refresh');
+  return (
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/login') ||
+    url.includes('/auth/register')
+  );
 }

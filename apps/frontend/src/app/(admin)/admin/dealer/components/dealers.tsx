@@ -94,6 +94,7 @@ const Dealers = ({ token }: { token: string }) => {
               status: u.status,
               password: '', // required by type, default empty
               logoFile: null, // required by type, default null
+              allowedDevices: (u as any).allowedDevices ?? null, // device limit
             }),
           );
         setDealers(flatData);
@@ -233,6 +234,7 @@ const Dealers = ({ token }: { token: string }) => {
               status: u.status,
               password: '', // required by type, default empty
               logoFile: null, // required by type, default null
+              allowedDevices: (u as any).allowedDevices ?? null, // device limit
             }),
           );
         setDealers(flatData);
@@ -284,6 +286,7 @@ const Dealers = ({ token }: { token: string }) => {
     website?: string;
     contactEmail?: string;
     tierId?: number;
+    allowedDevices?: number | null; // device limit
   }) => {
     try {
       if (!editData) return;
@@ -367,6 +370,29 @@ const Dealers = ({ token }: { token: string }) => {
         );
       }
 
+      // Step 3: Update device limit if changed
+      if (
+        data.allowedDevices !== undefined &&
+        data.allowedDevices !== editData.allowedDevices
+      ) {
+        const deviceLimitResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/admins/dealer/${editData.id}/device-limit`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ limit: data.allowedDevices }),
+          },
+        );
+
+        if (!deviceLimitResponse.ok) {
+          console.error('Failed to update device limit');
+          // Don't throw - continue with the rest of the update
+        }
+      }
+
       const updatedDealer = await response.json();
 
       // Refetch dealers to ensure consistent state and logo URLs
@@ -390,6 +416,7 @@ const Dealers = ({ token }: { token: string }) => {
               status: u.status,
               password: '', // required by type, default empty
               logoFile: null, // required by type, default null
+              allowedDevices: (u as any).allowedDevices ?? null, // device limit
             }),
           );
         setDealers(flatData);
@@ -806,6 +833,7 @@ const Dealers = ({ token }: { token: string }) => {
                       <TableCell>Dealer Name</TableCell>
                       <TableCell>Owner</TableCell>
                       <TableCell>Location</TableCell>
+                      <TableCell>Device Limit</TableCell>
                       <TableCell>Status</TableCell>
                       <TableCell>Action</TableCell>
                     </TableRow>
@@ -873,6 +901,31 @@ const Dealers = ({ token }: { token: string }) => {
                         </TableCell>
                         <TableCell>{dealer.owner}</TableCell>
                         <TableCell>{dealer.location}</TableCell>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color:
+                                dealer.allowedDevices === null
+                                  ? 'text.secondary'
+                                  : dealer.allowedDevices === 0
+                                    ? 'error.main'
+                                    : 'text.primary',
+                              fontStyle:
+                                dealer.allowedDevices === null
+                                  ? 'italic'
+                                  : 'normal',
+                              fontWeight:
+                                dealer.allowedDevices !== null ? 500 : 400,
+                            }}
+                          >
+                            {dealer.allowedDevices === null
+                              ? 'Unlimited'
+                              : dealer.allowedDevices === 0
+                                ? '0 (Blocked)'
+                                : `${dealer.allowedDevices} ${dealer.allowedDevices === 1 ? 'Device' : 'Devices'}`}
+                          </Typography>
+                        </TableCell>
                         <TableCell>
                           <Select
                             value={dealer.status}

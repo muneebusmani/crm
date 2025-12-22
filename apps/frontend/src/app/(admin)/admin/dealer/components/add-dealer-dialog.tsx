@@ -37,6 +37,7 @@ interface AddDealerDialogProps {
     website: string;
     contactEmail: string;
     tierId?: number;
+    allowedDevices?: number | null; // NULL = unlimited
   }) => void;
   initialData?: DealerFlatData;
   isEditing?: boolean;
@@ -63,6 +64,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
     website: '',
     contactEmail: '',
     tierId: 1,
+    allowedDevices: null, // null = unlimited
   });
 
   const [dealerTiers, setDealerTiers] = useState<DealerTier[]>([]);
@@ -110,6 +112,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         tierId:
           initialData.tierId ||
           (dealerTiers.length > 0 ? dealerTiers[0].id : 1),
+        allowedDevices: initialData.allowedDevices ?? null,
       });
     } else if (!isEditing) {
       setFormData({
@@ -124,6 +127,7 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
         website: '',
         contactEmail: '',
         tierId: dealerTiers.length > 0 ? dealerTiers[0].id : 1,
+        allowedDevices: null, // null = unlimited for new dealers
       });
     }
   }, [initialData, isEditing, dealerTiers]);
@@ -298,6 +302,40 @@ const AddDealerDialog: React.FC<AddDealerDialogProps> = ({
                 )}
               </Select>
             </FormControl>
+
+            {/* Device Limit - only show when editing */}
+            {isEditing && (
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Device Limit</InputLabel>
+                <Select
+                  name="allowedDevices"
+                  value={
+                    formData.allowedDevices === null
+                      ? 'unlimited'
+                      : formData.allowedDevices
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      allowedDevices:
+                        value === 'unlimited' ? null : Number(value),
+                    }));
+                  }}
+                  label="Device Limit"
+                >
+                  <MenuItem value="unlimited">
+                    <em>Unlimited</em>
+                  </MenuItem>
+                  <MenuItem value={0}>0 Devices (Block All)</MenuItem>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <MenuItem key={num} value={num}>
+                      {num} {num === 1 ? 'Device' : 'Devices'}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Box>
 
           {/* Contact Information */}

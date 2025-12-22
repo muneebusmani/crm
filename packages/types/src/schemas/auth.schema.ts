@@ -10,6 +10,7 @@ export const LoginSchema = z.object({
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters' }),
+  deviceFingerprint: z.string().optional(),
 });
 
 export type LoginDto = z.infer<typeof LoginSchema>;

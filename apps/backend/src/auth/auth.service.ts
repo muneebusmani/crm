@@ -1,16 +1,27 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <idk> */
-import { LoginDto, RegisterDto, User } from '@crm/types';
-import {
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { LoginDto, RegisterDto, User, UserStatus } from '@crm/types';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { User as UserEntity } from 'src/user/entities';
 import { Repository } from 'typeorm';
+import {
+  InvalidCredentialsException,
+  AccountSuspendedException,
+  AccountInactiveException,
+} from 'src/common/auth-exceptions';
+import {
+  UserDeviceService,
+  type DeviceInfo,
+} from 'src/user/user-device.service';
+
+export interface LoginDeviceInfo {
+  fingerprint?: string;
+  userAgent?: string;
+  ipAddress?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -21,6 +32,7 @@ export class AuthService {
     private readonly userRepository: Repository<UserEntity>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly userDeviceService: UserDeviceService,
   ) {
     this.saltRounds = parseInt(
       this.configService.get<string>('SALT_ROUNDS')!,
@@ -38,6 +50,7 @@ export class AuthService {
       expiresIn: '7d',
     });
   }
+
   private async generateToken(user: {
     id: number;
     email: string;
@@ -47,23 +60,86 @@ export class AuthService {
     return await this.jwtService.signAsync(payload);
   }
 
+  /**
+   * Login with device bound enforcement.
+   *
+   * Order of checks:
+   * 1. Find user by email
+   * 2. Check account status (BEFORE password validation)
+   * 3. Validate password
+   * 4. Check device limit (strict blocking)
+   * 5. Generate tokens
+   */
   async login(
     dto: LoginDto,
+    deviceInfo?: LoginDeviceInfo,
   ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    // STEP 1: Find user by email
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new InvalidCredentialsException();
     }
 
+    // STEP 2: Check account status BEFORE password validation
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new AccountSuspendedException();
+    }
+
+    if (user.status === UserStatus.IN_ACTIVE) {
+      throw new AccountInactiveException();
+    }
+
+    // STEP 3: Validate password
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
 
     if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new InvalidCredentialsException();
     }
 
+    // STEP 4: Check device limit
+    // Log device info for debugging
+    console.log('[AuthService] Device info received:', {
+      fingerprint: deviceInfo?.fingerprint
+        ? deviceInfo.fingerprint.substring(0, 16) + '...'
+        : 'NONE',
+      hasUserAgent: !!deviceInfo?.userAgent,
+      hasIpAddress: !!deviceInfo?.ipAddress,
+      userAllowedDevices: user.allowedDevices,
+    });
+
+    // ALWAYS check device limit if user has a limit set (not unlimited/null)
+    // Use a fallback fingerprint based on IP if no fingerprint provided
+    const effectiveFingerprint =
+      deviceInfo?.fingerprint ||
+      (deviceInfo?.ipAddress ? `ip-${deviceInfo.ipAddress}` : null) ||
+      (deviceInfo?.userAgent
+        ? `ua-${Buffer.from(deviceInfo.userAgent).toString('base64').substring(0, 32)}`
+        : null);
+
+    if (effectiveFingerprint) {
+      const deviceData: DeviceInfo = {
+        userAgent: deviceInfo?.userAgent,
+        ipAddress: deviceInfo?.ipAddress,
+      };
+      console.log(
+        '[AuthService] Calling checkAndRegisterDevice with fingerprint:',
+        effectiveFingerprint.substring(0, 20) + '...',
+      );
+      await this.userDeviceService.checkAndRegisterDevice(
+        user,
+        effectiveFingerprint,
+        deviceData,
+      );
+    } else {
+      console.warn(
+        '[AuthService] No fingerprint available, skipping device registration',
+      );
+    }
+
+    // STEP 5: Generate tokens
     const accessToken = await this.generateToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
@@ -95,12 +171,12 @@ export class AuthService {
       });
 
       if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Access Denied');
+        throw new InvalidCredentialsException();
       }
 
       const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
       if (!isValid) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new InvalidCredentialsException();
       }
 
       const accessToken = await this.generateToken(user);
@@ -117,7 +193,7 @@ export class AuthService {
         refreshToken: newRefreshToken,
       };
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new InvalidCredentialsException();
     }
   }
 

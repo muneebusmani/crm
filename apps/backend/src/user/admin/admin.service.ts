@@ -165,7 +165,7 @@ export class AdminService {
       user.status = status;
       return await this.userRepository.save(user);
     } catch (error: unknown) {
-      throw new CustomError("Unable to update dealer status");
+      throw new CustomError('Unable to update dealer status');
     }
   }
 
@@ -207,5 +207,62 @@ export class AdminService {
     );
 
     return dealerStatuses;
+  }
+
+  /**
+   * Update the device limit for a dealer.
+   * @param userId - Dealer user ID
+   * @param limit - Number of allowed devices (null = unlimited)
+   */
+  async updateDeviceLimit(
+    userId: number,
+    limit: number | null,
+  ): Promise<{ userId: number; allowedDevices: number | null }> {
+    const user = await this.findDealer(userId);
+    user.allowedDevices = limit;
+    await this.userRepository.save(user);
+    return { userId, allowedDevices: limit };
+  }
+
+  /**
+   * Get all devices for a dealer.
+   * @param userId - Dealer user ID
+   */
+  async getDealerDevices(userId: number) {
+    await this.findDealer(userId); // Verify dealer exists
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['devices'],
+    });
+    return user?.devices || [];
+  }
+
+  /**
+   * Deactivate a specific device for a dealer.
+   * @param dealerId - Dealer user ID
+   * @param deviceId - Device ID to deactivate
+   */
+  async deactivateDevice(dealerId: number, deviceId: number): Promise<void> {
+    await this.findDealer(dealerId); // Verify dealer exists
+    const user = await this.userRepository.findOne({
+      where: { id: dealerId },
+      relations: ['devices'],
+    });
+
+    const device = user?.devices?.find((d) => d.id === deviceId);
+    if (!device) {
+      throw new NotFoundException(
+        `Device ${deviceId} not found for dealer ${dealerId}`,
+      );
+    }
+
+    device.isActive = false;
+    // We need to save via the device repository, but since we don't have it here,
+    // we'll update through a raw query or use the relation
+    await this.userRepository.manager.update(
+      'user_device',
+      { id: deviceId, userId: dealerId },
+      { isActive: false },
+    );
   }
 }
