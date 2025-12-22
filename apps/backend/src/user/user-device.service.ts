@@ -4,6 +4,13 @@ import { Repository } from 'typeorm';
 import { UserDevice } from './entities/user_device.entity';
 import { User } from './entities/user.entity';
 import { DeviceLimitReachedException } from 'src/common/auth-exceptions';
+import {
+  parseUserAgent,
+  normalizeIpAddress,
+  detectPlatform,
+  getGeoLocation,
+  formatLocation,
+} from 'src/common/device-utils';
 
 export interface DeviceInfo {
   userAgent?: string;
@@ -33,10 +40,16 @@ export class UserDeviceService {
     fingerprint: string,
     deviceInfo: DeviceInfo = {},
   ): Promise<void> {
+    console.log('[UserDeviceService] checkAndRegisterDevice called:', {
+      userId: user.id,
+      fingerprint: fingerprint.substring(0, 16) + '...',
+      allowedDevices: user.allowedDevices,
+    });
+
     // If unlimited (NULL), just upsert device and return
     if (user.allowedDevices === null) {
-      this.logger.debug(
-        `User ${user.id} has unlimited devices, skipping limit check`,
+      console.log(
+        `[UserDeviceService] User ${user.id} has unlimited devices, skipping limit check`,
       );
       await this.upsertDevice(user.id, fingerprint, deviceInfo);
       return;
@@ -53,8 +66,8 @@ export class UserDeviceService {
 
     if (existingDevice) {
       // Same device re-login - just update timestamp
-      this.logger.debug(
-        `User ${user.id} re-login from existing device ${existingDevice.id}`,
+      console.log(
+        `[UserDeviceService] User ${user.id} re-login from existing device ${existingDevice.id}`,
       );
       existingDevice.lastLoginAt = new Date();
       existingDevice.ipAddress =
@@ -68,22 +81,22 @@ export class UserDeviceService {
       where: { userId: user.id, isActive: true },
     });
 
-    this.logger.debug(
-      `User ${user.id} has ${activeCount}/${user.allowedDevices} active devices`,
+    console.log(
+      `[UserDeviceService] User ${user.id} has ${activeCount}/${user.allowedDevices} active devices`,
     );
 
     // STRICT BLOCKING - reject if limit reached
     if (activeCount >= user.allowedDevices) {
-      this.logger.warn(
-        `User ${user.id} blocked: device limit reached (${activeCount}/${user.allowedDevices})`,
+      console.log(
+        `[UserDeviceService] User ${user.id} BLOCKED: device limit reached (${activeCount}/${user.allowedDevices})`,
       );
       throw new DeviceLimitReachedException();
     }
 
     // Under limit - register new device
     await this.upsertDevice(user.id, fingerprint, deviceInfo);
-    this.logger.log(
-      `User ${user.id} registered new device, count: ${activeCount + 1}`,
+    console.log(
+      `[UserDeviceService] User ${user.id} registered new device, count: ${activeCount + 1}`,
     );
   }
 
@@ -95,6 +108,28 @@ export class UserDeviceService {
     fingerprint: string,
     deviceInfo: DeviceInfo,
   ): Promise<UserDevice> {
+    // Parse and normalize device information
+    const normalizedIp = normalizeIpAddress(deviceInfo.ipAddress);
+    const deviceName = parseUserAgent(deviceInfo.userAgent);
+    const platform =
+      deviceInfo.platform || detectPlatform(deviceInfo.userAgent);
+
+    // Get geolocation (async, but don't block on failure)
+    let location: string | null = null;
+    try {
+      const geo = await getGeoLocation(deviceInfo.ipAddress || '');
+      location = formatLocation(geo);
+    } catch (err) {
+      console.warn('[UserDeviceService] Failed to get geolocation:', err);
+    }
+
+    console.log('[UserDeviceService] Parsed device info:', {
+      normalizedIp,
+      deviceName,
+      platform,
+      location,
+    });
+
     // Try to find existing device (may be inactive)
     let device = await this.deviceRepository.findOne({
       where: { userId, deviceFingerprint: fingerprint },
@@ -104,9 +139,10 @@ export class UserDeviceService {
       // Update existing device
       device.isActive = true;
       device.lastLoginAt = new Date();
-      device.ipAddress = deviceInfo.ipAddress || device.ipAddress;
-      device.deviceName = deviceInfo.userAgent || device.deviceName;
-      device.platform = deviceInfo.platform || device.platform;
+      device.ipAddress = normalizedIp || device.ipAddress;
+      device.deviceName = deviceName || device.deviceName;
+      device.platform = platform || device.platform;
+      device.location = location || device.location;
     } else {
       // Create new device
       device = this.deviceRepository.create({
@@ -114,9 +150,10 @@ export class UserDeviceService {
         deviceFingerprint: fingerprint,
         isActive: true,
         lastLoginAt: new Date(),
-        ipAddress: deviceInfo.ipAddress || null,
-        deviceName: deviceInfo.userAgent || null,
-        platform: deviceInfo.platform || 'web',
+        ipAddress: normalizedIp || null,
+        deviceName: deviceName || null,
+        platform: platform || 'web',
+        location: location,
       });
     }
 

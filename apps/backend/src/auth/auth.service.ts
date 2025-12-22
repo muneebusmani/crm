@@ -74,34 +74,54 @@ export class AuthService {
     dto: LoginDto,
     deviceInfo?: LoginDeviceInfo,
   ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    console.log('[AuthService] Step 1: Finding user by email:', dto.email);
+
     // STEP 1: Find user by email
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
 
     if (!user) {
+      console.log('[AuthService] Step 1 FAILED: User not found');
       throw new InvalidCredentialsException();
     }
 
+    console.log(
+      '[AuthService] Step 1 OK: User found, id:',
+      user.id,
+      'allowedDevices:',
+      user.allowedDevices,
+    );
+
     // STEP 2: Check account status BEFORE password validation
+    console.log('[AuthService] Step 2: Checking account status:', user.status);
+
     if (user.status === UserStatus.SUSPENDED) {
+      console.log('[AuthService] Step 2 FAILED: Account suspended');
       throw new AccountSuspendedException();
     }
 
     if (user.status === UserStatus.IN_ACTIVE) {
+      console.log('[AuthService] Step 2 FAILED: Account inactive');
       throw new AccountInactiveException();
     }
 
+    console.log('[AuthService] Step 2 OK: Account status is active');
+
     // STEP 3: Validate password
+    console.log('[AuthService] Step 3: Validating password...');
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
 
     if (!passwordMatches) {
+      console.log('[AuthService] Step 3 FAILED: Password does not match');
       throw new InvalidCredentialsException();
     }
 
+    console.log('[AuthService] Step 3 OK: Password validated');
+
     // STEP 4: Check device limit
     // Log device info for debugging
-    console.log('[AuthService] Device info received:', {
+    console.log('[AuthService] Step 4: Checking device limit...', {
       fingerprint: deviceInfo?.fingerprint
         ? deviceInfo.fingerprint.substring(0, 16) + '...'
         : 'NONE',
