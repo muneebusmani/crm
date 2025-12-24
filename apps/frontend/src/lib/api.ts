@@ -5,7 +5,11 @@ import type { ApiResponse } from '@crm/types';
 import { cookies } from 'next/headers';
 import http, { type RequestConfig } from 'next-axis';
 import { refreshAccessToken, clearAuthAndRedirect } from './token-refresh';
-import { isUnauthorizedError, isRefreshRequest } from './token-utils';
+import {
+  isUnauthorizedError,
+  isRefreshRequest,
+  isDeviceRevokedError,
+} from './token-utils';
 import { redirect } from 'next/navigation';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -33,9 +37,7 @@ async function attachToken<T>(
 
 /**
  * Wrapper function that handles automatic token refresh on 401 errors
- * @param fn The API function to call
- * @param args The arguments to pass to the API function
- * @returns The result of the API call
+ * and device revocation detection (DEVICE_REVOKED error code)
  */
 async function withTokenRefresh<T>(
   fn: (...args: any[]) => Promise<T>,
@@ -44,6 +46,12 @@ async function withTokenRefresh<T>(
   try {
     return await fn(...args);
   } catch (error) {
+    // Check if device was revoked - redirect to login immediately
+    if (isDeviceRevokedError(error)) {
+      await clearAuthAndRedirect();
+      redirect('/login?reason=device_revoked');
+    }
+
     // Check if this is a 401 error and not a refresh request
     if (isUnauthorizedError(error) && !isRefreshRequest(args[0] as string)) {
       try {
@@ -70,13 +78,13 @@ export async function get<T = any>(
   options?: RequestConfig<T>,
   skipAuth = false,
 ) {
-  console.log(`[API GET] Calling: ${path}`);
+  // console.log(`[API GET] Calling: ${path}`);
   try {
     const result = await withTokenRefresh(
       async () => http.get<T>(path, await attachToken(options, skipAuth)),
       path,
     );
-    console.log(`[API GET] Success: ${path}`, result);
+    // console.log(`[API GET] Success: ${path}`, result);
     return result;
   } catch (error) {
     console.error(`[API GET] Error: ${path}`, error);

@@ -26,15 +26,15 @@ export class AnalyticsController {
   @Get('dashboard')
   async getDashboard(@Req() req) {
     try {
-      console.log('🎯 Dashboard endpoint hit');
-      console.log('👤 User:', req.user);
+      // console.log('🎯 Dashboard endpoint hit');
+      // console.log('👤 User:', req.user);
       const userType = req.user.role; // 'admin' or 'dealer'
-      console.log('🔍 Logging Request', req);
+      // console.log('🔍 Logging Request', req);
       const dealerId = userType === 'dealer' ? req.user.id : undefined;
-      console.log('🔍 User type:', userType, 'Dealer ID:', dealerId);
+      // console.log('🔍 User type:', userType, 'Dealer ID:', dealerId);
 
       const stats = await this.analytics.getDashboardStats(dealerId);
-      console.log('✅ Dashboard stats retrieved:', Object.keys(stats));
+      // console.log('✅ Dashboard stats retrieved:', Object.keys(stats));
       return this.buildResponse(stats);
     } catch (error) {
       console.error('❌ Dashboard endpoint error:', error);

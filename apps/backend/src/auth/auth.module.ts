@@ -7,6 +7,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UserDeviceService } from 'src/user/user-device.service';
+import { DeviceGateway } from './device.gateway';
+import { DeviceCheckGuard } from './guards/device-check.guard';
 
 @Module({
   imports: [
@@ -21,8 +23,14 @@ import { UserDeviceService } from 'src/user/user-device.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy, UserDeviceService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    UserDeviceService,
+    DeviceGateway,
+    DeviceCheckGuard,
+  ],
   controllers: [AuthController],
-  exports: [UserDeviceService],
+  exports: [UserDeviceService, DeviceGateway, DeviceCheckGuard],
 })
 export class AuthModule {}

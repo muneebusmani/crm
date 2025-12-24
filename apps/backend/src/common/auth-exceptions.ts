@@ -52,3 +52,16 @@ export class DeviceLimitReachedException extends ForbiddenException {
     });
   }
 }
+
+/**
+ * Thrown when a device has been revoked by admin.
+ * HTTP 403 Forbidden
+ */
+export class DeviceRevokedException extends ForbiddenException {
+  constructor() {
+    super({
+      errorCode: 'DEVICE_REVOKED',
+      message: 'This device has been revoked. Please log in again.',
+    });
+  }
+}

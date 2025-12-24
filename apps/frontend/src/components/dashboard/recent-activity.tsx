@@ -176,6 +176,7 @@ export default function RecentActivity({
                     }}
                   >
                     <ListItemText
+                      disableTypography
                       primary={
                         <Box
                           display="flex"
@@ -258,6 +259,7 @@ export default function RecentActivity({
                     }}
                   >
                     <ListItemText
+                      disableTypography
                       primary={
                         <Box
                           display="flex"
@@ -340,6 +342,7 @@ export default function RecentActivity({
                     }}
                   >
                     <ListItemText
+                      disableTypography
                       primary={
                         <Box
                           display="flex"

@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import GlobalLayout, { roboto } from '@/components/global-layout';
 import { Layout } from '@/components/sidebar';
 import DealerTopbarWrapper from '@/components/dealer-topbar-wrapper';
+import { DeviceSessionWrapper } from '@/components/device-session-wrapper';
 
 export const metadata: Metadata = {
   title: 'CRM | Dealer',
@@ -17,6 +18,7 @@ export default async function DealerLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
+  const userId = cookieStore.get('user_id')?.value;
   const LayoutProps = {
     userType: cookieStore.get('user_type')?.value as UserType,
     selectedProfileName: cookieStore.get('selected_profile_name')?.value,
@@ -26,10 +28,12 @@ export default async function DealerLayout({
     <html lang="en">
       <body className={`${roboto.variable} antialiased`}>
         <GlobalLayout>
-          <Layout {...LayoutProps}>
-            <DealerTopbarWrapper />
-            {children}
-          </Layout>
+          <DeviceSessionWrapper userId={userId}>
+            <Layout {...LayoutProps}>
+              <DealerTopbarWrapper />
+              {children}
+            </Layout>
+          </DeviceSessionWrapper>
         </GlobalLayout>
       </body>
     </html>

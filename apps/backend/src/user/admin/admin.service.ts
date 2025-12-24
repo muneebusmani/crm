@@ -15,8 +15,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Admin, AdminRole, User } from '../entities';
+import { UserDevice } from '../entities/user_device.entity';
 import { CustomError } from 'src/common/custom-error';
 import { LeadsService } from 'src/leads/leads.service';
+import { DeviceGateway } from 'src/auth/device.gateway';
+import { DeviceCheckGuard } from 'src/auth/guards/device-check.guard';
 
 @Injectable()
 export class AdminService {
@@ -27,7 +30,10 @@ export class AdminService {
     private adminRepository: Repository<Admin>,
     @InjectRepository(AdminRole)
     private adminRoleRepository: Repository<AdminRole>,
+    @InjectRepository(UserDevice)
+    private deviceRepository: Repository<UserDevice>,
     private leadsService: LeadsService,
+    private deviceGateway: DeviceGateway,
   ) {}
 
   async createAdmin(dto: CreateAdminDto) {
@@ -238,31 +244,106 @@ export class AdminService {
   }
 
   /**
-   * Deactivate a specific device for a dealer.
+   * Deactivate (revoke) a specific device for a dealer.
+   * This triggers real-time logout via WebSocket.
    * @param dealerId - Dealer user ID
    * @param deviceId - Device ID to deactivate
    */
   async deactivateDevice(dealerId: number, deviceId: number): Promise<void> {
     await this.findDealer(dealerId); // Verify dealer exists
-    const user = await this.userRepository.findOne({
-      where: { id: dealerId },
-      relations: ['devices'],
+
+    const device = await this.deviceRepository.findOne({
+      where: { id: deviceId, userId: dealerId },
     });
 
-    const device = user?.devices?.find((d) => d.id === deviceId);
     if (!device) {
       throw new NotFoundException(
         `Device ${deviceId} not found for dealer ${dealerId}`,
       );
     }
 
+    // Update device status
     device.isActive = false;
-    // We need to save via the device repository, but since we don't have it here,
-    // we'll update through a raw query or use the relation
-    await this.userRepository.manager.update(
-      'user_device',
-      { id: deviceId, userId: dealerId },
+    await this.deviceRepository.save(device);
+
+    // Invalidate cache so DeviceCheckGuard blocks immediately
+    DeviceCheckGuard.invalidateCache(dealerId, device.deviceFingerprint);
+
+    // Emit WebSocket event for instant logout
+    this.deviceGateway.emitDeviceRevocation(dealerId, device.deviceFingerprint);
+  }
+
+  /**
+   * Reactivate a previously revoked device.
+   * @param dealerId - Dealer user ID
+   * @param deviceId - Device ID to reactivate
+   */
+  async reactivateDevice(dealerId: number, deviceId: number): Promise<void> {
+    await this.findDealer(dealerId);
+
+    const device = await this.deviceRepository.findOne({
+      where: { id: deviceId, userId: dealerId },
+    });
+
+    if (!device) {
+      throw new NotFoundException(
+        `Device ${deviceId} not found for dealer ${dealerId}`,
+      );
+    }
+
+    device.isActive = true;
+    await this.deviceRepository.save(device);
+
+    // Invalidate cache to allow login on next attempt
+    DeviceCheckGuard.invalidateCache(dealerId, device.deviceFingerprint);
+  }
+
+  /**
+   * Permanently remove a device record.
+   * This frees up a device slot for the dealer.
+   * @param dealerId - Dealer user ID
+   * @param deviceId - Device ID to remove
+   */
+  async removeDevice(dealerId: number, deviceId: number): Promise<void> {
+    await this.findDealer(dealerId);
+
+    const device = await this.deviceRepository.findOne({
+      where: { id: deviceId, userId: dealerId },
+    });
+
+    if (!device) {
+      throw new NotFoundException(
+        `Device ${deviceId} not found for dealer ${dealerId}`,
+      );
+    }
+
+    const fingerprint = device.deviceFingerprint;
+
+    // Delete the device record
+    await this.deviceRepository.remove(device);
+
+    // Invalidate cache
+    DeviceCheckGuard.invalidateCache(dealerId, fingerprint);
+
+    // Emit WebSocket event for instant logout (if device was active)
+    this.deviceGateway.emitDeviceRevocation(dealerId, fingerprint);
+  }
+
+  /**
+   * Deactivate all devices for a dealer.
+   */
+  async deactivateAllDevices(dealerId: number): Promise<void> {
+    await this.findDealer(dealerId);
+
+    await this.deviceRepository.update(
+      { userId: dealerId },
       { isActive: false },
     );
+
+    // Invalidate all cached entries for this user
+    DeviceCheckGuard.invalidateUserCache(dealerId);
+
+    // Emit WebSocket event to all devices
+    this.deviceGateway.emitLogoutAllDevices(dealerId);
   }
 }
