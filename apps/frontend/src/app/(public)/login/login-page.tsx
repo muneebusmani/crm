@@ -19,7 +19,8 @@ import {
   useRef,
 } from 'react';
 import { loginAction } from '@/actions/loginAction';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { setStoredFingerprint } from '@/lib/force-logout';
 
 const Logo = () => (
   <Box
@@ -74,6 +75,7 @@ async function generateFingerprint(): Promise<string> {
 export default function LoginPage() {
   const [message, formAction, isPending] = useActionState(loginAction, null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [fingerprint, setFingerprint] = useState<string>('');
   const fingerprintRef = useRef<HTMLInputElement>(null);
 
@@ -89,16 +91,54 @@ export default function LoginPage() {
       try {
         const fp = await generateFingerprint();
         setFingerprint(fp);
+        // Store the fingerprint for WebSocket and API calls
+        setStoredFingerprint(fp);
       } catch (err) {
         console.warn('Failed to generate fingerprint:', err);
         // Fallback to a random ID if fingerprint generation fails
-        setFingerprint(
-          `fallback-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        );
+        const fallbackFp = `fallback-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        setFingerprint(fallbackFp);
+        setStoredFingerprint(fallbackFp);
       }
     };
     loadFingerprint();
   }, []);
+
+  // Check for redirect reason (e.g., device_revoked)
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'device_revoked') {
+      setSnackbar({
+        open: true,
+        message:
+          'Your session was ended by an administrator. Please log in again.',
+        severity: 'warning',
+      });
+      // Clean up the URL
+      router.replace('/login');
+    } else if (reason === 'all_devices_revoked') {
+      setSnackbar({
+        open: true,
+        message: 'All your devices have been logged out by an administrator.',
+        severity: 'warning',
+      });
+      router.replace('/login');
+    } else if (reason === 'device_removed') {
+      setSnackbar({
+        open: true,
+        message: 'This device is no longer registered. Please log in again.',
+        severity: 'warning',
+      });
+      router.replace('/login');
+    } else if (reason === 'session_expired') {
+      setSnackbar({
+        open: true,
+        message: 'Your session has expired. Please log in again.',
+        severity: 'info',
+      });
+      router.replace('/login');
+    }
+  }, [searchParams, router]);
 
   const handleCloseSnackbar = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));

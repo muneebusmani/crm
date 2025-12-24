@@ -101,15 +101,52 @@ export class AdminController {
   }
 
   /**
-   * Deactivate a specific device for a dealer.
+   * Deactivate (revoke) a specific device for a dealer.
+   * Device record is preserved but user is logged out.
    */
-  @Delete('dealer/:dealerId/devices/:deviceId')
+  @Patch('dealer/:dealerId/devices/:deviceId/revoke')
   @UseGuards(AdminGuard)
-  async deactivateDevice(
+  async revokeDevice(
     @Param('dealerId', ParseIntPipe) dealerId: number,
     @Param('deviceId', ParseIntPipe) deviceId: number,
   ) {
     await this.adminService.deactivateDevice(dealerId, deviceId);
-    return this.buildResponse({ message: 'Device deactivated successfully' });
+    return this.buildResponse({ message: 'Device revoked successfully' });
+  }
+
+  /**
+   * Reactivate a previously revoked device.
+   */
+  @Patch('dealer/:dealerId/devices/:deviceId/reactivate')
+  @UseGuards(AdminGuard)
+  async reactivateDevice(
+    @Param('dealerId', ParseIntPipe) dealerId: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
+  ) {
+    await this.adminService.reactivateDevice(dealerId, deviceId);
+    return this.buildResponse({ message: 'Device reactivated successfully' });
+  }
+
+  /**
+   * Permanently remove a device (frees up device slot).
+   */
+  @Delete('dealer/:dealerId/devices/:deviceId')
+  @UseGuards(AdminGuard)
+  async removeDevice(
+    @Param('dealerId', ParseIntPipe) dealerId: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
+  ) {
+    await this.adminService.removeDevice(dealerId, deviceId);
+    return this.buildResponse({ message: 'Device removed successfully' });
+  }
+
+  /**
+   * Revoke all devices for a dealer (logs out everywhere).
+   */
+  @Patch('dealer/:dealerId/devices/revoke-all')
+  @UseGuards(AdminGuard)
+  async revokeAllDevices(@Param('dealerId', ParseIntPipe) dealerId: number) {
+    await this.adminService.deactivateAllDevices(dealerId);
+    return this.buildResponse({ message: 'All devices revoked successfully' });
   }
 }

@@ -34,3 +34,52 @@ export function isRefreshRequest(url: string): boolean {
     url.includes('/auth/register')
   );
 }
+
+/**
+ * Check if an error indicates the device has been revoked.
+ * This triggers forced logout.
+ */
+export function isDeviceRevokedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const err = error as Record<string, unknown>;
+
+  // Check direct errorCode
+  if (err.errorCode === 'DEVICE_REVOKED') return true;
+
+  // Check nested response
+  const response = err.response as Record<string, unknown> | undefined;
+  if (response?.errorCode === 'DEVICE_REVOKED') return true;
+
+  // Check data.errorCode (common Axios format)
+  const data = err.data as Record<string, unknown> | undefined;
+  if (data?.errorCode === 'DEVICE_REVOKED') return true;
+
+  return false;
+}
+
+/**
+ * Extract error code from API error response
+ */
+export function getErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+
+  const err = error as Record<string, unknown>;
+
+  // Direct errorCode
+  if (typeof err.errorCode === 'string') return err.errorCode;
+
+  // Nested response.errorCode
+  const response = err.response as Record<string, unknown> | undefined;
+  if (response && typeof response.errorCode === 'string') {
+    return response.errorCode;
+  }
+
+  // Nested data.errorCode
+  const data = err.data as Record<string, unknown> | undefined;
+  if (data && typeof data.errorCode === 'string') {
+    return data.errorCode;
+  }
+
+  return null;
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -21,6 +21,10 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -29,6 +33,9 @@ import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import BlockIcon from '@mui/icons-material/Block';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 interface UserDevice {
   id: number;
@@ -49,6 +56,14 @@ interface DealerDeviceManagerProps {
   onClose: () => void;
 }
 
+type ActionType = 'revoke' | 'reactivate' | 'remove';
+
+interface ConfirmState {
+  deviceId: number;
+  action: ActionType;
+  deviceName: string;
+}
+
 const getPlatformIcon = (platform: string) => {
   switch (platform) {
     case 'android':
@@ -64,6 +79,38 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString();
 };
 
+const ACTION_LABELS: Record<
+  ActionType,
+  {
+    title: string;
+    description: string;
+    buttonText: string;
+    color: 'error' | 'success' | 'warning';
+  }
+> = {
+  revoke: {
+    title: 'Revoke Device Access?',
+    description:
+      'This will immediately log out this device. The device record is preserved and can be reactivated later.',
+    buttonText: 'Revoke',
+    color: 'warning',
+  },
+  reactivate: {
+    title: 'Reactivate Device?',
+    description:
+      'This will allow the user to log in from this device again without using a new device slot.',
+    buttonText: 'Reactivate',
+    color: 'success',
+  },
+  remove: {
+    title: 'Remove Device Permanently?',
+    description:
+      'This will permanently delete the device record and free up a device slot. This action cannot be undone.',
+    buttonText: 'Remove',
+    color: 'error',
+  },
+};
+
 export default function DealerDeviceManager({
   dealerId,
   dealerName,
@@ -72,11 +119,15 @@ export default function DealerDeviceManager({
 }: DealerDeviceManagerProps) {
   const [devices, setDevices] = useState<UserDevice[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{
+    element: HTMLElement;
+    device: UserDevice;
+  } | null>(null);
 
-  const fetchDevices = async () => {
+  const fetchDevices = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -96,46 +147,85 @@ export default function DealerDeviceManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, [dealerId]);
 
-  const handleDeleteDevice = async (deviceId: number) => {
+  const handleDeviceAction = async (deviceId: number, action: ActionType) => {
     try {
-      setDeleting(true);
+      setActionLoading(true);
+      setError(null);
 
-      const response = await fetch(
-        `/api/admin/dealers/${dealerId}/devices/${deviceId}`,
-        {
-          method: 'DELETE',
-          credentials: 'include',
-        },
-      );
+      let response: Response;
 
-      if (!response.ok) {
-        throw new Error('Failed to revoke device');
+      if (action === 'remove') {
+        response = await fetch(
+          `/api/admin/dealers/${dealerId}/devices/${deviceId}`,
+          {
+            method: 'DELETE',
+            credentials: 'include',
+          },
+        );
+      } else {
+        response = await fetch(
+          `/api/admin/dealers/${dealerId}/devices/${deviceId}`,
+          {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action }),
+          },
+        );
       }
 
-      // Refresh the list
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to ${action} device`);
+      }
+
       await fetchDevices();
-      setDeleteConfirm(null);
+      setConfirmState(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to revoke device');
+      setError(
+        err instanceof Error ? err.message : `Failed to ${action} device`,
+      );
     } finally {
-      setDeleting(false);
+      setActionLoading(false);
     }
+  };
+
+  const openConfirmDialog = (device: UserDevice, action: ActionType) => {
+    setMenuAnchor(null);
+    setConfirmState({
+      deviceId: device.id,
+      action,
+      deviceName: device.deviceName || 'Unknown Device',
+    });
+  };
+
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    device: UserDevice,
+  ) => {
+    setMenuAnchor({ element: event.currentTarget, device });
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
   };
 
   useEffect(() => {
     if (open && dealerId) {
       fetchDevices();
     }
-  }, [open, dealerId]);
+  }, [open, dealerId, fetchDevices]);
 
   const activeDevices = devices.filter((d) => d.isActive);
   const inactiveDevices = devices.filter((d) => !d.isActive);
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
         <DialogTitle>
           <Box
             display="flex"
@@ -158,7 +248,11 @@ export default function DealerDeviceManager({
 
         <DialogContent>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+              onClose={() => setError(null)}
+            >
               {error}
             </Alert>
           )}
@@ -188,7 +282,7 @@ export default function DealerDeviceManager({
                       <TableCell>Location</TableCell>
                       <TableCell>IP Address</TableCell>
                       <TableCell>Last Login</TableCell>
-                      <TableCell align="right">Action</TableCell>
+                      <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -233,11 +327,24 @@ export default function DealerDeviceManager({
                         </TableCell>
                         <TableCell>{formatDate(device.lastLoginAt)}</TableCell>
                         <TableCell align="right">
-                          <Tooltip title="Revoke Device Access">
+                          <Tooltip title="Revoke (Logout)">
+                            <IconButton
+                              color="warning"
+                              size="small"
+                              onClick={() =>
+                                openConfirmDialog(device, 'revoke')
+                              }
+                            >
+                              <BlockIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Remove Permanently">
                             <IconButton
                               color="error"
                               size="small"
-                              onClick={() => setDeleteConfirm(device.id)}
+                              onClick={() =>
+                                openConfirmDialog(device, 'remove')
+                              }
                             >
                               <DeleteIcon />
                             </IconButton>
@@ -276,11 +383,12 @@ export default function DealerDeviceManager({
                           <TableCell>Location</TableCell>
                           <TableCell>Last Login</TableCell>
                           <TableCell>Status</TableCell>
+                          <TableCell align="right">Actions</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {inactiveDevices.map((device) => (
-                          <TableRow key={device.id} sx={{ opacity: 0.6 }}>
+                          <TableRow key={device.id} sx={{ opacity: 0.7 }}>
                             <TableCell>
                               {getPlatformIcon(device.platform)}
                             </TableCell>
@@ -298,6 +406,14 @@ export default function DealerDeviceManager({
                                 color="default"
                               />
                             </TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleMenuOpen(e, device)}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -314,31 +430,76 @@ export default function DealerDeviceManager({
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteConfirm !== null}
-        onClose={() => setDeleteConfirm(null)}
+      {/* Actions Menu for Revoked Devices */}
+      <Menu
+        anchorEl={menuAnchor?.element}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
       >
-        <DialogTitle>Revoke Device Access?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            This will immediately log out this device and free up a device slot.
-            The user will need to log in again from an available slot.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(null)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => deleteConfirm && handleDeleteDevice(deleteConfirm)}
-            color="error"
-            variant="contained"
-            disabled={deleting}
-          >
-            {deleting ? <CircularProgress size={20} /> : 'Revoke'}
-          </Button>
-        </DialogActions>
+        <MenuItem
+          onClick={() =>
+            menuAnchor && openConfirmDialog(menuAnchor.device, 'reactivate')
+          }
+        >
+          <ListItemIcon>
+            <CheckCircleIcon color="success" />
+          </ListItemIcon>
+          <ListItemText>Reactivate</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() =>
+            menuAnchor && openConfirmDialog(menuAnchor.device, 'remove')
+          }
+        >
+          <ListItemIcon>
+            <DeleteIcon color="error" />
+          </ListItemIcon>
+          <ListItemText>Remove Permanently</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmState !== null}
+        onClose={() => setConfirmState(null)}
+      >
+        {confirmState && (
+          <>
+            <DialogTitle>
+              {ACTION_LABELS[confirmState.action].title}
+            </DialogTitle>
+            <DialogContent>
+              <Typography gutterBottom>
+                <strong>Device:</strong> {confirmState.deviceName}
+              </Typography>
+              <Typography color="text.secondary">
+                {ACTION_LABELS[confirmState.action].description}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => setConfirmState(null)}
+                disabled={actionLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  handleDeviceAction(confirmState.deviceId, confirmState.action)
+                }
+                color={ACTION_LABELS[confirmState.action].color}
+                variant="contained"
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  ACTION_LABELS[confirmState.action].buttonText
+                )}
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </>
   );

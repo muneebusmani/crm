@@ -99,6 +99,7 @@ export async function loginAction(_, formData: FormData) {
     if (!accessToken) console.error('Token not sent from API');
 
     cookieStore.set('id', id.toString(), commonOptions);
+    cookieStore.set('user_id', id.toString(), commonOptions);
     cookieStore.set('user_type', userType, commonOptions);
     cookieStore.set('access_token', accessToken, commonOptions);
     cookieStore.set('refresh_token', refreshToken, commonOptions);

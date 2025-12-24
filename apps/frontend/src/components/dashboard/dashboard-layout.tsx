@@ -32,27 +32,27 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
   const loadDashboardData = useCallback(async () => {
     try {
       setError(null);
-      console.log('🔍 Loading dashboard data from /analytics/dashboard...');
+      // console.log('🔍 Loading dashboard data from /analytics/dashboard...');
       const response = await get<{
         data?: DashboardStats;
         success: boolean;
         error?: string;
       }>('/analytics/dashboard');
 
-      console.log('📦 Dashboard response:', response);
+      // console.log('📦 Dashboard response:', response);
 
       if (response.success && response.data) {
-        console.log('✅ Dashboard data loaded successfully:', response.data);
+        // console.log('✅ Dashboard data loaded successfully:', response.data);
         setStats(response.data);
       } else {
-        console.error('❌ Dashboard response failed:', response);
+        // console.error('❌ Dashboard response failed:', response);
         setError(
           `Failed to load dashboard data: ${response.error || 'Unknown error'}`,
         );
       }
     } catch (err) {
-      console.error('💥 Dashboard error caught:', err);
-      console.error('Error details:', JSON.stringify(err, null, 2));
+      // console.error('💥 Dashboard error caught:', err);
+      // console.error('Error details:', JSON.stringify(err, null, 2));
       setError(
         `Failed to load dashboard data: ${err instanceof Error ? err.message : String(err)}`,
       );
