@@ -131,8 +131,8 @@ export class InvoiceController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     try {
-      // Get the actual dealer ID from the user's dealer relationship
-      const dealerId = req.user.dealer?.id || req.user.id;
+      // Use user.id (User ID) - the service handles dealer lookup internally
+      const dealerId = req.user.id;
       console.log(
         '🔍 Controller.downloadPdf - Received DTO:',
         JSON.stringify(createInvoiceDto, null, 2),

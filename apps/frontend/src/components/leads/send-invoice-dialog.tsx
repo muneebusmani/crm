@@ -454,16 +454,17 @@ export default function SendInvoiceDialog({
           <Box sx={{ display: 'flex', gap: 3 }}>
             {/* Left: Invoice Preview */}
             <Box
-              sx={{
+              sx={(theme) => ({
                 flex: 1,
-                borderTop: '8px solid theme.palette.primary.main',
-                borderLeft: '8px solid theme.palette.grey[600]',
-                borderRight: '2px solid theme.palette.primary.main',
-                borderBottom: '2px solid theme.palette.primary.main',
+                borderTop: '8px solid #007b8f',
+                borderLeft: `8px solid ${theme.palette.mode === 'dark' ? '#888' : '#666'}`,
+                borderRight: '2px solid #007b8f',
+                borderBottom: '2px solid #007b8f',
                 borderRadius: 2,
                 p: 3,
-                bgcolor: 'background.paper',
-              }}
+                bgcolor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
+                color: theme.palette.text.primary,
+              })}
             >
               {/* Header */}
               <Box
@@ -471,19 +472,19 @@ export default function SendInvoiceDialog({
               >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box
-                    sx={{
+                    sx={(theme) => ({
                       width: 80,
                       height: 60,
-                      border: '1px solid theme.palette.divider',
+                      border: `1px solid ${theme.palette.mode === 'dark' ? '#555' : '#ddd'}`,
                       borderRadius: 1,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 10,
-                      color: 'text.secondary',
+                      color: theme.palette.text.secondary,
                       overflow: 'hidden',
                       position: 'relative',
-                    }}
+                    })}
                   >
                     {dealerProfile?.dealer?.logo ? (
                       <Image
@@ -500,11 +501,14 @@ export default function SendInvoiceDialog({
                   </Box>
                   <Typography
                     variant="body2"
-                    sx={{ fontWeight: 600, color: 'theme.palette.primary.main' }}
+                    sx={{ fontWeight: 600, color: '#007b8f' }}
                   >
                     {dealerProfile?.dealer?.name || 'Company Name'}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    sx={(theme) => ({ color: theme.palette.text.secondary })}
+                  >
                     {dealerProfile?.dealer?.location ||
                       'Plot 145, street 1, london'}
                   </Typography>
@@ -513,7 +517,7 @@ export default function SendInvoiceDialog({
                 <Box sx={{ textAlign: 'right' }}>
                   <Typography
                     variant="h5"
-                    sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
                   >
                     Invoice
                   </Typography>
@@ -533,7 +537,7 @@ export default function SendInvoiceDialog({
               {/* Vehicle Info */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
               >
                 Vehicle Info:
               </Typography>
@@ -574,7 +578,7 @@ export default function SendInvoiceDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
                   >
                     Buyer Info:
                   </Typography>
@@ -596,7 +600,7 @@ export default function SendInvoiceDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                    sx={{ fontWeight: 600, mb: 1, color: '#007b8f' }}
                   >
                     Recovery & Collection:
                   </Typography>
@@ -628,36 +632,36 @@ export default function SendInvoiceDialog({
               <TableContainer sx={{ mb: 2 }}>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ bgcolor: 'theme.palette.primary.main' }}>
-                      <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText, fontWeight: 600 }}>
+                    <TableRow sx={{ bgcolor: '#007b8f' }}>
+                      <TableCell sx={{ color: '#fff', fontWeight: 600 }}>
                         Name
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ color: (theme) => theme.palette.primary.contrastText, fontWeight: 600 }}
+                        sx={{ color: '#fff', fontWeight: 600 }}
                       >
                         Rate
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ color: (theme) => theme.palette.primary.contrastText, fontWeight: 600 }}
+                        sx={{ color: '#fff', fontWeight: 600 }}
                       >
                         Qty
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ color: (theme) => theme.palette.primary.contrastText, fontWeight: 600 }}
+                        sx={{ color: '#fff', fontWeight: 600 }}
                       >
                         Price
                       </TableCell>
-                      <TableCell sx={{ color: (theme) => theme.palette.primary.contrastText }}></TableCell>
+                      <TableCell sx={{ color: '#fff' }}></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {items.map((it, index) => (
                       <TableRow
                         key={it.id}
-                        sx={{ borderBottom: '1px solid theme.palette.primary.main' }}
+                        sx={{ borderBottom: '1px solid #007b8f' }}
                       >
                         <TableCell>
                           <TextField
@@ -738,8 +742,8 @@ export default function SendInvoiceDialog({
                 variant="contained"
                 sx={{
                   mb: 2,
-                  bgcolor: 'theme.palette.primary.main',
-                  '&:hover': { bgcolor: 'theme.palette.primary.dark' },
+                  bgcolor: '#007b8f',
+                  '&:hover': { bgcolor: '#005f6b' },
                 }}
               >
                 Add More
@@ -794,7 +798,7 @@ export default function SendInvoiceDialog({
                       <Typography variant="body2">%</Typography>
                     </Box>
                   </Box>
-                  <Divider sx={{ my: 1, borderColor: 'theme.palette.primary.main' }} />
+                  <Divider sx={{ my: 1, borderColor: '#007b8f' }} />
                   <Box
                     sx={{ display: 'flex', justifyContent: 'space-between' }}
                   >
@@ -811,13 +815,17 @@ export default function SendInvoiceDialog({
               {/* Bank Details */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: '#007b8f',
+                }}
               >
                 Bank Details:
               </Typography>
               <Box
                 sx={{
-                  border: '1px solid theme.palette.primary.main',
+                  border: '1px solid #007b8f',
                   borderRadius: 1,
                   p: 2,
                   mb: 2,
@@ -863,7 +871,11 @@ export default function SendInvoiceDialog({
               {/* Seller Note */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: '#007b8f',
+                }}
               >
                 Seller Note:
               </Typography>
@@ -880,7 +892,11 @@ export default function SendInvoiceDialog({
               {/* Quotation Terms */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: '#007b8f',
+                }}
               >
                 Quotation Terms:
               </Typography>
@@ -896,7 +912,11 @@ export default function SendInvoiceDialog({
               {/* Sales Terms */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: 'theme.palette.primary.main' }}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: '#007b8f',
+                }}
               >
                 Sales Terms:
               </Typography>
@@ -912,13 +932,15 @@ export default function SendInvoiceDialog({
 
             {/* Right: Customer Card */}
             <Box
-              sx={{
+              sx={(theme) => ({
                 width: 280,
-                border: '2px solid theme.palette.text.primary',
+                border: `2px solid ${theme.palette.mode === 'dark' ? '#555' : '#333'}`,
                 borderRadius: 2,
                 p: 2,
                 height: 'fit-content',
-              }}
+                bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#fff',
+                color: theme.palette.text.primary,
+              })}
             >
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 {lead?.name || 'John doe'}
