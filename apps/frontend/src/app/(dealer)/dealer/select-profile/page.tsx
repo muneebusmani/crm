@@ -33,9 +33,14 @@ export default function SelectProfilePage() {
       const result = await selectProfileAction(profileId);
 
       if (result.success) {
-        // Use Next.js router for client-side navigation to preserve WebSocket connection
-        // router.refresh() ensures the middleware sees the updated cookies
-        router.refresh();
+        // Update local state to show selection immediately
+        setSelectedProfileId(profileId);
+
+        // Small delay to ensure cookies are fully set before navigation
+        // This prevents the infinite loading issue while preserving WebSocket connections
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Navigate to dealer dashboard - the middleware will pick up the new cookies
         router.push('/dealer');
       } else {
         setError(result.message || 'Failed to select profile');

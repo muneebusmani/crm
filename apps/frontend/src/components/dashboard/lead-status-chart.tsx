@@ -67,10 +67,41 @@ export default function LeadStatusChart({ data }: LeadStatusChartProps) {
   // Calculate total
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
-  // Custom label for pie slices
+  // Custom label for pie slices - only show if >5%
   const renderLabel = (entry: any) => {
-    const percent = ((entry.value / total) * 100).toFixed(0);
-    return `${percent}%`;
+    const percent = (entry.value / total) * 100;
+    // Only show label if slice is > 5% to avoid clutter
+    if (percent < 5) return '';
+    return `${percent.toFixed(1)}%`;
+  };
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const percent = ((data.value / total) * 100).toFixed(1);
+      return (
+        <Box
+          sx={{
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
+            p: 1.5,
+          }}
+        >
+          <Typography variant="body2" fontWeight="bold">
+            {data.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Count: {data.value.toLocaleString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Percentage: {percent}%
+          </Typography>
+        </Box>
+      );
+    }
+    return null;
   };
 
   return (
@@ -96,22 +127,21 @@ export default function LeadStatusChart({ data }: LeadStatusChartProps) {
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: theme.palette.background.paper,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: theme.shape.borderRadius,
-              }}
-            />
+            <Tooltip content={<CustomTooltip />} />
             <Legend
               verticalAlign="bottom"
               height={36}
               iconType="circle"
-              formatter={(value, entry: any) => (
-                <span style={{ color: theme.palette.text.primary }}>
-                  {value} ({entry.payload.value})
-                </span>
-              )}
+              formatter={(value, entry: any) => {
+                const percent = ((entry.payload.value / total) * 100).toFixed(
+                  1,
+                );
+                return (
+                  <span style={{ color: theme.palette.text.primary }}>
+                    {value.toUpperCase()} ({entry.payload.value}) - {percent}%
+                  </span>
+                );
+              }}
             />
           </PieChart>
         </ResponsiveContainer>

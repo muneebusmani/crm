@@ -33,7 +33,6 @@ import {
   Alert,
   Tooltip,
   IconButton,
-  Divider,
 } from '@mui/material';
 import { get, post, put } from '@/lib/api';
 import {
@@ -1494,8 +1493,15 @@ const HqLeadsAdminPage = () => {
             </Paper>
 
             <Typography variant="subtitle2" gutterBottom>
-              Select Dealer to Assign
+              Select Dealer to Assign (Pay-Per-Lead)
             </Typography>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="caption">
+                <strong>Pay-Per-Lead:</strong> This manual assignment does NOT
+                count against the dealer&apos;s daily quota. Only dealers with
+                capped quotas (Silver, Bronze) are shown.
+              </Typography>
+            </Alert>
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>Choose Dealer</InputLabel>
               <Select
@@ -1503,8 +1509,12 @@ const HqLeadsAdminPage = () => {
                 label="Choose Dealer"
                 onChange={(e) => setSelectedDealerId(e.target.value as number)}
               >
+                {/* Only show dealers with CAPPED quotas (exclude unlimited/Gold) */}
+                {/* All capped dealers are eligible since Pay-Per-Lead bypasses quota */}
                 {dealerHqStatuses
-                  .filter((d) => d.canReceiveMore)
+                  .filter(
+                    (d) => d.effectiveQuota !== -1 && d.effectiveQuota !== 0,
+                  )
                   .map((dealer) => (
                     <MenuItem key={dealer.dealerId} value={dealer.dealerId}>
                       <Box
@@ -1517,41 +1527,23 @@ const HqLeadsAdminPage = () => {
                       >
                         <Typography>{dealer.dealerName}</Typography>
                         <Chip
-                          label={`${dealer.assignedToday}/${dealer.effectiveQuota === -1 ? '∞' : dealer.effectiveQuota}`}
+                          label={`${dealer.tierName} (${dealer.assignedToday}/${dealer.effectiveQuota})`}
                           size="small"
-                          color="success"
+                          color={dealer.canReceiveMore ? 'success' : 'warning'}
                         />
                       </Box>
                     </MenuItem>
                   ))}
-                <Divider />
-                {dealerHqStatuses
-                  .filter((d) => !d.canReceiveMore)
-                  .map((dealer) => (
-                    <MenuItem
-                      key={dealer.dealerId}
-                      value={dealer.dealerId}
-                      disabled
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Typography color="text.secondary">
-                          {dealer.dealerName}
-                        </Typography>
-                        <Chip
-                          label={`At Limit (${dealer.assignedToday}/${dealer.effectiveQuota})`}
-                          size="small"
-                          color="warning"
-                        />
-                      </Box>
-                    </MenuItem>
-                  ))}
+                {/* Show message if no capped dealers available */}
+                {dealerHqStatuses.filter(
+                  (d) => d.effectiveQuota !== -1 && d.effectiveQuota !== 0,
+                ).length === 0 && (
+                  <MenuItem disabled>
+                    <Typography color="text.secondary">
+                      No capped dealers available
+                    </Typography>
+                  </MenuItem>
+                )}
               </Select>
             </FormControl>
 
@@ -1571,7 +1563,7 @@ const HqLeadsAdminPage = () => {
                   color="text.secondary"
                   gutterBottom
                 >
-                  Selected Dealer
+                  Selected Dealer (Pay-Per-Lead)
                 </Typography>
                 {(() => {
                   const dealer = dealerHqStatuses.find(
@@ -1584,11 +1576,15 @@ const HqLeadsAdminPage = () => {
                         {dealer.dealerName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Quota: {dealer.assignedToday} /{' '}
-                        {dealer.effectiveQuota === -1
-                          ? 'Unlimited'
-                          : dealer.effectiveQuota}{' '}
-                        today
+                        Current quota usage: {dealer.assignedToday} /{' '}
+                        {dealer.effectiveQuota} today
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        color="primary"
+                      >
+                        ✓ This assignment will NOT affect their quota
                       </Typography>
                     </Box>
                   );

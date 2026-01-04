@@ -573,20 +573,36 @@ export class LeadsService {
     return this.getEffectiveHqQuota(dealerEntityId);
   }
 
-  // Get today's HQ lead visibility count for a dealer
-  async getTodayHqLeadCount(dealerEntityId: number): Promise<number> {
+  /**
+   * Get today's HQ lead visibility count for a dealer.
+   * @param dealerEntityId - The dealer's entity ID
+   * @param excludeManualOverrides - If true, excludes Pay-Per-Lead manual assignments from count
+   */
+  async getTodayHqLeadCount(
+    dealerEntityId: number,
+    excludeManualOverrides = false,
+  ): Promise<number> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return await this.userRepository.manager
+    const query = this.userRepository.manager
       .createQueryBuilder(HqLeadVisibility, 'v')
       .where('v.dealerId = :dealerId', { dealerId: dealerEntityId })
-      .andWhere('v.assignedDate = :today', { today })
-      .getCount();
+      .andWhere('v.assignedDate = :today', { today });
+
+    // Exclude manual overrides (Pay-Per-Lead) from quota counting
+    if (excludeManualOverrides) {
+      query.andWhere('v.isManualOverride = :isManual', { isManual: false });
+    }
+
+    return await query.getCount();
   }
 
-  // Check if a dealer has reached their daily HQ lead quota (using tier-based limits)
-  // Note: This method expects Dealer entity ID, not User ID
+  /**
+   * Check if a dealer has reached their daily HQ lead quota (using tier-based limits).
+   * Note: This method expects Dealer entity ID, not User ID.
+   * Manual override (Pay-Per-Lead) assignments are excluded from quota counting.
+   */
   async checkHqLeadQuota(dealerEntityId: number): Promise<{
     canAssign: boolean;
     assignedCount: number;
@@ -601,12 +617,17 @@ export class LeadsService {
 
     // If unlimited (-1), allow assignment
     if (dailyLimit === -1) {
-      const assignedToday = await this.getTodayHqLeadCount(dealerEntityId);
+      // For unlimited dealers, count all assignments (including manual)
+      const assignedToday = await this.getTodayHqLeadCount(
+        dealerEntityId,
+        false,
+      );
       return { canAssign: true, assignedCount: assignedToday, dailyLimit: -1 };
     }
 
-    // Count how many HQ leads are visible to this dealer today (using new 1:Many table)
-    const assignedToday = await this.getTodayHqLeadCount(dealerEntityId);
+    // Count only auto-assigned leads (exclude manual overrides/Pay-Per-Lead)
+    // This ensures manual assignments don't consume the dealer's daily quota
+    const assignedToday = await this.getTodayHqLeadCount(dealerEntityId, true);
     const canAssign = assignedToday < dailyLimit;
 
     return {
@@ -639,8 +660,14 @@ export class LeadsService {
     }
   }
 
-  // Assign an HQ lead to a dealer if they have quota available
-  // This uses the new 1:Many visibility system
+  /**
+   * Manually assign an HQ lead to a dealer (Pay-Per-Lead).
+   * This is a MANUAL assignment that bypasses quota limits entirely.
+   * The assignment is flagged as isManualOverride=true and does NOT count
+   * against the dealer's daily quota for the 1 AM UTC auto-run.
+   *
+   * This uses the new 1:Many visibility system.
+   */
   async assignHqLeadToDealer(
     leadId: number,
     dealerId: number,
@@ -654,15 +681,9 @@ export class LeadsService {
       throw new CustomError('Lead is not an HQ lead', 400);
     }
 
-    const quotaCheck = await this.checkHqLeadQuota(dealerId);
-    if (!quotaCheck.canAssign) {
-      throw new CustomError(
-        `Dealer has reached daily HQ lead quota. Limit: ${quotaCheck.dailyLimit}, Assigned: ${quotaCheck.assignedCount}`,
-        400,
-      );
-    }
-
-    // Create visibility record (manual assignment bypasses quota)
+    // Manual assignments (Pay-Per-Lead) bypass quota entirely
+    // No quota check needed - these are paid additional leads
+    // The recordHqLeadAssignment sets isManualOverride=true
     await this.recordHqLeadAssignment(dealerId, leadId);
 
     return true;
@@ -795,11 +816,13 @@ export class LeadsService {
       .getMany();
 
     // Get today's visibility counts for all dealers (using new 1:Many table)
+    // Exclude manual overrides (Pay-Per-Lead) from quota tracking
     const assignmentCounts = await this.userRepository.manager
       .createQueryBuilder(HqLeadVisibility, 'v')
       .select('v.dealerId', 'dealerId')
       .addSelect('COUNT(*)', 'count')
       .where('v.assignedDate = :today', { today })
+      .andWhere('v.isManualOverride = :isManual', { isManual: false })
       .groupBy('v.dealerId')
       .getRawMany();
 
@@ -948,16 +971,53 @@ export class LeadsService {
     };
   }
 
-  // Get HQ leads that are not visible to ANY dealer (truly unassigned)
+  /**
+   * Get HQ leads that are not visible to ALL eligible dealers.
+   * These are "leftover" leads that some dealers missed due to quota limits.
+   *
+   * A lead is considered "unassigned" (available for manual assignment) if:
+   * 1. It's an HQ lead
+   * 2. It's not deleted
+   * 3. At least one dealer with non-zero HQ quota has NOT received it
+   */
   async getUnassignedHqLeads(): Promise<Lead[]> {
-    return await this.leadRepo
+    // First, get all dealers with non-zero HQ quota (eligible for HQ leads)
+    const eligibleDealers = await this.userRepository.manager
+      .createQueryBuilder(Dealer, 'dealer')
+      .leftJoinAndSelect('dealer.tier', 'tier')
+      .getMany();
+
+    // Filter to dealers with effective quota > 0 or unlimited (-1)
+    const eligibleDealerIds = eligibleDealers
+      .filter((dealer) => {
+        const quota =
+          dealer.customHqQuota !== null && dealer.customHqQuota !== undefined
+            ? dealer.customHqQuota
+            : (dealer.tier?.hqLeadQuota ?? 0);
+        return quota !== 0; // Include unlimited (-1) and positive quotas
+      })
+      .map((d) => d.id);
+
+    if (eligibleDealerIds.length === 0) {
+      // No eligible dealers, so no leads can be "unassigned"
+      return [];
+    }
+
+    // Find HQ leads where NOT ALL eligible dealers have visibility
+    // Using a subquery to count visibility vs total eligible dealers
+    const leads = await this.leadRepo
       .createQueryBuilder('lead')
       .leftJoin('lead.hqVisibility', 'v')
       .where('lead.isHqLead = :isHq', { isHq: true })
       .andWhere('lead.is_deleted = :isDeleted', { isDeleted: false })
-      .andWhere('v.leadId IS NULL')
+      .groupBy('lead.id')
+      .having('COUNT(DISTINCT v.dealerId) < :totalEligible', {
+        totalEligible: eligibleDealerIds.length,
+      })
       .orderBy('lead.createdAt', 'DESC')
       .getMany();
+
+    return leads;
   }
 
   // Create HQ lead visibility record (helper method)

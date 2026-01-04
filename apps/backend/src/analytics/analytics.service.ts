@@ -68,7 +68,9 @@ export class AnalyticsService {
         dealerId ? this.getDealerCredits(dealerId) : Promise.resolve(undefined),
         dealerId ? this.getDealerTier(dealerId) : Promise.resolve(undefined),
         dealerId ? this.getTotalRevenue(dealerId) : Promise.resolve(undefined),
-        dealerId ? this.getPendingQuotationsCount(dealerId) : Promise.resolve(undefined),
+        dealerId
+          ? this.getPendingQuotationsCount(dealerId)
+          : Promise.resolve(undefined),
       ]);
 
       return {
@@ -173,13 +175,13 @@ export class AnalyticsService {
       where: { id: dealerId },
       relations: ['dealer'],
     });
-    
+
     if (!user?.dealer?.tierId) return undefined;
 
-    const tier = await this.dealerTierRepo.findOne({ 
-      where: { id: user.dealer.tierId } 
+    const tier = await this.dealerTierRepo.findOne({
+      where: { id: user.dealer.tierId },
     });
-    
+
     return tier?.name;
   }
 
@@ -285,7 +287,26 @@ export class AnalyticsService {
       const trackedLeadsCount = parseInt(trackedResult?.count || '0', 10);
 
       // Calculate new leads (not in pivot table)
-      const newLeadsCount = totalLeads - trackedLeadsCount;
+      // For dealers: exclude HQ leads from NEW count (they only see regular new leads)
+      // For admin: include all leads (both regular and HQ leads)
+      let newLeadsCount = 0;
+
+      if (dealerId) {
+        // Dealer: Count only regular (non-HQ) new leads assigned to them
+        const newLeadsQuery = this.leadRepo
+          .createQueryBuilder('lead')
+          .innerJoin('lead.dealerLeads', 'dealerLead')
+          .where('"dealerLead"."userId" = :dealerId', { dealerId })
+          .andWhere('lead.is_deleted = false')
+          .andWhere('lead.isHqLead = false') // Exclude HQ leads for dealers
+          .getCount();
+
+        const dealerTotalRegularLeads = await newLeadsQuery;
+        newLeadsCount = dealerTotalRegularLeads - trackedLeadsCount;
+      } else {
+        // Admin: Include all leads (regular + HQ)
+        newLeadsCount = totalLeads - trackedLeadsCount;
+      }
 
       const statusCounts = results.map((row) => ({
         status: row.status || 'unknown',

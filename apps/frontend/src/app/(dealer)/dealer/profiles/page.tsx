@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
@@ -37,9 +38,11 @@ import {
   Work,
   StarBorder,
   Star,
+  ArrowBack,
 } from '@mui/icons-material';
 import type { CompanyUser, CreateCompanyUserDto } from '@crm/types';
 export default function ProfilesPage() {
+  const router = useRouter();
   const [profiles, setProfiles] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,13 +174,22 @@ export default function ProfilesPage() {
         alignItems="center"
         mb={4}
       >
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            Company Profiles
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage team members who can access the dealer portal
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <IconButton
+            onClick={() => router.back()}
+            sx={{ mt: 0.5 }}
+            aria-label="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Company Profiles
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage team members who can access the dealer portal
+            </Typography>
+          </Box>
         </Box>
         <Button
           variant="contained"

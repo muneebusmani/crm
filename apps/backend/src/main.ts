@@ -28,7 +28,7 @@ async function bootstrap() {
     await supabaseStorage.verifyBucket();
   } catch {
     console.warn(
-      '⚠️  Supabase Storage not configured. File uploads will use local storage.',
+      '!  Supabase Storage not configured. File uploads will use local storage.',
     );
   }
 
