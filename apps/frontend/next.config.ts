@@ -53,6 +53,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/storage/v1/object/**', // Supabase Storage path (including signed URLs)
       },
+      {
+        protocol: 'https',
+        hostname: 'gfrnxvolaqbfalerfhsr.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/**', // Supabase Storage path (including signed URLs)
+      },
     ],
   },
 };

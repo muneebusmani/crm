@@ -546,19 +546,19 @@ export default function SendQuotationDialog({
                 }}
               >
                 <Typography variant="body2">
-                  Reg No: {lead?.vehicle_reg || lead?.vehicle_vrm || '23A13'}
+                  Reg No: {lead?.vehicle_vrm || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  Make: {lead?.vehicle_brand || 'Audi'}
+                  Make: {lead?.vehicle_brand || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  Model: {lead?.vehicle_model || 'm3'}
+                  Model: {lead?.vehicle_model || '-'}
                 </Typography>
-                <Typography variant="body2">Reg Year: 2016</Typography>
+                <Typography variant="body2">Reg Year: {lead?.vehicle_reg || lead?.vehicle_vrm || '-'}</Typography>
                 <Typography variant="body2">
-                  Fuel Type: {lead?.fuelType || 'Petrol'}
+                  Fuel Type: {lead?.fuelType || '-'}
                 </Typography>
-                <Typography variant="body2">Car Type: Engine</Typography>
+                <Typography variant="body2">Series: {lead?.vehicle_series || '-'}</Typography>
               </Box>
 
               {/* Buyer Info & Recovery & Collection - Side by Side */}
@@ -914,7 +914,11 @@ export default function SendQuotationDialog({
             <Box
               sx={{
                 width: 280,
+<<<<<<< HEAD
                 border: '2px solid theme.palette.text.primary',
+=======
+                border: `2px solid ${theme.palette.mode === 'dark' ? '#555' : '#007b8f'}`,
+>>>>>>> 9ac36e2 (resolving quotation incorrect values issue)
                 borderRadius: 2,
                 p: 2,
                 height: 'fit-content',
