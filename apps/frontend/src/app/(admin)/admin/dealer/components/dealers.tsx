@@ -13,6 +13,7 @@ import {
   Edit as EditIcon,
   FilterList as FilterListIcon,
   ImportExport as ImportExportIcon,
+  Login as LoginIcon,
   Mail as MailIcon,
   MoreVert as MoreVertIcon,
   Phone as PhoneIcon,
@@ -70,6 +71,7 @@ const Dealers = ({ token }: { token: string }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [deviceManagerDealer, setDeviceManagerDealer] =
     useState<DealerFlatData | null>(null);
+  const [impersonatingDealerId, setImpersonatingDealerId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDealers = async () => {
@@ -550,6 +552,27 @@ const Dealers = ({ token }: { token: string }) => {
     } catch (err) {
       console.error('Error in handleDelete:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete dealer');
+    }
+  };
+
+  const handleLoginAsDealer = async (dealerId: number) => {
+    try {
+      setImpersonatingDealerId(dealerId);
+      const response = await fetch(`/api/admin/dealers/${dealerId}/impersonate`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || 'Failed to login as dealer');
+      }
+
+      window.location.href = data?.target || '/dealer';
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to login as dealer');
+    } finally {
+      setImpersonatingDealerId(null);
     }
   };
 
@@ -1075,6 +1098,19 @@ const Dealers = ({ token }: { token: string }) => {
                                 }}
                               >
                                 <DevicesIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Login as Dealer">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                disabled={impersonatingDealerId === dealer.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLoginAsDealer(dealer.id as number);
+                                }}
+                              >
+                                <LoginIcon />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Delete">

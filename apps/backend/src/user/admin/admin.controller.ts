@@ -13,12 +13,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
   Put,
   UseGuards,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CustomError } from 'src/common/custom-error';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import type { Request } from 'express';
 
 @Controller('admins')
 export class AdminController {
@@ -73,6 +75,16 @@ export class AdminController {
   ) {
     const user = this.adminService.updateDealerStatus(id, dto.status);
     return this.buildResponse(user);
+  }
+
+  @Post('dealer/:id/impersonate')
+  @UseGuards(AdminGuard)
+  async impersonateDealer(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user: { id: number } },
+  ) {
+    const session = await this.adminService.impersonateDealer(req.user.id, id);
+    return this.buildResponse(session);
   }
 
   /**

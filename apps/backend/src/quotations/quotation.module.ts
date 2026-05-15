@@ -10,6 +10,7 @@ import { QuotationItem } from './entities/quotation-item.entity'
 import { CustomMailerModule } from 'src/mailer/mailer.module'
 import { QuotationController } from './quotation.controller'
 import { QuotationService } from './quotation.service'
+import { SupabaseStorageService } from 'src/common/supabase-storage.service'
 import { DealerLead } from 'src/user/entities/dealer-lead.entity'
 import { PdfService } from 'src/Pdf/pdf-service'
 import { BankDetails } from 'src/bank-details/entities/bank-details.entity'
@@ -21,7 +22,7 @@ import { BusinessSetting } from 'src/business-setting/entities/business-setting.
 @Module({
   imports: [TypeOrmModule.forFeature([Lead, Quotation, QuotationItem, Dealer, User, DealerLead, BankDetails, LeadMessage, BusinessSetting]), CustomMailerModule, DealerTierModule], // 👈 registers LeadRepository
   controllers: [QuotationController],
-  providers: [QuotationService, LeadsGateway, PdfService],
+  providers: [QuotationService, LeadsGateway, PdfService, SupabaseStorageService],
   exports: [QuotationService],
 })
-export class QuotationModule {}
+export class QuotationModule { }

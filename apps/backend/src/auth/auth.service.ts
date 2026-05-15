@@ -217,6 +217,29 @@ export class AuthService {
     }
   }
 
+  async createSessionForUser(
+    user: UserEntity,
+  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    const accessToken = await this.generateToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    const hashedRefresh = await bcrypt.hash(refreshToken, 10);
+    await this.userRepository.update(user.id, { refreshToken: hashedRefresh });
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        status: user.status,
+        type: user.type,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
   async register(dto: RegisterDto) {
     const { name, email, username, password, type } = dto;
 

@@ -30,6 +30,7 @@ import { BankDetails } from 'src/bank-details/entities/bank-details.entity';
 import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity';
 import { LeadsGateway } from 'src/leads/leads.gateway';
 import { DealerTierService } from 'src/dealer-tier/dealer-tier.service';
+import { SupabaseStorageService } from 'src/common/supabase-storage.service';
 
 @Injectable()
 export class InvoiceService {
@@ -65,7 +66,37 @@ export class InvoiceService {
     private readonly dealerTierService: DealerTierService, // inject service
 
     private readonly pdfService: PdfService,
-  ) {}
+    private readonly supabaseStorageService: SupabaseStorageService,
+  ) { }
+
+  private async resolveLogoUrl(logoPath: string | null): Promise<string | null> {
+    if (!logoPath) return null;
+    if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+      return logoPath;
+    }
+
+    try {
+      if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
+        const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
+        if (publicUrl && !publicUrl.includes('undefined') && !publicUrl.includes('null')) {
+          return publicUrl;
+        }
+
+        const isPublic = await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
+        if (isPublic && publicUrl) return publicUrl;
+
+        return await this.supabaseStorageService.getSignedUrl(logoPath, 604800);
+      }
+    } catch (error) {
+      if (logoPath.startsWith('dealer/')) {
+        const relativePath = logoPath.substring('dealer/'.length);
+        return `/images/dealer/${relativePath}`;
+      }
+      return logoPath;
+    }
+
+    return logoPath;
+  }
 
   async create(
     createInvoiceDto: CreateInvoiceDto,
@@ -173,8 +204,8 @@ export class InvoiceService {
         subTotal: Math.round(item.unitPrice * item.quantity),
         totalPrice: Math.round(
           item.unitPrice * item.quantity -
-            (item.discount || 0) +
-            (item.taxAmount || 0),
+          (item.discount || 0) +
+          (item.taxAmount || 0),
         ),
       }),
     );
@@ -223,13 +254,13 @@ export class InvoiceService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-              name: dealer.dealer.name,
-              owner: dealer.dealer.owner,
-              location: dealer.dealer.location,
-              logo: dealer.dealer.logo,
-              website: dealer.dealer.website,
-              contactEmail: dealer.dealer.contactEmail,
-            }
+            name: dealer.dealer.name,
+            owner: dealer.dealer.owner,
+            location: dealer.dealer.location,
+            logo: await this.resolveLogoUrl(dealer.dealer.logo),
+            website: dealer.dealer.website,
+            contactEmail: dealer.dealer.contactEmail,
+          }
           : null,
       },
       items: invoiceItems,
@@ -252,7 +283,10 @@ export class InvoiceService {
       to: lead.email,
       subject: `Invoice ${invoice.invoiceNumber}`,
       template: 'invoice-pdf',
-      context: { invoiceData },
+      context: {
+        invoiceData,
+        baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+      },
     });
 
     // 🔒 10. Mark lead as won (first invoice wins the lead)
@@ -539,13 +573,13 @@ export class InvoiceService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-              name: dealer.dealer.name,
-              owner: dealer.dealer.owner,
-              location: dealer.dealer.location,
-              logo: dealer.dealer.logo,
-              website: dealer.dealer.website,
-              contactEmail: dealer.dealer.contactEmail,
-            }
+            name: dealer.dealer.name,
+            owner: dealer.dealer.owner,
+            location: dealer.dealer.location,
+            logo: await this.resolveLogoUrl(dealer.dealer.logo),
+            website: dealer.dealer.website,
+            contactEmail: dealer.dealer.contactEmail,
+          }
           : null,
       },
       items: previewData.items.map((item) => ({
@@ -558,8 +592,8 @@ export class InvoiceService {
         subTotal: Math.round(item.unitPrice * item.quantity),
         totalPrice: Math.round(
           item.unitPrice * item.quantity -
-            (item.discount || 0) +
-            (item.taxAmount || 0),
+          (item.discount || 0) +
+          (item.taxAmount || 0),
         ),
       })),
       sellerNote: previewData.sellerNote,
@@ -687,13 +721,13 @@ export class InvoiceService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-              name: dealer.dealer.name,
-              owner: dealer.dealer.owner,
-              location: dealer.dealer.location,
-              logo: dealer.dealer.logo,
-              website: dealer.dealer.website,
-              contactEmail: dealer.dealer.contactEmail,
-            }
+            name: dealer.dealer.name,
+            owner: dealer.dealer.owner,
+            location: dealer.dealer.location,
+            logo: await this.resolveLogoUrl(dealer.dealer.logo),
+            website: dealer.dealer.website,
+            contactEmail: dealer.dealer.contactEmail,
+          }
           : null,
       },
       items: previewData.items.map((item) => ({
@@ -726,7 +760,10 @@ export class InvoiceService {
     );
     const templateSource = fs.readFileSync(templatePath, 'utf8');
     const template = Handlebars.compile(templateSource);
-    const html = template({ invoiceData });
+    const html = template({
+      invoiceData,
+      baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+    });
 
     return html;
   }

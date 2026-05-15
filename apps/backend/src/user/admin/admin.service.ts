@@ -20,6 +20,7 @@ import { CustomError } from 'src/common/custom-error';
 import { LeadsService } from 'src/leads/leads.service';
 import { DeviceGateway } from 'src/auth/device.gateway';
 import { DeviceCheckGuard } from 'src/auth/guards/device-check.guard';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class AdminService {
@@ -34,6 +35,7 @@ export class AdminService {
     private deviceRepository: Repository<UserDevice>,
     private leadsService: LeadsService,
     private deviceGateway: DeviceGateway,
+    private authService: AuthService,
   ) {}
 
   async createAdmin(dto: CreateAdminDto) {
@@ -345,5 +347,15 @@ export class AdminService {
 
     // Emit WebSocket event to all devices
     this.deviceGateway.emitLogoutAllDevices(dealerId);
+  }
+
+  async impersonateDealer(adminUserId: number, dealerUserId: number) {
+    const admin = await this.userRepository.findOne({ where: { id: adminUserId } });
+    if (!admin || admin.type !== UserType.ADMIN) {
+      throw new BadRequestException('Only admin can impersonate dealer accounts');
+    }
+
+    const dealer = await this.findDealer(dealerUserId);
+    return this.authService.createSessionForUser(dealer);
   }
 }

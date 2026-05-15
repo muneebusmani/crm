@@ -550,19 +550,19 @@ export default function SendInvoiceDialog({
                 }}
               >
                 <Typography variant="body2">
-                  Reg No: {lead?.vehicle_reg || lead?.vehicle_vrm || '23A13'}
+                  Reg No: {lead?.vehicle_vrm || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  Make: {lead?.vehicle_brand || 'Audi'}
+                  Make: {lead?.vehicle_brand || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  Model: {lead?.vehicle_model || 'm3'}
+                  Model: {lead?.vehicle_model || lead?.vehicle_series || '-'}
                 </Typography>
-                <Typography variant="body2">Reg Year: 2016</Typography>
+                <Typography variant="body2">Reg Year: {lead?.vehicle_reg || '-'}</Typography>
                 <Typography variant="body2">
                   Fuel Type: {lead?.fuelType || 'Petrol'}
                 </Typography>
-                <Typography variant="body2">Car Type: Engine</Typography>
+                <Typography variant="body2">Series: {'-'}</Typography>
               </Box>
 
               {/* Buyer Info & Recovery & Collection - Side by Side */}

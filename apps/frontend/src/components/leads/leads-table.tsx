@@ -937,23 +937,23 @@ const LeadsTable: React.FC = () => {
                   minWidth: TABLE_MIN_WIDTH,
                   tableLayout: 'auto',
                   '& th, & td': { whiteSpace: 'nowrap' },
-                  '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 180 }, // Name
-                  '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 160 }, // Email
-                  '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 160 }, // Phone
+                  '& th:nth-of-type(1), & td:nth-of-type(1)': { minWidth: 100 }, // Name
+                  '& th:nth-of-type(2), & td:nth-of-type(2)': { minWidth: 100 }, // Email
+                  '& th:nth-of-type(3), & td:nth-of-type(3)': { minWidth: 100 }, // Phone
                   '& th:nth-of-type(4), & td:nth-of-type(4)': {
                     minWidth: 140,
                     textAlign: 'center',
                   }, // Received at
-                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 160 }, // VRM
-                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 120 }, // Post Code
-                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 120 }, // Make
-                  '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 120 }, // Model
+                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 100 }, // VRM
+                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 100 }, // Post Code
+                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 100 }, // Make
+                  '& th:nth-of-type(8), & td:nth-of-type(8)': { minWidth: 100 }, // Model
                   '& th:nth-of-type(9), & td:nth-of-type(9)': {
                     minWidth: 60,
                     textAlign: 'center',
                   }, // Year
                   '& th:nth-of-type(10), & td:nth-of-type(10)': {
-                    minWidth: 200,
+                    minWidth: 80,
                   }, // Customer Notes
                   '& th:nth-of-type(11), & td:nth-of-type(11)': {
                     minWidth: 90,

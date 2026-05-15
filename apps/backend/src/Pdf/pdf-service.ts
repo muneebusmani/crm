@@ -214,7 +214,10 @@ export class PdfService {
           : "dist/templates/templates/quotation-pdf.hbs",
       );
 
-      const templateDataToPass = { quotationData };
+      const templateDataToPass = {
+        quotationData,
+        baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+      };
       console.log(
         "🔍 PdfService.generateQuotationPdf - Template data structure:",
         JSON.stringify(templateDataToPass, null, 2),

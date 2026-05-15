@@ -17,11 +17,12 @@ import { LeadMessage } from 'src/leads-messages/entities/lead-message.entity'
 import { LeadsGateway } from 'src/leads/leads.gateway'
 import { DealerTierModule } from 'src/dealer-tier/dealer-tier.module'
 import { BusinessSetting } from 'src/business-setting/entities/business-setting.entity'
+import { SupabaseStorageService } from 'src/common/supabase-storage.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Lead, Invoice, InvoiceItem, Dealer, User, DealerLead, BankDetails, LeadMessage, BusinessSetting]), CustomMailerModule, DealerTierModule], // 👈 registers LeadRepository
   controllers: [InvoiceController],
-  providers: [InvoiceService, LeadsGateway, PdfService],
+  providers: [InvoiceService, LeadsGateway, PdfService, SupabaseStorageService],
   exports: [InvoiceService],
 })
-export class InvoiceModule {}
+export class InvoiceModule { }

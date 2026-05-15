@@ -31,6 +31,6 @@ import { DeviceCheckGuard } from './guards/device-check.guard';
     DeviceCheckGuard,
   ],
   controllers: [AuthController],
-  exports: [UserDeviceService, DeviceGateway, DeviceCheckGuard],
+  exports: [AuthService, UserDeviceService, DeviceGateway, DeviceCheckGuard],
 })
 export class AuthModule {}
