@@ -24,7 +24,7 @@ import type { Request } from 'express';
 
 @Controller('admins')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) { }
 
   private async buildResponse<T>(data: T): Promise<ApiResponse<T>> {
     try {

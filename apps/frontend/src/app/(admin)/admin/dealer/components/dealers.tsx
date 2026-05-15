@@ -604,7 +604,7 @@ const Dealers = ({ token }: { token: string }) => {
     .filter((dealer) => {
       const matchesSearch = searchTerm
         ? dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          dealer.owner.toLowerCase().includes(searchTerm.toLowerCase())
+        dealer.owner.toLowerCase().includes(searchTerm.toLowerCase())
         : true;
       const matchesLocation = locationFilter
         ? dealer.location.includes(locationFilter)

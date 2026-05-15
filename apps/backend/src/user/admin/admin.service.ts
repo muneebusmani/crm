@@ -36,7 +36,7 @@ export class AdminService {
     private leadsService: LeadsService,
     private deviceGateway: DeviceGateway,
     private authService: AuthService,
-  ) {}
+  ) { }
 
   async createAdmin(dto: CreateAdminDto) {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
