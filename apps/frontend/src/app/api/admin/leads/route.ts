@@ -10,26 +10,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/leads`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
       },
-      cache: 'no-store',
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json();
       return NextResponse.json(
-        { error: error.message || 'Failed to fetch leads' },
+        { error: error.message || 'Failed to fetch admin leads' },
         { status: response.status },
       );
     }
 
     const data = await response.json();
-    return NextResponse.json(data.data || data);
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching leads:', error);
+    console.error('Error fetching admin leads:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 },

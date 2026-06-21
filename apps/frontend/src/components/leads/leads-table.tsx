@@ -3,65 +3,67 @@
 
 import type { Lead } from '@crm/types';
 import {
+  AutoFixHigh as AutoFixHighIcon,
+  Dashboard as DashboardIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   Info as InfoIcon,
+  MoreVert as MoreVertIcon,
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
   Search as SearchIcon,
-  MoreVert as MoreVertIcon,
-  AutoFixHigh as AutoFixHighIcon,
-  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
-import ChatIcon from '@mui/icons-material/Chat';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import EmailIcon from '@mui/icons-material/Email';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Box,
   Chip,
-  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   IconButton,
   InputBase,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Pagination,
   Paper,
+  Select,
   Skeleton,
   Snackbar,
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableContainer,
+  TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useTheme,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Select,
-  Tooltip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useRouter, useSearchParams } from 'next/navigation'; // ✅ App Router hook
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { post2 } from '@/lib/api';
 import { socketService } from '@/services/socket.service';
+import LeadNotesPanel from '../LeadNotesPanel';
 import LeadEditDialog from './lead-edit-dialog';
 import LeadEmailDialog from './lead-email-dialog';
 import LeadInfoDialog from './lead-info-dialog';
-import VehicleDetailsDialog from './vehicle-details-dialog';
 import SendInvoiceDialog from './send-invoice-dialog';
 import SendQuotationDialog from './send-quotation-dialog';
-import LeadNotesPanel from '../LeadNotesPanel';
-import { get, post, post2 } from '@/lib/api';
+import VehicleDetailsDialog from './vehicle-details-dialog';
+
+type LeadsTableProps = {
+  view?: 'dealer' | 'admin';
+};
 
 const HighlightText = ({
   text,
@@ -127,6 +129,26 @@ const TruncatedCell = ({
   );
 };
 
+const matchesLeadSearch = (lead: Lead, search: string) => {
+  const term = search.trim().toLowerCase();
+  if (!term) return true;
+
+  return [
+    lead.name,
+    lead.email,
+    lead.number,
+    lead.vehicle_model,
+    lead.vehicle_series,
+    lead.vehicle_reg,
+    lead.vehicle_brand,
+    lead.postcode,
+    lead.description,
+    lead.vehicle_title,
+  ]
+    .filter(Boolean)
+    .some((value) => String(value).toLowerCase().includes(term));
+};
+
 // Skeleton rows for table loading state
 const TableSkeletonRows = ({
   rows = 5,
@@ -148,9 +170,11 @@ const TableSkeletonRows = ({
   </>
 );
 
-const LeadsTable: React.FC = () => {
+const LeadsTable: React.FC<LeadsTableProps> = ({ view = 'dealer' }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isAdminView = view === 'admin';
+  const leadsRoute = isAdminView ? '/admin/leads' : '/dealer/leads';
   const handleOpenChat = (leadId: number) => {
     router.push(`/dealer/messages?leadId=${leadId}`);
   };
@@ -159,14 +183,15 @@ const LeadsTable: React.FC = () => {
   const ACTION_COL_WIDTH = 160; // Reduced from 180 to decrease space between status and actions
   const STATUS_COL_WIDTH = 100;
   const NOTES_COL_WIDTH = 150;
+  const showLeadNotesAndStatus = !isAdminView;
+  const leadNotesRightOffset = showLeadNotesAndStatus
+    ? ACTION_COL_WIDTH + STATUS_COL_WIDTH
+    : 0;
+  const leadStatusRightOffset = showLeadNotesAndStatus ? ACTION_COL_WIDTH : 0;
   const TABLE_MIN_WIDTH = 2400;
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [adminLeads, setAdminLeads] = useState<Lead[]>([]);
   const [hqLeads, setHqLeads] = useState<Lead[]>([]); // Separate state for assigned HQ leads
-  const [hqQuota, setHqQuota] = useState<{
-    canAssign: boolean;
-    assignedCount: number;
-    dailyLimit: number;
-  } | null>(null);
   const [regularSearchTerm, setRegularSearchTerm] = useState('');
   const [hqSearchTerm, setHqSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -192,7 +217,7 @@ const LeadsTable: React.FC = () => {
   const [hqServerTotalPages, setHqServerTotalPages] = useState(0);
   const [debouncedHqSearchTerm, setDebouncedHqSearchTerm] = useState('');
   // Track if HQ leads section should be visible (set once on initial load if dealer has HQ access)
-  const [showHqSection, setShowHqSection] = useState(false);
+  const [showHqSection, setShowHqSection] = useState(isAdminView);
 
   // Dialog states
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -245,6 +270,44 @@ const LeadsTable: React.FC = () => {
         setLeadsLoading(true);
       }
       try {
+        if (isAdminView) {
+          const res = await fetch('/api/admin/leads', {
+            credentials: 'include',
+          });
+          if (!res.ok) throw new Error('Failed to fetch leads');
+
+          const response = await res.json();
+          const allLeads: Lead[] =
+            response.data && Array.isArray(response.data)
+              ? response.data
+              : Array.isArray(response)
+                ? response
+                : [];
+
+          const sortedLeads = allLeads.sort(
+            (a: Lead, b: Lead) =>
+              new Date(b.createdAt as unknown as Date).getTime() -
+              new Date(a.createdAt as unknown as Date).getTime(),
+          );
+
+          setAdminLeads(sortedLeads);
+          setLeads(sortedLeads.filter((lead: Lead) => !lead.isHqLead));
+          setHqLeads(sortedLeads.filter((lead: Lead) => lead.isHqLead));
+          setServerTotalLeads(
+            sortedLeads.filter((lead) => !lead.isHqLead).length,
+          );
+          setServerTotalPages(
+            Math.max(
+              1,
+              Math.ceil(
+                sortedLeads.filter((lead) => !lead.isHqLead).length / limitNum,
+              ),
+            ),
+          );
+          setShowHqSection(true);
+          return;
+        }
+
         const params = new URLSearchParams();
         params.set('page', pageNum.toString());
         params.set('limit', limitNum.toString());
@@ -288,7 +351,7 @@ const LeadsTable: React.FC = () => {
         }
       }
     },
-    [page, rowsPerPage, debouncedSearchTerm],
+    [page, rowsPerPage, debouncedSearchTerm, isAdminView],
   );
 
   // Fetch HQ leads assigned to this dealer with server-side pagination
@@ -299,6 +362,10 @@ const LeadsTable: React.FC = () => {
       search: string = debouncedHqSearchTerm,
       isInitialLoad: boolean = false,
     ) => {
+      if (isAdminView) {
+        return;
+      }
+
       if (!isInitialLoad) {
         setHqLeadsLoading(true);
       }
@@ -310,7 +377,10 @@ const LeadsTable: React.FC = () => {
           params.set('search', search);
         }
 
-        const res = await fetch(`/api/leads/hq/my-leads?${params.toString()}`, {
+        const hqPath = isAdminView
+          ? '/api/admin/hq-leads/unassigned'
+          : '/api/leads/hq/my-leads';
+        const res = await fetch(`${hqPath}?${params.toString()}`, {
           credentials: 'include',
         });
         if (!res.ok) throw new Error('Failed to fetch HQ leads');
@@ -323,7 +393,7 @@ const LeadsTable: React.FC = () => {
           setHqServerTotalLeads(response.total || 0);
           setHqServerTotalPages(response.totalPages || 0);
           // Show HQ section once we've successfully loaded HQ leads (even if 0 results due to search)
-          if (isInitialLoad && response.total > 0) {
+          if (isInitialLoad && (isAdminView || response.total > 0)) {
             setShowHqSection(true);
           }
         } else if (Array.isArray(response)) {
@@ -337,7 +407,7 @@ const LeadsTable: React.FC = () => {
           setHqServerTotalLeads(sortedHqLeads.length);
           setHqServerTotalPages(Math.ceil(sortedHqLeads.length / limitNum));
           // Show HQ section if dealer has any HQ leads
-          if (isInitialLoad && sortedHqLeads.length > 0) {
+          if (isInitialLoad && (isAdminView || sortedHqLeads.length > 0)) {
             setShowHqSection(true);
           }
         }
@@ -350,23 +420,8 @@ const LeadsTable: React.FC = () => {
         }
       }
     },
-    [hqPage, hqRowsPerPage, debouncedHqSearchTerm],
+    [hqPage, hqRowsPerPage, debouncedHqSearchTerm, isAdminView],
   );
-
-  // Fetch HQ quota status
-  const fetchHqQuota = async () => {
-    try {
-      const res = await fetch('/api/leads/hq/my-quota', {
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const quotaData = await res.json();
-        setHqQuota(quotaData);
-      }
-    } catch (error) {
-      console.error('Failed to fetch HQ quota:', error);
-    }
-  };
 
   const fetchLeadById = async (id: number) => {
     setLoading(true);
@@ -395,6 +450,9 @@ const LeadsTable: React.FC = () => {
 
     socketService.onLeadCreated((newLead: Lead) => {
       setLeads((prev) => [...prev, newLead]);
+      if (isAdminView) {
+        setAdminLeads((prev) => [...prev, newLead]);
+      }
       setSnackbar({
         open: true,
         message: `New lead created: ${newLead.name || 'Unknown'}`,
@@ -406,6 +464,11 @@ const LeadsTable: React.FC = () => {
       setLeads((prev) =>
         prev.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)),
       );
+      if (isAdminView) {
+        setAdminLeads((prev) =>
+          prev.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)),
+        );
+      }
       setSnackbar({
         open: true,
         message: `Lead updated: ${updatedLead.name || 'Unknown'}`,
@@ -416,6 +479,11 @@ const LeadsTable: React.FC = () => {
     // Service
     socketService.onLeadDeleted((id) => {
       setLeads((prev) => prev.filter((lead) => String(lead.id) !== String(id)));
+      if (isAdminView) {
+        setAdminLeads((prev) =>
+          prev.filter((lead) => String(lead.id) !== String(id)),
+        );
+      }
       setSnackbar({
         open: true,
         message: 'Lead deleted successfully',
@@ -442,26 +510,39 @@ const LeadsTable: React.FC = () => {
   // Fetch leads on component mount
   // biome-ignore lint/correctness/useExhaustiveDependencies: Initial load only
   useEffect(() => {
+    if (isAdminView) {
+      fetchLeads(1, rowsPerPage, '', true);
+      return;
+    }
+
     fetchLeads(1, rowsPerPage, '', true); // isInitialLoad = true
     fetchHqLeads(1, hqRowsPerPage, '', true); // isInitialLoad = true
-    fetchHqQuota();
   }, []);
 
   // Handle opening lead from URL query parameter
   useEffect(() => {
     const leadId = searchParams.get('id');
-    if (leadId && leads.length > 0 && !openInfoDialog) {
-      const lead = leads.find((l) => String(l.id) === leadId);
+    const searchableLeads = isAdminView ? adminLeads : leads;
+    if (leadId && searchableLeads.length > 0 && !openInfoDialog) {
+      const lead = searchableLeads.find((l) => String(l.id) === leadId);
       if (lead) {
         console.log('Opening lead from URL:', leadId);
         handleActionClick('info', lead);
         // Clear the query parameter after a short delay
         setTimeout(() => {
-          router.replace('/dealer/leads', { scroll: false });
+          router.replace(leadsRoute, { scroll: false });
         }, 100);
       }
     }
-  }, [searchParams, leads, openInfoDialog, router]);
+  }, [
+    searchParams,
+    leads,
+    adminLeads,
+    openInfoDialog,
+    router,
+    leadsRoute,
+    isAdminView,
+  ]);
 
   // Fetch current profile ID
   useEffect(() => {
@@ -502,25 +583,42 @@ const LeadsTable: React.FC = () => {
     setPage(1);
   }, []);
 
-  // For regular leads, we use server-side filtering - leads state already contains filtered results
-  // Just use leads directly as currentLeads
+  const adminRegularLeads = useMemo(() => {
+    if (!isAdminView) return [];
+    return adminLeads
+      .filter((lead) => !lead.isHqLead)
+      .filter((lead) => matchesLeadSearch(lead, debouncedSearchTerm));
+  }, [adminLeads, debouncedSearchTerm, isAdminView]);
 
-  // For regular leads, we use server-side filtering - leads state already contains filtered results
-  // Just use leads directly as currentLeads
+  const adminHqLeads = useMemo(() => {
+    if (!isAdminView) return [];
+    return adminLeads
+      .filter((lead) => lead.isHqLead)
+      .filter((lead) => matchesLeadSearch(lead, debouncedHqSearchTerm));
+  }, [adminLeads, debouncedHqSearchTerm, isAdminView]);
 
-  // For HQ leads, server now returns paginated data directly - no client-side filtering needed
-  // The hqLeads state already contains the current page results from server
+  // For regular leads, server returns current page data directly in dealer mode.
+  const currentLeads = isAdminView
+    ? adminRegularLeads.slice((page - 1) * rowsPerPage, page * rowsPerPage)
+    : leads;
 
-  // For regular leads, server returns current page data directly
-  const currentLeads = leads;
+  // For HQ leads, server returns current page data directly in dealer mode.
+  const currentHqLeads = isAdminView
+    ? adminHqLeads.slice((hqPage - 1) * hqRowsPerPage, hqPage * hqRowsPerPage)
+    : hqLeads;
 
-  // For HQ leads, server returns current page data directly
-  const currentHqLeads = hqLeads;
-
-  // totalPages for regular leads comes from server
-  const totalPages = serverTotalPages;
-  // totalHqPages for HQ leads comes from server
-  const totalHqPages = hqServerTotalPages;
+  // totalPages for regular leads comes from server in dealer mode.
+  const totalPages = isAdminView
+    ? Math.max(1, Math.ceil(adminRegularLeads.length / rowsPerPage))
+    : serverTotalPages;
+  // totalHqPages for HQ leads comes from server in dealer mode.
+  const totalHqPages = isAdminView
+    ? Math.max(1, Math.ceil(adminHqLeads.length / hqRowsPerPage))
+    : hqServerTotalPages;
+  const regularTotalLeads = isAdminView
+    ? adminRegularLeads.length
+    : serverTotalLeads;
+  const hqTotalLeads = isAdminView ? adminHqLeads.length : hqServerTotalLeads;
 
   // Fetch note previews only for current page leads
   useEffect(() => {
@@ -610,7 +708,9 @@ const LeadsTable: React.FC = () => {
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearchTerm(value);
       setPage(1); // Reset to first page on search
-      fetchLeads(1, rowsPerPage, value);
+      if (!isAdminView) {
+        fetchLeads(1, rowsPerPage, value);
+      }
     }, 300);
   };
 
@@ -630,7 +730,9 @@ const LeadsTable: React.FC = () => {
     hqSearchTimeoutRef.current = setTimeout(() => {
       setDebouncedHqSearchTerm(value);
       setHqPage(1); // Reset to first page on search
-      fetchHqLeads(1, hqRowsPerPage, value);
+      if (!isAdminView) {
+        fetchHqLeads(1, hqRowsPerPage, value);
+      }
     }, 300);
   };
 
@@ -639,7 +741,9 @@ const LeadsTable: React.FC = () => {
     value: number,
   ) => {
     setPage(value);
-    fetchLeads(value, rowsPerPage, debouncedSearchTerm);
+    if (!isAdminView) {
+      fetchLeads(value, rowsPerPage, debouncedSearchTerm);
+    }
   };
 
   const handleHqPageChange = (
@@ -647,21 +751,27 @@ const LeadsTable: React.FC = () => {
     value: number,
   ) => {
     setHqPage(value);
-    fetchHqLeads(value, hqRowsPerPage, debouncedHqSearchTerm);
+    if (!isAdminView) {
+      fetchHqLeads(value, hqRowsPerPage, debouncedHqSearchTerm);
+    }
   };
 
   // Handler for rows-per-page change - resets to page 1 and refetches
   const handleRowsPerPageChange = (newRowsPerPage: number) => {
     setRowsPerPage(newRowsPerPage);
     setPage(1); // Always reset to page 1 when changing rows per page
-    fetchLeads(1, newRowsPerPage, debouncedSearchTerm);
+    if (!isAdminView) {
+      fetchLeads(1, newRowsPerPage, debouncedSearchTerm);
+    }
   };
 
   // Handler for HQ rows-per-page change - resets to page 1 and refetches
   const handleHqRowsPerPageChange = (newRowsPerPage: number) => {
     setHqRowsPerPage(newRowsPerPage);
     setHqPage(1); // Always reset to page 1 when changing rows per page
-    fetchHqLeads(1, newRowsPerPage, debouncedHqSearchTerm);
+    if (!isAdminView) {
+      fetchHqLeads(1, newRowsPerPage, debouncedHqSearchTerm);
+    }
   };
 
   const handleRowSelect = (id: number) => {
@@ -895,7 +1005,7 @@ const LeadsTable: React.FC = () => {
               Regular Leads
             </Typography>
             <Chip
-              label={`${serverTotalLeads} Total`}
+              label={`${regularTotalLeads} Total`}
               color="primary"
               size="small"
             />
@@ -1038,42 +1148,46 @@ const LeadsTable: React.FC = () => {
                       </Typography>
                     </TableCell>
 
-                    <TableCell
-                      sx={{
-                        position: 'sticky',
-                        right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
-                        backgroundColor: theme.palette.background.paper,
-                        zIndex: 4,
-                        minWidth: NOTES_COL_WIDTH,
-                        width: NOTES_COL_WIDTH,
-                        padding: '12px 8px',
-                        borderRight: `1px solid ${theme.palette.divider}`,
-                        borderLeft: `1px solid ${theme.palette.divider}`,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Notes
-                      </Typography>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        position: 'sticky',
-                        right: ACTION_COL_WIDTH,
-                        backgroundColor: theme.palette.background.paper,
-                        zIndex: 4,
-                        minWidth: STATUS_COL_WIDTH,
-                        width: STATUS_COL_WIDTH,
-                        maxWidth: STATUS_COL_WIDTH,
-                        padding: '12px 8px',
-                        borderRight: `1px solid ${theme.palette.divider}`,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Status
-                      </Typography>
-                    </TableCell>
+                    {showLeadNotesAndStatus && (
+                      <TableCell
+                        sx={{
+                          position: 'sticky',
+                          right: leadNotesRightOffset,
+                          backgroundColor: theme.palette.background.paper,
+                          zIndex: 4,
+                          minWidth: NOTES_COL_WIDTH,
+                          width: NOTES_COL_WIDTH,
+                          padding: '12px 8px',
+                          borderRight: `1px solid ${theme.palette.divider}`,
+                          borderLeft: `1px solid ${theme.palette.divider}`,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Notes
+                        </Typography>
+                      </TableCell>
+                    )}
+                    {showLeadNotesAndStatus && (
+                      <TableCell
+                        sx={{
+                          position: 'sticky',
+                          right: leadStatusRightOffset,
+                          backgroundColor: theme.palette.background.paper,
+                          zIndex: 4,
+                          minWidth: STATUS_COL_WIDTH,
+                          width: STATUS_COL_WIDTH,
+                          maxWidth: STATUS_COL_WIDTH,
+                          padding: '12px 8px',
+                          borderRight: `1px solid ${theme.palette.divider}`,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Status
+                        </Typography>
+                      </TableCell>
+                    )}
                     <TableCell
                       sx={{
                         position: 'sticky',
@@ -1253,72 +1367,73 @@ const LeadsTable: React.FC = () => {
                             }
                           />
                         </TableCell>
-                        <TableCell
-                          onClick={() => {
-                            setSelectedLeadForNotes(lead);
-                            setOpenNotesDialog(true);
-                          }}
-                          sx={{
-                            cursor: 'pointer',
-                            // '&:hover': {
-                            //   backgroundColor: theme.palette.action.hover,
-                            // },
-                            position: 'sticky',
-                            right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
-                            backgroundColor: theme.palette.background.paper,
-                            zIndex: 3,
-                            minWidth: NOTES_COL_WIDTH,
-                            width: NOTES_COL_WIDTH,
-                            padding: '12px 8px',
-                            borderRight: `1px solid ${theme.palette.divider}`,
-                            borderLeft: `1px solid ${theme.palette.divider}`,
-                            textAlign: 'center',
-                          }}
-                        >
-                          <Tooltip
-                            title={notePreviews.get(lead.id!) || ''}
-                            placement="top"
-                          >
-                            <Typography variant="body2" color="primary">
-                              {notePreviews.get(lead.id!)
-                                ? notePreviews.get(lead.id!) === '...'
-                                  ? '...'
-                                  : notePreviews.get(lead.id!)!.length > 5
-                                    ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
-                                    : notePreviews.get(lead.id!)
-                                : '...'}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            position: 'sticky',
-                            right: ACTION_COL_WIDTH,
-                            backgroundColor: theme.palette.background.paper,
-                            zIndex: 3,
-                            minWidth: STATUS_COL_WIDTH,
-                            width: STATUS_COL_WIDTH,
-                            maxWidth: STATUS_COL_WIDTH,
-                            padding: '12px 8px',
-                            borderRight: `1px solid ${theme.palette.divider}`,
-                            overflow: 'visible',
-                          }}
-                        >
-                          <Box
+                        {showLeadNotesAndStatus && (
+                          <TableCell
+                            onClick={() => {
+                              setSelectedLeadForNotes(lead);
+                              setOpenNotesDialog(true);
+                            }}
                             sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                              alignItems: 'center',
+                              cursor: 'pointer',
+                              position: 'sticky',
+                              right: leadNotesRightOffset,
+                              backgroundColor: theme.palette.background.paper,
+                              zIndex: 3,
+                              minWidth: NOTES_COL_WIDTH,
+                              width: NOTES_COL_WIDTH,
+                              padding: '12px 8px',
+                              borderRight: `1px solid ${theme.palette.divider}`,
+                              borderLeft: `1px solid ${theme.palette.divider}`,
+                              textAlign: 'center',
                             }}
                           >
-                            <Chip
-                              label={lead.status || 'Unknown'}
-                              color={getStatusColor(lead.status)}
-                              size="small"
-                            />
-                          </Box>
-                        </TableCell>
+                            <Tooltip
+                              title={notePreviews.get(lead.id!) || ''}
+                              placement="top"
+                            >
+                              <Typography variant="body2" color="primary">
+                                {notePreviews.get(lead.id!)
+                                  ? notePreviews.get(lead.id!) === '...'
+                                    ? '...'
+                                    : notePreviews.get(lead.id!)!.length > 5
+                                      ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
+                                      : notePreviews.get(lead.id!)
+                                  : '...'}
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                        {showLeadNotesAndStatus && (
+                          <TableCell
+                            sx={{
+                              position: 'sticky',
+                              right: leadStatusRightOffset,
+                              backgroundColor: theme.palette.background.paper,
+                              zIndex: 3,
+                              minWidth: STATUS_COL_WIDTH,
+                              width: STATUS_COL_WIDTH,
+                              maxWidth: STATUS_COL_WIDTH,
+                              padding: '12px 8px',
+                              borderRight: `1px solid ${theme.palette.divider}`,
+                              overflow: 'visible',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.5,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Chip
+                                label={lead.status || 'Unknown'}
+                                color={getStatusColor(lead.status)}
+                                size="small"
+                              />
+                            </Box>
+                          </TableCell>
+                        )}
                         <TableCell
                           sx={{
                             position: 'sticky',
@@ -1388,18 +1503,21 @@ const LeadsTable: React.FC = () => {
                                   />
                                 </IconButton>
 
-                                {/* Quotation Icon - Outside Menu */}
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  onClick={() => {
-                                    setSelectedLead(lead);
-                                    setOpenQuotationDialog(true);
-                                  }}
-                                  title="Send Quotation"
-                                >
-                                  <RequestQuoteIcon fontSize="small" />
-                                </IconButton>
+                                {!isAdminView && (
+                                  <>
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={() => {
+                                        setSelectedLead(lead);
+                                        setOpenQuotationDialog(true);
+                                      }}
+                                      title="Send Quotation"
+                                    >
+                                      <RequestQuoteIcon fontSize="small" />
+                                    </IconButton>
+                                  </>
+                                )}
                               </>
                             )}
 
@@ -1496,7 +1614,7 @@ const LeadsTable: React.FC = () => {
                 HQ Leads
               </Typography>
               <Chip
-                label={`${hqServerTotalLeads} Total`}
+                label={`${hqTotalLeads} Total`}
                 color="default"
                 size="small"
                 sx={{
@@ -1586,9 +1704,17 @@ const LeadsTable: React.FC = () => {
                       minWidth: 90,
                       textAlign: 'center',
                     }, // Engine Capacity
-                    '& th:nth-of-type(14), & td:nth-of-type(14)': {
-                      minWidth: ACTION_COL_WIDTH,
-                    }, // Action
+                    ...(showLeadNotesAndStatus
+                      ? {
+                          '& th:nth-of-type(14), & td:nth-of-type(14)': {
+                            minWidth: ACTION_COL_WIDTH,
+                          }, // Action
+                        }
+                      : {
+                          '& th:nth-of-type(14), & td:nth-of-type(14)': {
+                            minWidth: ACTION_COL_WIDTH,
+                          }, // Action
+                        }),
                   }}
                 >
                   <TableHead>
@@ -1659,42 +1785,46 @@ const LeadsTable: React.FC = () => {
                         </Typography>
                       </TableCell>
 
-                      <TableCell
-                        sx={{
-                          position: 'sticky',
-                          right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
-                          backgroundColor: theme.palette.background.paper,
-                          zIndex: 4,
-                          minWidth: NOTES_COL_WIDTH,
-                          width: NOTES_COL_WIDTH,
-                          padding: '12px 8px',
-                          borderRight: `1px solid ${theme.palette.divider}`,
-                          borderLeft: `1px solid ${theme.palette.divider}`,
-                          textAlign: 'center',
-                        }}
-                      >
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          Notes
-                        </Typography>
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          position: 'sticky',
-                          right: ACTION_COL_WIDTH,
-                          backgroundColor: theme.palette.background.paper,
-                          zIndex: 4,
-                          minWidth: STATUS_COL_WIDTH,
-                          width: STATUS_COL_WIDTH,
-                          maxWidth: STATUS_COL_WIDTH,
-                          padding: '12px 8px',
-                          borderRight: `1px solid ${theme.palette.divider}`,
-                          textAlign: 'center',
-                        }}
-                      >
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          Status
-                        </Typography>
-                      </TableCell>
+                      {showLeadNotesAndStatus && (
+                        <TableCell
+                          sx={{
+                            position: 'sticky',
+                            right: leadNotesRightOffset,
+                            backgroundColor: theme.palette.background.paper,
+                            zIndex: 4,
+                            minWidth: NOTES_COL_WIDTH,
+                            width: NOTES_COL_WIDTH,
+                            padding: '12px 8px',
+                            borderRight: `1px solid ${theme.palette.divider}`,
+                            borderLeft: `1px solid ${theme.palette.divider}`,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            Notes
+                          </Typography>
+                        </TableCell>
+                      )}
+                      {showLeadNotesAndStatus && (
+                        <TableCell
+                          sx={{
+                            position: 'sticky',
+                            right: leadStatusRightOffset,
+                            backgroundColor: theme.palette.background.paper,
+                            zIndex: 4,
+                            minWidth: STATUS_COL_WIDTH,
+                            width: STATUS_COL_WIDTH,
+                            maxWidth: STATUS_COL_WIDTH,
+                            padding: '12px 8px',
+                            borderRight: `1px solid ${theme.palette.divider}`,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            Status
+                          </Typography>
+                        </TableCell>
+                      )}
                       <TableCell
                         sx={{
                           position: 'sticky',
@@ -1874,72 +2004,73 @@ const LeadsTable: React.FC = () => {
                               }
                             />
                           </TableCell>
-                          <TableCell
-                            onClick={() => {
-                              setSelectedLeadForNotes(lead);
-                              setOpenNotesDialog(true);
-                            }}
-                            sx={{
-                              cursor: 'pointer',
-                              // '&:hover': {
-                              //   backgroundColor: theme.palette.action.hover,
-                              // },
-                              position: 'sticky',
-                              right: ACTION_COL_WIDTH + STATUS_COL_WIDTH,
-                              backgroundColor: theme.palette.background.paper,
-                              zIndex: 3,
-                              minWidth: NOTES_COL_WIDTH,
-                              width: NOTES_COL_WIDTH,
-                              padding: '12px 8px',
-                              borderRight: `1px solid ${theme.palette.divider}`,
-                              borderLeft: `1px solid ${theme.palette.divider}`,
-                              textAlign: 'center',
-                            }}
-                          >
-                            <Tooltip
-                              title={notePreviews.get(lead.id!) || ''}
-                              placement="top"
-                            >
-                              <Typography variant="body2" color="primary">
-                                {notePreviews.get(lead.id!)
-                                  ? notePreviews.get(lead.id!) === '...'
-                                    ? '...'
-                                    : notePreviews.get(lead.id!)!.length > 5
-                                      ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
-                                      : notePreviews.get(lead.id!)
-                                  : '...'}
-                              </Typography>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              position: 'sticky',
-                              right: ACTION_COL_WIDTH,
-                              backgroundColor: theme.palette.background.paper,
-                              zIndex: 3,
-                              minWidth: STATUS_COL_WIDTH,
-                              width: STATUS_COL_WIDTH,
-                              maxWidth: STATUS_COL_WIDTH,
-                              padding: '12px 8px',
-                              borderRight: `1px solid ${theme.palette.divider}`,
-                              overflow: 'visible',
-                            }}
-                          >
-                            <Box
+                          {showLeadNotesAndStatus && (
+                            <TableCell
+                              onClick={() => {
+                                setSelectedLeadForNotes(lead);
+                                setOpenNotesDialog(true);
+                              }}
                               sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 0.5,
-                                alignItems: 'center',
+                                cursor: 'pointer',
+                                position: 'sticky',
+                                right: leadNotesRightOffset,
+                                backgroundColor: theme.palette.background.paper,
+                                zIndex: 3,
+                                minWidth: NOTES_COL_WIDTH,
+                                width: NOTES_COL_WIDTH,
+                                padding: '12px 8px',
+                                borderRight: `1px solid ${theme.palette.divider}`,
+                                borderLeft: `1px solid ${theme.palette.divider}`,
+                                textAlign: 'center',
                               }}
                             >
-                              <Chip
-                                label={lead.status || 'Unknown'}
-                                color={getStatusColor(lead.status)}
-                                size="small"
-                              />
-                            </Box>
-                          </TableCell>
+                              <Tooltip
+                                title={notePreviews.get(lead.id!) || ''}
+                                placement="top"
+                              >
+                                <Typography variant="body2" color="primary">
+                                  {notePreviews.get(lead.id!)
+                                    ? notePreviews.get(lead.id!) === '...'
+                                      ? '...'
+                                      : notePreviews.get(lead.id!)!.length > 5
+                                        ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
+                                        : notePreviews.get(lead.id!)
+                                    : '...'}
+                                </Typography>
+                              </Tooltip>
+                            </TableCell>
+                          )}
+                          {showLeadNotesAndStatus && (
+                            <TableCell
+                              sx={{
+                                position: 'sticky',
+                                right: leadStatusRightOffset,
+                                backgroundColor: theme.palette.background.paper,
+                                zIndex: 3,
+                                minWidth: STATUS_COL_WIDTH,
+                                width: STATUS_COL_WIDTH,
+                                maxWidth: STATUS_COL_WIDTH,
+                                padding: '12px 8px',
+                                borderRight: `1px solid ${theme.palette.divider}`,
+                                overflow: 'visible',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 0.5,
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <Chip
+                                  label={lead.status || 'Unknown'}
+                                  color={getStatusColor(lead.status)}
+                                  size="small"
+                                />
+                              </Box>
+                            </TableCell>
+                          )}
                           <TableCell
                             sx={{
                               position: 'sticky',
@@ -2012,18 +2143,19 @@ const LeadsTable: React.FC = () => {
                                     />
                                   </IconButton>
 
-                                  {/* Quotation Icon - Outside Menu */}
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => {
-                                      setSelectedLead(lead);
-                                      setOpenQuotationDialog(true);
-                                    }}
-                                    title="Send Quotation"
-                                  >
-                                    <RequestQuoteIcon fontSize="small" />
-                                  </IconButton>
+                                  {!isAdminView && (
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={() => {
+                                        setSelectedLead(lead);
+                                        setOpenQuotationDialog(true);
+                                      }}
+                                      title="Send Quotation"
+                                    >
+                                      <RequestQuoteIcon fontSize="small" />
+                                    </IconButton>
+                                  )}
                                 </>
                               )}
 
@@ -2162,19 +2294,21 @@ const LeadsTable: React.FC = () => {
         {/*<ListItemText>Open Chat</ListItemText>*/}
         {/*</MenuItem>*/}
         {/* WARN: DO NOT REMOVE THIS */}
-        <MenuItem
-          onClick={() => handleMenuAction('invoice')}
-          disabled={
-            currentMenuLead?.wonByDealerId !== undefined &&
-            currentMenuLead?.wonByDealerId !== null &&
-            currentMenuLead?.wonByDealerId !== currentDealerId
-          }
-        >
-          <ListItemIcon>
-            <ReceiptLongIcon fontSize="small" color="warning" />
-          </ListItemIcon>
-          <ListItemText>Send Invoice</ListItemText>
-        </MenuItem>
+        {!isAdminView && (
+          <MenuItem
+            onClick={() => handleMenuAction('invoice')}
+            disabled={
+              currentMenuLead?.wonByDealerId !== undefined &&
+              currentMenuLead?.wonByDealerId !== null &&
+              currentMenuLead?.wonByDealerId !== currentDealerId
+            }
+          >
+            <ListItemIcon>
+              <ReceiptLongIcon fontSize="small" color="warning" />
+            </ListItemIcon>
+            <ListItemText>Send Invoice</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => handleMenuAction('delete')}
           disabled={
