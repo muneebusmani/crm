@@ -32,6 +32,11 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server!: Server;
 
   private readonly logger = new Logger(DeviceGateway.name);
+  private readonly socketConnections = new Map<
+    string,
+    { userId: string; fingerprint: string }
+  >();
+  private readonly connectedFingerprintsByUser = new Map<string, Set<string>>();
 
   constructor(
     @InjectRepository(UserDevice)
@@ -56,6 +61,10 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Join a room specific to this device
     const room = `device:${userId}:${fingerprint}`;
     client.join(room);
+    this.socketConnections.set(client.id, { userId, fingerprint });
+    const fingerprints = this.connectedFingerprintsByUser.get(userId) ?? new Set();
+    fingerprints.add(fingerprint);
+    this.connectedFingerprintsByUser.set(userId, fingerprints);
     this.logger.log(
       `Client connected: ${client.id}, room: ${room.substring(0, 30)}...`,
     );
@@ -101,6 +110,17 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
+    const connection = this.socketConnections.get(client.id);
+    if (connection) {
+      const fingerprints = this.connectedFingerprintsByUser.get(connection.userId);
+      if (fingerprints) {
+        fingerprints.delete(connection.fingerprint);
+        if (fingerprints.size === 0) {
+          this.connectedFingerprintsByUser.delete(connection.userId);
+        }
+      }
+      this.socketConnections.delete(client.id);
+    }
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
@@ -137,6 +157,10 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
     this.logger.log(`Emitted logout_device to all devices of user: ${userId}`);
+  }
+
+  isUserConnected(userId: number): boolean {
+    return this.connectedFingerprintsByUser.has(String(userId));
   }
 
   /**

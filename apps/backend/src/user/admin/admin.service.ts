@@ -358,4 +358,10 @@ export class AdminService {
     const dealer = await this.findDealer(dealerUserId);
     return this.authService.createSessionForUser(dealer);
   }
+
+  isDealerConnected(userId: number): { isConnected: boolean } {
+    return {
+      isConnected: this.deviceGateway.isUserConnected(userId),
+    };
+  }
 }

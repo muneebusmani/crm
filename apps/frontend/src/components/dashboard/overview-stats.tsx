@@ -1,19 +1,49 @@
 'use client';
 
-import { Box, Card, Grid, Typography, useTheme, alpha } from '@mui/material';
 import {
-  RocketLaunch as RocketIcon,
-  CurrencyExchange as CurrencyIcon,
-  MonitorHeart as PulseIcon,
-  EmojiEvents as TrophyIcon,
-  VolunteerActivism as HandshakeIcon,
-  ArrowUpward as ArrowUpIcon,
-  ArrowDownward as ArrowDownIcon,
-  HourglassEmpty as HourglassEmptyIcon,
-  TrendingUp as TrendingUpIcon,
   AccountBalance as AccountBalanceIcon,
+  ArrowDownward as ArrowDownIcon,
+  ArrowUpward as ArrowUpIcon,
+  CurrencyExchange as CurrencyIcon,
+  VolunteerActivism as HandshakeIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Login as LoginIcon,
+  MonitorHeart as PulseIcon,
+  RocketLaunch as RocketIcon,
+  TrendingUp as TrendingUpIcon,
+  EmojiEvents as TrophyIcon,
 } from '@mui/icons-material';
+import {
+  Avatar,
+  alpha,
+  Box,
+  Card,
+  CircularProgress,
+  Divider,
+  Grid,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Popover,
+  Stack,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import { useState } from 'react';
 import { MonthlyTrend } from '@/types/dashboard';
+
+type DealerActivity = {
+  id: number;
+  email: string;
+  name: string;
+  logo: string | null;
+  lastLoginAt: string | null;
+  isActive: boolean;
+  activeDeviceCount: number;
+};
 
 interface OverviewStatsProps {
   totalLeads: number;
@@ -27,6 +57,8 @@ interface OverviewStatsProps {
   pendingQuotations?: number;
   userType: 'admin' | 'dealer';
   monthlyTrends?: MonthlyTrend[];
+  dealerProfiles?: DealerActivity[];
+  dealerProfilesLoading?: boolean;
 }
 
 interface ModernStatCardProps {
@@ -35,6 +67,7 @@ interface ModernStatCardProps {
   icon: React.ReactNode;
   trend?: 'up' | 'down' | 'neutral';
   color?: string; // Kept for compatibility but might not be used in white design
+  action?: React.ReactNode;
 }
 
 const ModernStatCard: React.FC<ModernStatCardProps> = ({
@@ -43,6 +76,7 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
   icon,
   trend,
   color,
+  action,
 }) => {
   const theme = useTheme();
   const isUp = trend === 'up';
@@ -81,41 +115,44 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
         >
           {title}
         </Typography>
-        {trend && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              color: isUp
-                ? 'success.main'
-                : isDown
-                  ? 'error.main'
-                  : 'text.secondary',
-              bgcolor: isUp
-                ? alpha(theme.palette.success.main, 0.1)
-                : isDown
-                  ? alpha(theme.palette.error.main, 0.1)
-                  : 'action.hover',
-              border: `1px solid ${
-                isUp
-                  ? alpha(theme.palette.success.main, 0.2)
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {action}
+          {trend && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                color: isUp
+                  ? 'success.main'
                   : isDown
-                    ? alpha(theme.palette.error.main, 0.2)
-                    : 'transparent'
-              }`,
-            }}
-          >
-            {isUp ? (
-              <ArrowUpIcon sx={{ fontSize: 16 }} />
-            ) : isDown ? (
-              <ArrowDownIcon sx={{ fontSize: 16 }} />
-            ) : null}
-          </Box>
-        )}
+                    ? 'error.main'
+                    : 'text.secondary',
+                bgcolor: isUp
+                  ? alpha(theme.palette.success.main, 0.1)
+                  : isDown
+                    ? alpha(theme.palette.error.main, 0.1)
+                    : 'action.hover',
+                border: `1px solid ${
+                  isUp
+                    ? alpha(theme.palette.success.main, 0.2)
+                    : isDown
+                      ? alpha(theme.palette.error.main, 0.2)
+                      : 'transparent'
+                }`,
+              }}
+            >
+              {isUp ? (
+                <ArrowUpIcon sx={{ fontSize: 16 }} />
+              ) : isDown ? (
+                <ArrowDownIcon sx={{ fontSize: 16 }} />
+              ) : null}
+            </Box>
+          )}
+        </Box>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box
@@ -150,8 +187,15 @@ export default function OverviewStats({
   pendingQuotations,
   userType,
   monthlyTrends,
+  dealerProfiles = [],
+  dealerProfilesLoading = false,
 }: OverviewStatsProps) {
   const theme = useTheme();
+  const [dealerMenuAnchorEl, setDealerMenuAnchorEl] =
+    useState<HTMLElement | null>(null);
+  const [impersonatingDealerId, setImpersonatingDealerId] = useState<
+    number | null
+  >(null);
 
   const getTrend = (
     field: keyof MonthlyTrend,
@@ -233,6 +277,18 @@ export default function OverviewStats({
       icon: <AccountBalanceIcon />,
       trend: 'up',
       color: theme.palette.secondary.main,
+      action: (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDealerMenuAnchorEl(e.currentTarget);
+          }}
+          aria-label="View dealer activity"
+        >
+          <InfoOutlinedIcon fontSize="small" />
+        </IconButton>
+      ),
     });
   }
 
@@ -280,6 +336,176 @@ export default function OverviewStats({
           <ModernStatCard {...stat} />
         </Grid>
       ))}
+
+      <Popover
+        open={Boolean(dealerMenuAnchorEl)}
+        anchorEl={dealerMenuAnchorEl}
+        onClose={() => setDealerMenuAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: { width: 420, maxHeight: 520, overflow: 'hidden' },
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="subtitle1" fontWeight={700}>
+            Dealer activity
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {dealerProfiles.length} dealer profiles
+          </Typography>
+        </Box>
+        <Divider />
+        {dealerProfilesLoading ? (
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : (
+          <List sx={{ p: 0, maxHeight: 420, overflow: 'auto' }}>
+            {dealerProfiles.map((dealer) => (
+              <ListItem
+                key={dealer.id}
+                sx={{ alignItems: 'flex-start', py: 1.5, px: 2 }}
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    onClick={async () => {
+                      try {
+                        setImpersonatingDealerId(dealer.id);
+                        const response = await fetch(
+                          `/api/admin/dealers/${dealer.id}/impersonate`,
+                          {
+                            method: 'POST',
+                            credentials: 'include',
+                          },
+                        );
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                          throw new Error(
+                            data?.error ||
+                              data?.message ||
+                              'Failed to login as dealer',
+                          );
+                        }
+                        window.location.href = data?.target || '/dealer';
+                      } finally {
+                        setImpersonatingDealerId(null);
+                      }
+                    }}
+                    disabled={impersonatingDealerId === dealer.id}
+                    aria-label={`Login as ${dealer.name}`}
+                  >
+                    {impersonatingDealerId === dealer.id ? (
+                      <CircularProgress size={18} />
+                    ) : (
+                      <LoginIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                }
+              >
+                <ListItemAvatar>
+                  <Avatar
+                    src={
+                      dealer.logo ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(dealer.name)}&background=3f51b5&color=ffffff&size=128`
+                    }
+                    alt={dealer.name}
+                  />
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      sx={{ minWidth: 0 }}
+                    >
+                      <Typography variant="body1" fontWeight={600} noWrap>
+                        {dealer.name}
+                      </Typography>
+                      {dealer.isActive && dealer.activeDeviceCount > 0 && (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: 999,
+                            bgcolor: alpha(theme.palette.success.main, 0.1),
+                            color: 'success.main',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: 'success.main',
+                            }}
+                          />
+                          <Typography variant="caption" fontWeight={700}>
+                            Active
+                          </Typography>
+                        </Box>
+                      )}
+                      {!dealer.isActive && (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: 999,
+                            bgcolor: alpha(theme.palette.text.secondary, 0.08),
+                            color: 'text.secondary',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: 'text.secondary',
+                            }}
+                          />
+                          <Typography variant="caption" fontWeight={700}>
+                            Not active
+                          </Typography>
+                        </Box>
+                      )}
+                    </Stack>
+                  }
+                  secondary={
+                    <Box sx={{ mt: 0.5 }}>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {dealer.email}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {dealer.lastLoginAt
+                          ? `Last login ${new Date(dealer.lastLoginAt).toLocaleString()}`
+                          : 'No login history'}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </ListItem>
+            ))}
+            {dealerProfiles.length === 0 && (
+              <Box sx={{ p: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No dealer profiles available.
+                </Typography>
+              </Box>
+            )}
+          </List>
+        )}
+      </Popover>
     </Grid>
   );
 }

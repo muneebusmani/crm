@@ -87,6 +87,13 @@ export class AdminController {
     return this.buildResponse(session);
   }
 
+  @Get('dealer/:id/presence')
+  @UseGuards(AdminGuard)
+  async getDealerPresence(@Param('id', ParseIntPipe) id: number) {
+    const presence = this.adminService.isDealerConnected(id);
+    return this.buildResponse(presence);
+  }
+
   /**
    * Update device limit for a dealer.
    * @param id - Dealer user ID

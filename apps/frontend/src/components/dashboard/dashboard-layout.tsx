@@ -1,23 +1,32 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   CircularProgress,
   Container,
-  Typography,
-  IconButton,
-  Alert,
   Grid,
+  IconButton,
+  Typography,
 } from '@mui/material';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { useCallback, useEffect, useState } from 'react';
 import { get } from '@/lib/api';
 import type { DashboardStats } from '@/types/dashboard';
-import OverviewStats from './overview-stats';
-import MonthlyTrendsChart from './monthly-trends-chart';
 import LeadStatusChart from './lead-status-chart';
+import MonthlyTrendsChart from './monthly-trends-chart';
+import OverviewStats from './overview-stats';
 import RecentActivity from './recent-activity';
 import TopDealersTable from './top-dealers-table';
+
+type DealerActivity = {
+  id: number;
+  email: string;
+  name: string;
+  logo: string | null;
+  lastLoginAt: string | null;
+  isActive: boolean;
+};
 
 interface DashboardLayoutProps {
   userType: 'admin' | 'dealer';
@@ -28,16 +37,24 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [dealerActivity, setDealerActivity] = useState<DealerActivity[]>([]);
+  const [dealerActivityLoading, setDealerActivityLoading] = useState(false);
 
   const loadDashboardData = useCallback(async () => {
     try {
       setError(null);
+      setDealerActivityLoading(userType === 'admin');
       // console.log('🔍 Loading dashboard data from /analytics/dashboard...');
-      const response = await get<{
-        data?: DashboardStats;
-        success: boolean;
-        error?: string;
-      }>('/analytics/dashboard');
+      const [response, dealerActivityResponse] = await Promise.all([
+        get<{
+          data?: DashboardStats;
+          success: boolean;
+          error?: string;
+        }>('/analytics/dashboard'),
+        userType === 'admin'
+          ? fetch('/api/admin/dealers/activity', { credentials: 'include' })
+          : Promise.resolve(null),
+      ]);
 
       // console.log('📦 Dashboard response:', response);
 
@@ -50,6 +67,15 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
           `Failed to load dashboard data: ${response.error || 'Unknown error'}`,
         );
       }
+
+      if (userType === 'admin' && dealerActivityResponse) {
+        if (dealerActivityResponse.ok) {
+          const dealerActivityData = await dealerActivityResponse.json();
+          setDealerActivity(dealerActivityData.data || []);
+        } else {
+          setDealerActivity([]);
+        }
+      }
     } catch (err) {
       // console.error('💥 Dashboard error caught:', err);
       // console.error('Error details:', JSON.stringify(err, null, 2));
@@ -59,8 +85,9 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setDealerActivityLoading(false);
     }
-  }, []);
+  }, [userType]);
 
   useEffect(() => {
     loadDashboardData();
@@ -145,6 +172,8 @@ export default function DashboardLayout({ userType }: DashboardLayoutProps) {
           pendingQuotations={stats.overview.pendingQuotations}
           userType={userType}
           monthlyTrends={stats.monthlyTrends}
+          dealerProfiles={dealerActivity}
+          dealerProfilesLoading={dealerActivityLoading}
         />
       </Box>
 
