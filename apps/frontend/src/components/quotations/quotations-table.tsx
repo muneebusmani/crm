@@ -1,13 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import type { QuotationResponse } from '@crm/types';
 import {
+  Download as DownloadIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
+} from '@mui/icons-material';
+import {
+  Alert,
   Box,
   IconButton,
   InputBase,
   Pagination,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -16,27 +22,44 @@ import {
   TableRow,
   Typography,
   useTheme,
-  Snackbar,
-  Alert,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  Visibility as VisibilityIcon,
-  Download as DownloadIcon,
-} from '@mui/icons-material';
-import type { QuotationResponse } from '@crm/types';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { get } from '@/lib/api';
 import QuotationDetailDialog from './quotation-detail-dialog';
 
-const QuotationsTable: React.FC = () => {
+type QuotationRow = QuotationResponse & {
+  companyUser?: {
+    name?: string;
+    email?: string;
+  };
+  lead?: {
+    id?: string;
+    name?: string;
+  };
+};
+
+type QuotationsTableProps = {
+  apiPath?: string;
+  previewPathBase?: string;
+  downloadPathBase?: string;
+};
+
+const QuotationsTable: React.FC<QuotationsTableProps> = ({
+  apiPath = '/quotations',
+  previewPathBase,
+  downloadPathBase,
+}) => {
   const theme = useTheme();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const router = useRouter();
-  const [quotations, setQuotations] = useState<any[]>([]);
+  const [quotations, setQuotations] = useState<QuotationRow[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [selectedQuotation, setSelectedQuotation] = useState<any | null>(null);
+  const [selectedQuotation, setSelectedQuotation] =
+    useState<QuotationRow | null>(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -53,7 +76,7 @@ const QuotationsTable: React.FC = () => {
     const fetchQuotations = async () => {
       setLoading(true);
       try {
-        const response = await get('/quotations');
+        const response = await get<{ data?: QuotationRow[] }>(apiPath);
         console.log('Quotations Response:', response);
         setQuotations(response.data || []);
       } catch (error) {
@@ -70,7 +93,7 @@ const QuotationsTable: React.FC = () => {
       }
     };
     fetchQuotations();
-  }, []);
+  }, [apiPath]);
 
   // Handle opening quotation from URL query parameter
   useEffect(() => {
@@ -83,11 +106,11 @@ const QuotationsTable: React.FC = () => {
         setOpenDetailDialog(true);
         // Clear the query parameter after a short delay
         setTimeout(() => {
-          router.replace('/dealer/quotations', { scroll: false });
+          router.replace(pathname, { scroll: false });
         }, 100);
       }
     }
-  }, [searchParams, quotations, openDetailDialog, router]);
+  }, [openDetailDialog, pathname, quotations, router, searchParams]);
 
   // Filter and paginate
   const filteredQuotations = quotations.filter((quotation) =>
@@ -103,12 +126,12 @@ const QuotationsTable: React.FC = () => {
 
   const totalPages = Math.ceil(filteredQuotations.length / ROWS_PER_PAGE);
 
-  const handleViewDetails = (quotation: any) => {
+  const handleViewDetails = (quotation: QuotationRow) => {
     setSelectedQuotation(quotation);
     setOpenDetailDialog(true);
   };
 
-  const handleDownloadPdf = async (quotation: any) => {
+  const handleDownloadPdf = async (quotation: QuotationRow) => {
     try {
       setDownloadingId(quotation.id);
 
@@ -127,12 +150,17 @@ const QuotationsTable: React.FC = () => {
         deliveryLocation: quotation.deliveryLocation || '',
       };
 
-      const res = await fetch('/api/quotations/download-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+      const res = downloadPathBase
+        ? await fetch(`${downloadPathBase}/${quotation.id}/download-pdf`, {
+            method: 'POST',
+            credentials: 'include',
+          })
+        : await fetch('/api/quotations/download-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload),
+          });
 
       if (!res.ok) throw new Error('Failed to download PDF');
 
@@ -207,16 +235,28 @@ const QuotationsTable: React.FC = () => {
               <TableCell sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Date</strong>
               </TableCell>
-              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="right"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Sub Total</strong>
               </TableCell>
-              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="right"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Tax</strong>
               </TableCell>
-              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="right"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Grand Total</strong>
               </TableCell>
-              <TableCell align="center" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="center"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Actions</strong>
               </TableCell>
             </TableRow>
@@ -311,6 +351,7 @@ const QuotationsTable: React.FC = () => {
       <QuotationDetailDialog
         open={openDetailDialog}
         quotation={selectedQuotation}
+        previewPathBase={previewPathBase}
         onClose={() => {
           setOpenDetailDialog(false);
           setSelectedQuotation(null);

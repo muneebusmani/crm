@@ -1,14 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import type { InvoiceResponse } from '@crm/types';
 import {
+  Download as DownloadIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
+} from '@mui/icons-material';
+import {
+  Alert,
   Box,
-  Chip,
   IconButton,
   InputBase,
   Pagination,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -17,27 +22,45 @@ import {
   TableRow,
   Typography,
   useTheme,
-  Snackbar,
-  Alert,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  Visibility as VisibilityIcon,
-  Download as DownloadIcon,
-} from '@mui/icons-material';
-import type { InvoiceResponse } from '@crm/types';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { get } from '@/lib/api';
 import InvoiceDetailDialog from './invoice-detail-dialog';
 
-const InvoicesTable: React.FC = () => {
+type InvoiceRow = InvoiceResponse & {
+  companyUser?: {
+    name?: string;
+    email?: string;
+  };
+  lead?: {
+    id?: string;
+    name?: string;
+  };
+};
+
+type InvoicesTableProps = {
+  apiPath?: string;
+  previewPathBase?: string;
+  downloadPathBase?: string;
+};
+
+const InvoicesTable: React.FC<InvoicesTableProps> = ({
+  apiPath = '/invoices',
+  previewPathBase,
+  downloadPathBase,
+}) => {
   const theme = useTheme();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const router = useRouter();
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(
+    null,
+  );
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -54,7 +77,7 @@ const InvoicesTable: React.FC = () => {
     const fetchInvoices = async () => {
       setLoading(true);
       try {
-        const response = await get('/invoices');
+        const response = await get<{ data?: InvoiceRow[] }>(apiPath);
         console.log('Invoices Response:', response);
         setInvoices(response.data || []);
       } catch (error) {
@@ -70,7 +93,7 @@ const InvoicesTable: React.FC = () => {
     };
 
     fetchInvoices();
-  }, []);
+  }, [apiPath]);
 
   // Handle opening invoice from URL query parameter
   useEffect(() => {
@@ -83,11 +106,11 @@ const InvoicesTable: React.FC = () => {
         setOpenDetailDialog(true);
         // Clear the query parameter after a short delay
         setTimeout(() => {
-          router.replace('/dealer/invoices', { scroll: false });
+          router.replace(pathname, { scroll: false });
         }, 100);
       }
     }
-  }, [searchParams, invoices, openDetailDialog, router]);
+  }, [invoices, openDetailDialog, pathname, router, searchParams]);
 
   // Filter and paginate
   const filteredInvoices = invoices.filter((invoice) =>
@@ -103,12 +126,12 @@ const InvoicesTable: React.FC = () => {
 
   const totalPages = Math.ceil(filteredInvoices.length / ROWS_PER_PAGE);
 
-  const handleViewDetails = (invoice: any) => {
+  const handleViewDetails = (invoice: InvoiceRow) => {
     setSelectedInvoice(invoice);
     setOpenDetailDialog(true);
   };
 
-  const handleDownloadPdf = async (invoice: any) => {
+  const handleDownloadPdf = async (invoice: InvoiceRow) => {
     try {
       setDownloadingId(invoice.id);
 
@@ -127,12 +150,17 @@ const InvoicesTable: React.FC = () => {
         deliveryLocation: invoice.deliveryLocation || '',
       };
 
-      const res = await fetch('/api/invoices/download-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+      const res = downloadPathBase
+        ? await fetch(`${downloadPathBase}/${invoice.id}/download-pdf`, {
+            method: 'POST',
+            credentials: 'include',
+          })
+        : await fetch('/api/invoices/download-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload),
+          });
 
       if (!res.ok) throw new Error('Failed to download PDF');
 
@@ -160,21 +188,6 @@ const InvoicesTable: React.FC = () => {
       });
     } finally {
       setDownloadingId(null);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return 'warning';
-      case 'SENT':
-        return 'info';
-      case 'PAID':
-        return 'success';
-      case 'CANCELLED':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
@@ -222,19 +235,31 @@ const InvoicesTable: React.FC = () => {
               <TableCell sx={{ color: theme.palette.primary.contrastText }}>
                 <strong>Date</strong>
               </TableCell>
-              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="right"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Sub Total</strong>
               </TableCell>
-              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="right"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Tax</strong>
               </TableCell>
-              <TableCell align="right" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="right"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Grand Total</strong>
               </TableCell>
               {/* <TableCell> */}
               {/*   <strong>Status</strong> */}
               {/* </TableCell> */}
-              <TableCell align="center" sx={{ color: theme.palette.primary.contrastText }}>
+              <TableCell
+                align="center"
+                sx={{ color: theme.palette.primary.contrastText }}
+              >
                 <strong>Actions</strong>
               </TableCell>
             </TableRow>
@@ -337,6 +362,7 @@ const InvoicesTable: React.FC = () => {
       <InvoiceDetailDialog
         open={openDetailDialog}
         invoice={selectedInvoice}
+        previewPathBase={previewPathBase}
         onClose={() => {
           setOpenDetailDialog(false);
           setSelectedInvoice(null);

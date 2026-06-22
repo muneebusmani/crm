@@ -1,27 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Close as CloseIcon } from '@mui/icons-material';
 import {
+  Box,
+  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
-  Box,
   IconButton,
-  CircularProgress,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
 import { post } from '@/lib/api';
+
+type QuotationRow = {
+  id: string;
+  quotationNumber?: string;
+  lead?: { id?: string };
+  leadId?: string;
+  date?: string;
+  sellerNote?: string;
+  items?: Array<{
+    id?: string;
+    productName?: string;
+    productDetails?: string;
+    unitPrice?: number | string;
+    quantity?: number;
+    discount?: number | string;
+    taxAmount?: number | string;
+    totalPrice?: number | string;
+    subTotal?: number | string;
+  }>;
+  subTotal?: number;
+  taxAmount?: number;
+  grandTotal?: number;
+  recoveryLocation?: string;
+  deliveryLocation?: string;
+};
 
 interface QuotationDetailDialogProps {
   open: boolean;
-  quotation: any | null;
+  quotation: QuotationRow | null;
   onClose: () => void;
+  previewPathBase?: string;
 }
 
 export default function QuotationDetailDialog({
   open,
   quotation,
   onClose,
+  previewPathBase,
 }: QuotationDetailDialogProps) {
   const [htmlContent, setHtmlContent] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -30,30 +57,39 @@ export default function QuotationDetailDialog({
     if (open && quotation) {
       setLoading(true);
 
-      // Transform quotation data to match backend expected format
-      // Include all existing quotation data for accurate preview generation
-      const payload = {
-        quotationNumber: quotation.quotationNumber,
-        leadId: quotation.lead?.id || quotation.leadId,
-        date: quotation.date,
-        sellerNote: quotation.sellerNote || '',
-        items: quotation.items || [],
-        subTotal: Number(quotation.subTotal) || 0,
-        taxAmount: Number(quotation.taxAmount) || 0,
-        grandTotal: Number(quotation.grandTotal) || 0,
-        recoveryLocation: quotation.recoveryLocation || '',
-        deliveryLocation: quotation.deliveryLocation || '',
-      };
+      const previewPath = previewPathBase
+        ? `${previewPathBase}/${quotation.id}/preview`
+        : null;
 
-      post('/quotations/preview', payload)
+      const request = previewPath
+        ? fetch(previewPath, { method: 'GET', credentials: 'include' })
+        : post('/quotations/preview', {
+            quotationNumber: quotation.quotationNumber,
+            leadId: quotation.lead?.id || quotation.leadId,
+            date: quotation.date,
+            sellerNote: quotation.sellerNote || '',
+            items: quotation.items || [],
+            subTotal: Number(quotation.subTotal) || 0,
+            taxAmount: Number(quotation.taxAmount) || 0,
+            grandTotal: Number(quotation.grandTotal) || 0,
+            recoveryLocation: quotation.recoveryLocation || '',
+            deliveryLocation: quotation.deliveryLocation || '',
+          });
+
+      request
         .then((response) => {
-          // The response is the HTML string directly from the backend
-          setHtmlContent(response as unknown as string);
+          if (previewPath) {
+            return response.text();
+          }
+          return response as unknown as string;
+        })
+        .then((content) => {
+          setHtmlContent(content);
         })
         .catch(() => setHtmlContent('<p>Failed to load preview</p>'))
         .finally(() => setLoading(false));
     }
-  }, [open, quotation]);
+  }, [open, previewPathBase, quotation]);
 
   if (!quotation) return null;
 

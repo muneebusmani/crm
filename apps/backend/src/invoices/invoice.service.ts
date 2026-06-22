@@ -67,22 +67,32 @@ export class InvoiceService {
 
     private readonly pdfService: PdfService,
     private readonly supabaseStorageService: SupabaseStorageService,
-  ) { }
+  ) {}
 
-  private async resolveLogoUrl(logoPath: string | null): Promise<string | null> {
+  private async resolveLogoUrl(
+    logoPath: string | null,
+  ): Promise<string | null> {
     if (!logoPath) return null;
     if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
       return logoPath;
     }
 
     try {
-      if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
+      if (
+        logoPath.includes('dealer-uploads') ||
+        logoPath.startsWith('dealer/')
+      ) {
         const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
-        if (publicUrl && !publicUrl.includes('undefined') && !publicUrl.includes('null')) {
+        if (
+          publicUrl &&
+          !publicUrl.includes('undefined') &&
+          !publicUrl.includes('null')
+        ) {
           return publicUrl;
         }
 
-        const isPublic = await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
+        const isPublic =
+          await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
         if (isPublic && publicUrl) return publicUrl;
 
         return await this.supabaseStorageService.getSignedUrl(logoPath, 604800);
@@ -136,8 +146,8 @@ export class InvoiceService {
     const dealerLead = await this.dealerLeadRepository.findOne({
       where: {
         dealer: { id: dealerId },
-        lead: { id: createInvoiceDto.leadId }
-      }
+        lead: { id: createInvoiceDto.leadId },
+      },
     });
 
     if (dealerLead && dealerLead.status === LeadStatus.WON) {
@@ -204,8 +214,8 @@ export class InvoiceService {
         subTotal: Math.round(item.unitPrice * item.quantity),
         totalPrice: Math.round(
           item.unitPrice * item.quantity -
-          (item.discount || 0) +
-          (item.taxAmount || 0),
+            (item.discount || 0) +
+            (item.taxAmount || 0),
         ),
       }),
     );
@@ -254,13 +264,13 @@ export class InvoiceService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-            name: dealer.dealer.name,
-            owner: dealer.dealer.owner,
-            location: dealer.dealer.location,
-            logo: await this.resolveLogoUrl(dealer.dealer.logo),
-            website: dealer.dealer.website,
-            contactEmail: dealer.dealer.contactEmail,
-          }
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: await this.resolveLogoUrl(dealer.dealer.logo),
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
           : null,
       },
       items: invoiceItems,
@@ -285,7 +295,10 @@ export class InvoiceService {
       template: 'invoice-pdf',
       context: {
         invoiceData,
-        baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+        baseUrl:
+          process.env.FRONTEND_URL ||
+          process.env.BACKEND_URL ||
+          'http://localhost:3000',
       },
     });
 
@@ -324,6 +337,72 @@ export class InvoiceService {
       relations: ['dealer', 'lead', 'items', 'companyUser'], // ✅ added companyUser
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findAllForAdmin(): Promise<Invoice[]> {
+    return this.invoiceRepository.find({
+      relations: ['dealer', 'lead', 'items', 'companyUser'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOneForAdmin(id: string): Promise<Invoice> {
+    const invoice = await this.invoiceRepository.findOne({
+      where: { id },
+      relations: ['dealer', 'lead', 'items', 'companyUser'],
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found');
+    }
+
+    return invoice;
+  }
+
+  async generatePreviewForAdmin(id: string): Promise<string> {
+    const invoice = await this.findOneForAdmin(id);
+    return this.generatePreview(
+      {
+        leadId: invoice.lead?.id,
+        date: invoice.date,
+        sellerNote: invoice.sellerNote || '',
+        items: invoice.items.map((item) => ({
+          productName: item.productName,
+          productDetails: item.productDetails || '',
+          unitPrice: Number(item.unitPrice),
+          quantity: item.quantity,
+          discount: Number(item.discount || 0),
+          taxAmount: Number(item.taxAmount || 0),
+        })),
+        taxAmount: Number(invoice.taxAmount || 0),
+        recoveryLocation: '',
+        deliveryLocation: '',
+      } as CreateInvoiceDto,
+      invoice.dealer.id,
+    );
+  }
+
+  async generatePdfForAdmin(id: string): Promise<Buffer> {
+    const invoice = await this.findOneForAdmin(id);
+    return this.generatePdf(
+      {
+        leadId: invoice.lead?.id,
+        date: invoice.date,
+        sellerNote: invoice.sellerNote || '',
+        items: invoice.items.map((item) => ({
+          productName: item.productName,
+          productDetails: item.productDetails || '',
+          unitPrice: Number(item.unitPrice),
+          quantity: item.quantity,
+          discount: Number(item.discount || 0),
+          taxAmount: Number(item.taxAmount || 0),
+        })),
+        taxAmount: Number(invoice.taxAmount || 0),
+        recoveryLocation: '',
+        deliveryLocation: '',
+      } as CreateInvoiceDto,
+      invoice.dealer.id,
+    );
   }
 
   private async ensureDealerLead(
@@ -573,13 +652,13 @@ export class InvoiceService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-            name: dealer.dealer.name,
-            owner: dealer.dealer.owner,
-            location: dealer.dealer.location,
-            logo: await this.resolveLogoUrl(dealer.dealer.logo),
-            website: dealer.dealer.website,
-            contactEmail: dealer.dealer.contactEmail,
-          }
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: await this.resolveLogoUrl(dealer.dealer.logo),
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
           : null,
       },
       items: previewData.items.map((item) => ({
@@ -592,8 +671,8 @@ export class InvoiceService {
         subTotal: Math.round(item.unitPrice * item.quantity),
         totalPrice: Math.round(
           item.unitPrice * item.quantity -
-          (item.discount || 0) +
-          (item.taxAmount || 0),
+            (item.discount || 0) +
+            (item.taxAmount || 0),
         ),
       })),
       sellerNote: previewData.sellerNote,
@@ -721,13 +800,13 @@ export class InvoiceService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-            name: dealer.dealer.name,
-            owner: dealer.dealer.owner,
-            location: dealer.dealer.location,
-            logo: await this.resolveLogoUrl(dealer.dealer.logo),
-            website: dealer.dealer.website,
-            contactEmail: dealer.dealer.contactEmail,
-          }
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: await this.resolveLogoUrl(dealer.dealer.logo),
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
           : null,
       },
       items: previewData.items.map((item) => ({
@@ -762,7 +841,10 @@ export class InvoiceService {
     const template = Handlebars.compile(templateSource);
     const html = template({
       invoiceData,
-      baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+      baseUrl:
+        process.env.FRONTEND_URL ||
+        process.env.BACKEND_URL ||
+        'http://localhost:3000',
     });
 
     return html;

@@ -3,7 +3,9 @@
 import { UserType } from '@crm/types';
 import {
   AccountBoxOutlined as AccountBoxOutlinedIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
   Circle as CircleIcon,
+  DarkMode as DarkModeIcon,
   Dashboard as DashboardIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
@@ -11,20 +13,16 @@ import {
   Groups2 as Groups2Icon,
   Home as HomeIcon,
   Inventory2Outlined as Inventory2OutlinedIcon,
+  LightMode as LightModeIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   MenuOpen,
-  Message as MessageIcon,
   Person as PersonIcon,
-  SwitchAccount as SwitchAccountIcon,
   ReceiptLong as ReceiptLongIcon,
   RequestQuote as RequestQuoteIcon,
   SupportAgent as SupportAgentIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
+  SwitchAccount as SwitchAccountIcon,
 } from '@mui/icons-material';
-import { useThemeMode } from '@/contexts/theme-context';
 import {
   alpha,
   Box,
@@ -46,6 +44,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useLayoutEffect, useState } from 'react';
+import { useThemeMode } from '@/contexts/theme-context';
 
 // Constants
 const DRAWER_WIDTH = 280;
@@ -189,6 +188,8 @@ const userRoutesMap: Record<UserType, NavigationItem[]> = {
   admin: [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Leads', icon: <GroupOutlinedIcon />, path: '/leads' },
+    { text: 'Quotations', icon: <RequestQuoteIcon />, path: '/quotations' },
+    { text: 'Invoices', icon: <ReceiptLongIcon />, path: '/invoices' },
     { text: 'Dealers', icon: <PersonIcon />, path: '/dealer' },
     { text: 'Admin', icon: <AdminPanelSettingsIcon />, path: '/adminstration' },
     { text: 'Support', icon: <SupportAgentIcon />, path: '/support' },
@@ -235,10 +236,13 @@ const prefixRoutes = (
 const ThemeToggleButton: React.FC<{ isShrunk: boolean }> = ({ isShrunk }) => {
   const { mode, toggleMode } = useThemeMode();
   const theme = useTheme();
-  
+
   return (
     <ListItem disablePadding>
-      <Tooltip title={isShrunk ? (mode === 'light' ? 'Dark Mode' : 'Light Mode') : ''} placement="right">
+      <Tooltip
+        title={isShrunk ? (mode === 'light' ? 'Dark Mode' : 'Light Mode') : ''}
+        placement="right"
+      >
         <ListItemButton
           onClick={toggleMode}
           sx={{
@@ -261,7 +265,10 @@ const ThemeToggleButton: React.FC<{ isShrunk: boolean }> = ({ isShrunk }) => {
             {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
           </ListItemIcon>
           {!isShrunk && (
-            <ListItemText primary={mode === 'light' ? 'Dark Mode' : 'Light Mode'} sx={{ ml: 1 }} />
+            <ListItemText
+              primary={mode === 'light' ? 'Dark Mode' : 'Light Mode'}
+              sx={{ ml: 1 }}
+            />
           )}
         </ListItemButton>
       </Tooltip>

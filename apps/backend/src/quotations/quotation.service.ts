@@ -66,22 +66,32 @@ export class QuotationService {
     private readonly dealerTierService: DealerTierService, // inject service
     private readonly pdfService: PdfService,
     private readonly supabaseStorageService: SupabaseStorageService,
-  ) { }
+  ) {}
 
-  private async resolveLogoUrl(logoPath: string | null): Promise<string | null> {
+  private async resolveLogoUrl(
+    logoPath: string | null,
+  ): Promise<string | null> {
     if (!logoPath) return null;
     if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
       return logoPath;
     }
 
     try {
-      if (logoPath.includes('dealer-uploads') || logoPath.startsWith('dealer/')) {
+      if (
+        logoPath.includes('dealer-uploads') ||
+        logoPath.startsWith('dealer/')
+      ) {
         const publicUrl = this.supabaseStorageService.getPublicUrl(logoPath);
-        if (publicUrl && !publicUrl.includes('undefined') && !publicUrl.includes('null')) {
+        if (
+          publicUrl &&
+          !publicUrl.includes('undefined') &&
+          !publicUrl.includes('null')
+        ) {
           return publicUrl;
         }
 
-        const isPublic = await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
+        const isPublic =
+          await this.supabaseStorageService.isFilePubliclyAccessible(logoPath);
         if (isPublic && publicUrl) return publicUrl;
 
         // fallback to a longer-lived signed URL
@@ -138,8 +148,8 @@ export class QuotationService {
     const dealerLead = await this.dealerLeadRepository.findOne({
       where: {
         dealer: { id: dealerId },
-        lead: { id: createQuotationDto.leadId }
-      }
+        lead: { id: createQuotationDto.leadId },
+      },
     });
 
     if (dealerLead && dealerLead.status === LeadStatus.WON) {
@@ -200,9 +210,15 @@ export class QuotationService {
         savedQuotation = await this.quotationRepository.save(quotation);
         break; // Success, exit retry loop
       } catch (error) {
-        if (error.code === '23505' && error.detail && error.detail.includes('quotationNumber')) {
+        if (
+          error.code === '23505' &&
+          error.detail &&
+          error.detail.includes('quotationNumber')
+        ) {
           // Duplicate key error for quotationNumber, retry
-          console.log(`Duplicate quotation number on attempt ${attempt + 1}, retrying...`);
+          console.log(
+            `Duplicate quotation number on attempt ${attempt + 1}, retrying...`,
+          );
           continue;
         } else {
           // Some other error, re-throw
@@ -212,7 +228,9 @@ export class QuotationService {
     }
 
     if (!savedQuotation) {
-      throw new BadRequestException('Failed to create quotation after multiple attempts');
+      throw new BadRequestException(
+        'Failed to create quotation after multiple attempts',
+      );
     }
 
     // 📦 6. Create quotation items
@@ -228,8 +246,8 @@ export class QuotationService {
         subTotal: Math.round(item.unitPrice * item.quantity),
         totalPrice: Math.round(
           item.unitPrice * item.quantity -
-          (item.discount || 0) +
-          (item.taxAmount || 0),
+            (item.discount || 0) +
+            (item.taxAmount || 0),
         ),
       }),
     );
@@ -278,13 +296,13 @@ export class QuotationService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-            name: dealer.dealer.name,
-            owner: dealer.dealer.owner,
-            location: dealer.dealer.location,
-            logo: await this.resolveLogoUrl(dealer.dealer.logo),
-            website: dealer.dealer.website,
-            contactEmail: dealer.dealer.contactEmail,
-          }
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: await this.resolveLogoUrl(dealer.dealer.logo),
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
           : null,
       },
       items: quotationItems,
@@ -309,7 +327,10 @@ export class QuotationService {
       template: 'quotation-pdf',
       context: {
         quotationData,
-        baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+        baseUrl:
+          process.env.FRONTEND_URL ||
+          process.env.BACKEND_URL ||
+          'http://localhost:3000',
       },
     });
 
@@ -325,6 +346,72 @@ export class QuotationService {
       relations: ['dealer', 'lead', 'items', 'companyUser'], // ✅ added companyUser
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findAllForAdmin(): Promise<Quotation[]> {
+    return this.quotationRepository.find({
+      relations: ['dealer', 'lead', 'items', 'companyUser'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOneForAdmin(id: string): Promise<Quotation> {
+    const quotation = await this.quotationRepository.findOne({
+      where: { id },
+      relations: ['dealer', 'lead', 'items', 'companyUser'],
+    });
+
+    if (!quotation) {
+      throw new NotFoundException('Quotation not found');
+    }
+
+    return quotation;
+  }
+
+  async generatePreviewForAdmin(id: string): Promise<string> {
+    const quotation = await this.findOneForAdmin(id);
+    return this.generatePreview(
+      {
+        leadId: quotation.lead?.id,
+        date: quotation.date,
+        sellerNote: quotation.sellerNote || '',
+        items: quotation.items.map((item) => ({
+          productName: item.productName,
+          productDetails: item.productDetails || '',
+          unitPrice: Number(item.unitPrice),
+          quantity: item.quantity,
+          discount: Number(item.discount || 0),
+          taxAmount: Number(item.taxAmount || 0),
+        })),
+        taxAmount: Number(quotation.taxAmount || 0),
+        recoveryLocation: '',
+        deliveryLocation: '',
+      } as CreateQuotationDto,
+      quotation.dealer.id,
+    );
+  }
+
+  async generatePdfForAdmin(id: string): Promise<Buffer> {
+    const quotation = await this.findOneForAdmin(id);
+    return this.generatePdf(
+      {
+        leadId: quotation.lead?.id,
+        date: quotation.date,
+        sellerNote: quotation.sellerNote || '',
+        items: quotation.items.map((item) => ({
+          productName: item.productName,
+          productDetails: item.productDetails || '',
+          unitPrice: Number(item.unitPrice),
+          quantity: item.quantity,
+          discount: Number(item.discount || 0),
+          taxAmount: Number(item.taxAmount || 0),
+        })),
+        taxAmount: Number(quotation.taxAmount || 0),
+        recoveryLocation: '',
+        deliveryLocation: '',
+      } as CreateQuotationDto,
+      quotation.dealer.id,
+    );
   }
 
   private async ensureDealerLead(
@@ -437,7 +524,10 @@ export class QuotationService {
 
     let nextNumber = 1;
     if (latestQuotation && latestQuotation.maxNumber) {
-      const lastNumber = parseInt(latestQuotation.maxNumber.replace('#VL', ''), 10);
+      const lastNumber = parseInt(
+        latestQuotation.maxNumber.replace('#VL', ''),
+        10,
+      );
       if (!isNaN(lastNumber)) {
         nextNumber = lastNumber + 1;
       }
@@ -591,13 +681,13 @@ export class QuotationService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-            name: dealer.dealer.name,
-            owner: dealer.dealer.owner,
-            location: dealer.dealer.location,
-            logo: await this.resolveLogoUrl(dealer.dealer.logo),
-            website: dealer.dealer.website,
-            contactEmail: dealer.dealer.contactEmail,
-          }
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: await this.resolveLogoUrl(dealer.dealer.logo),
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
           : null,
       },
       items: previewData.items.map((item) => ({
@@ -610,8 +700,8 @@ export class QuotationService {
         subTotal: Math.round(item.unitPrice * item.quantity),
         totalPrice: Math.round(
           item.unitPrice * item.quantity -
-          (item.discount || 0) +
-          (item.taxAmount || 0),
+            (item.discount || 0) +
+            (item.taxAmount || 0),
         ),
       })),
       sellerNote: previewData.sellerNote,
@@ -739,13 +829,13 @@ export class QuotationService {
         email: dealer.email,
         profile: dealer.dealer
           ? {
-            name: dealer.dealer.name,
-            owner: dealer.dealer.owner,
-            location: dealer.dealer.location,
-            logo: await this.resolveLogoUrl(dealer.dealer.logo),
-            website: dealer.dealer.website,
-            contactEmail: dealer.dealer.contactEmail,
-          }
+              name: dealer.dealer.name,
+              owner: dealer.dealer.owner,
+              location: dealer.dealer.location,
+              logo: await this.resolveLogoUrl(dealer.dealer.logo),
+              website: dealer.dealer.website,
+              contactEmail: dealer.dealer.contactEmail,
+            }
           : null,
       },
       items: previewData.items.map((item) => ({
@@ -780,7 +870,10 @@ export class QuotationService {
     const template = Handlebars.compile(templateSource);
     const html = template({
       quotationData,
-      baseUrl: process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:3000',
+      baseUrl:
+        process.env.FRONTEND_URL ||
+        process.env.BACKEND_URL ||
+        'http://localhost:3000',
     });
 
     return html;

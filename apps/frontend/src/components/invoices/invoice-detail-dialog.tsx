@@ -1,27 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Close as CloseIcon } from '@mui/icons-material';
 import {
+  Box,
+  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
-  Box,
   IconButton,
-  CircularProgress,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
 import { post } from '@/lib/api';
+
+type InvoiceRow = {
+  id: string;
+  invoiceNumber?: string;
+  lead?: { id?: string };
+  leadId?: string;
+  date?: string;
+  sellerNote?: string;
+  items?: Array<{
+    id?: string;
+    productName?: string;
+    productDetails?: string;
+    unitPrice?: number | string;
+    quantity?: number;
+    discount?: number | string;
+    taxAmount?: number | string;
+    totalPrice?: number | string;
+    subTotal?: number | string;
+  }>;
+  subTotal?: number;
+  taxAmount?: number;
+  grandTotal?: number;
+  recoveryLocation?: string;
+  deliveryLocation?: string;
+};
 
 interface InvoiceDetailDialogProps {
   open: boolean;
-  invoice: any | null;
+  invoice: InvoiceRow | null;
   onClose: () => void;
+  previewPathBase?: string;
 }
 
 export default function InvoiceDetailDialog({
   open,
   invoice,
   onClose,
+  previewPathBase,
 }: InvoiceDetailDialogProps) {
   const [htmlContent, setHtmlContent] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -30,30 +57,39 @@ export default function InvoiceDetailDialog({
     if (open && invoice) {
       setLoading(true);
 
-      // Transform invoice data to match backend expected format
-      // Include all existing invoice data for accurate preview generation
-      const payload = {
-        invoiceNumber: invoice.invoiceNumber,
-        leadId: invoice.lead?.id || invoice.leadId,
-        date: invoice.date,
-        sellerNote: invoice.sellerNote || '',
-        items: invoice.items || [],
-        subTotal: Number(invoice.subTotal) || 0,
-        taxAmount: Number(invoice.taxAmount) || 0,
-        grandTotal: Number(invoice.grandTotal) || 0,
-        recoveryLocation: invoice.recoveryLocation || '',
-        deliveryLocation: invoice.deliveryLocation || '',
-      };
+      const previewPath = previewPathBase
+        ? `${previewPathBase}/${invoice.id}/preview`
+        : null;
 
-      post('/invoices/preview', payload)
+      const request = previewPath
+        ? fetch(previewPath, { method: 'GET', credentials: 'include' })
+        : post('/invoices/preview', {
+            invoiceNumber: invoice.invoiceNumber,
+            leadId: invoice.lead?.id || invoice.leadId,
+            date: invoice.date,
+            sellerNote: invoice.sellerNote || '',
+            items: invoice.items || [],
+            subTotal: Number(invoice.subTotal) || 0,
+            taxAmount: Number(invoice.taxAmount) || 0,
+            grandTotal: Number(invoice.grandTotal) || 0,
+            recoveryLocation: invoice.recoveryLocation || '',
+            deliveryLocation: invoice.deliveryLocation || '',
+          });
+
+      request
         .then((response) => {
-          // The response is the HTML string directly from the backend
-          setHtmlContent(response as unknown as string);
+          if (previewPath) {
+            return response.text();
+          }
+          return response as unknown as string;
+        })
+        .then((content) => {
+          setHtmlContent(content);
         })
         .catch(() => setHtmlContent('<p>Failed to load preview</p>'))
         .finally(() => setLoading(false));
     }
-  }, [open, invoice]);
+  }, [invoice, open, previewPathBase]);
 
   if (!invoice) return null;
 
