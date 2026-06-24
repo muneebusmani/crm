@@ -200,11 +200,11 @@ const userRoutesMap: Record<UserType, NavigationItem[]> = {
     { text: 'Invoices', icon: <ReceiptLongIcon />, path: '/invoices' },
     { text: 'Quotations', icon: <RequestQuoteIcon />, path: '/quotations' },
     // { text: 'Messages', icon: <MessageIcon />, path: '/messages' },
-    {
-      text: 'Packages',
-      icon: <Inventory2OutlinedIcon />,
-      path: '/packages',
-    },
+    // {
+    //   text: 'Packages',
+    //   icon: <Inventory2OutlinedIcon />,
+    //   path: '/packages',
+    // },
     {
       text: 'Support',
       icon: <SupportAgentIcon />,
