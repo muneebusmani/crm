@@ -972,615 +972,6 @@ const LeadsTable: React.FC<LeadsTableProps> = ({ view = 'dealer' }) => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      {/* Regular Leads Accordion */}
-      <Accordion
-        expanded={regularLeadsExpanded}
-        onChange={() => setRegularLeadsExpanded(!regularLeadsExpanded)}
-        sx={{ mb: 2 }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          sx={{
-            backgroundColor: theme.palette.primary.main,
-            '&:hover': {
-              backgroundColor: theme.palette.primary.dark,
-            },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              width: '100%',
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 'bold',
-                color: theme.palette.primary.contrastText,
-              }}
-            >
-              Regular Leads
-            </Typography>
-            <Chip
-              label={`${regularTotalLeads} Total`}
-              color="primary"
-              size="small"
-            />
-            <Box
-              onClick={(e) => e.stopPropagation()}
-              sx={{ ml: 'auto', mr: 2 }}
-            >
-              <InputBase
-                placeholder="Search Regular Leads..."
-                value={regularSearchTerm}
-                onChange={handleRegularSearchChange}
-                startAdornment={
-                  <SearchIcon
-                    sx={{ color: theme.palette.text.secondary, ml: 1 }}
-                    fontSize="small"
-                  />
-                }
-                sx={{
-                  width: 300,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 1,
-                  px: 2,
-                  py: 1,
-                  backgroundColor: theme.palette.background.paper,
-                  '& input': { padding: '0 !important' },
-                }}
-              />
-            </Box>
-          </Box>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 0 }}>
-          <Paper elevation={0} sx={{ overflow: 'hidden' }}>
-            {/* Table */}
-            <TableContainer sx={{}}>
-              <Table
-                stickyHeader
-                aria-label="leads table"
-                sx={{
-                  minWidth: TABLE_MIN_WIDTH,
-                  tableLayout: 'auto',
-                  '& th, & td': { whiteSpace: 'nowrap' },
-                  '& th:nth-of-type(1), & td:nth-of-type(1)': { maxWidth: 100 }, // Name
-                  '& th:nth-of-type(2), & td:nth-of-type(2)': { maxWidth: 120 }, // Email
-                  '& th:nth-of-type(3), & td:nth-of-type(3)': { maxWidth: 120 }, // Phone
-                  '& th:nth-of-type(4), & td:nth-of-type(4)': {
-                    minWidth: 100,
-                    textAlign: 'center',
-                  }, // Received at
-                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 100 }, // VRM
-                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 100 }, // Post Code
-                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 100 }, // Make
-                  '& th:nth-of-type(8), & td:nth-of-type(8)': { maxWidth: 100 }, // Model
-                  '& th:nth-of-type(9), & td:nth-of-type(9)': {
-                    minWidth: 100,
-                    textAlign: 'center',
-                  }, // Year
-                  '& th:nth-of-type(10), & td:nth-of-type(10)': {
-                    maxWidth: 100,
-                  }, // Customer Notes
-                  '& th:nth-of-type(11), & td:nth-of-type(11)': {
-                    minWidth: 100,
-                    textAlign: 'center',
-                  }, // Fuel Type
-                  '& th:nth-of-type(12), & td:nth-of-type(12)': {
-                    minWidth: 100,
-                    textAlign: 'center',
-                  }, // Engine Title
-                  '& th:nth-of-type(13), & td:nth-of-type(13)': {
-                    minWidth: 90,
-                    textAlign: 'center',
-                  }, // Engine Capacity
-                }}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Name
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Email
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Phone
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ textAlign: 'center' }}>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Received at
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        VRM
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Post Code
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Make
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Model
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Year
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Customer Notes
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Fuel Type
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Engine Title
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Engine Capacity
-                      </Typography>
-                    </TableCell>
-
-                    {showLeadNotesAndStatus && (
-                      <TableCell
-                        sx={{
-                          position: 'sticky',
-                          right: leadNotesRightOffset,
-                          backgroundColor: theme.palette.background.paper,
-                          zIndex: 4,
-                          minWidth: NOTES_COL_WIDTH,
-                          width: NOTES_COL_WIDTH,
-                          padding: '12px 8px',
-                          borderRight: `1px solid ${theme.palette.divider}`,
-                          borderLeft: `1px solid ${theme.palette.divider}`,
-                          textAlign: 'center',
-                        }}
-                      >
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          Notes
-                        </Typography>
-                      </TableCell>
-                    )}
-                    {showLeadNotesAndStatus && (
-                      <TableCell
-                        sx={{
-                          position: 'sticky',
-                          right: leadStatusRightOffset,
-                          backgroundColor: theme.palette.background.paper,
-                          zIndex: 4,
-                          minWidth: STATUS_COL_WIDTH,
-                          width: STATUS_COL_WIDTH,
-                          maxWidth: STATUS_COL_WIDTH,
-                          padding: '12px 8px',
-                          borderRight: `1px solid ${theme.palette.divider}`,
-                          textAlign: 'center',
-                        }}
-                      >
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          Status
-                        </Typography>
-                      </TableCell>
-                    )}
-                    <TableCell
-                      sx={{
-                        position: 'sticky',
-                        right: 0,
-                        backgroundColor: theme.palette.background.paper,
-                        zIndex: 4,
-                        minWidth: ACTION_COL_WIDTH,
-                        width: ACTION_COL_WIDTH,
-                        maxWidth: ACTION_COL_WIDTH,
-                        padding: '12px 8px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Action
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {leadsLoading ? (
-                    <TableSkeletonRows rows={rowsPerPage} columns={9} />
-                  ) : currentLeads.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                        <Typography variant="body1" color="text.secondary">
-                          {debouncedSearchTerm
-                            ? `No leads found matching "${debouncedSearchTerm}"`
-                            : 'No leads available'}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    currentLeads.map((lead) => (
-                      <TableRow key={lead.id}>
-                        <TableCell>
-                          <Typography>
-                            <TruncatedCell
-                              text={lead.name || '-'}
-                              highlight={regularSearchTerm}
-                            />
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {lead.email ? (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                              }}
-                            >
-                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                                <TruncatedCell
-                                  text={lead.email}
-                                  highlight={regularSearchTerm}
-                                />
-                              </Box>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  (window.location.href = `mailto:${lead.email}`)
-                                }
-                                sx={{
-                                  color: 'info.main',
-                                  p: 0.5,
-                                  ml: 'auto',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <EmailIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {lead.number ? (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                              }}
-                            >
-                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                                <TruncatedCell text={lead.number} />
-                              </Box>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  window.open(
-                                    `https://wa.me/${lead.number.replace(/\D/g, '')}`,
-                                    '_blank',
-                                  )
-                                }
-                                sx={{
-                                  color: 'success.main',
-                                  p: 0.5,
-                                  ml: 'auto',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <WhatsAppIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          {new Date(
-                            lead.createdAt as unknown as string,
-                          ).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })}
-                          <br />
-                          {new Date(
-                            lead.createdAt as unknown as string,
-                          ).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell
-                            text={
-                              (
-                                lead.vehicle_vrm?.toUpperCase().trim() || '-'
-                              ).replace(/\s+/g, '') || '-'
-                            }
-                            highlight={regularSearchTerm}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell
-                            text={
-                              (
-                                lead.postcode?.toUpperCase().trim() || '-'
-                              ).replace(/\s+/g, '') || '-'
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell text={lead.vehicle_brand || '-'} />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell
-                            text={
-                              lead.vehicle_model || lead.vehicle_series || '-'
-                            }
-                            highlight={regularSearchTerm}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell text={lead.vehicle_reg || '-'} />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell text={lead.description || '-'} />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell text={lead.fuelType || '-'} />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell text={lead.vehicle_title || '-'} />
-                        </TableCell>
-                        <TableCell>
-                          <TruncatedCell
-                            text={
-                              lead.engin_capacity
-                                ? `${lead.engin_capacity}.0L`
-                                : '-'
-                            }
-                          />
-                        </TableCell>
-                        {showLeadNotesAndStatus && (
-                          <TableCell
-                            onClick={() => {
-                              setSelectedLeadForNotes(lead);
-                              setOpenNotesDialog(true);
-                            }}
-                            sx={{
-                              cursor: 'pointer',
-                              position: 'sticky',
-                              right: leadNotesRightOffset,
-                              backgroundColor: theme.palette.background.paper,
-                              zIndex: 3,
-                              minWidth: NOTES_COL_WIDTH,
-                              width: NOTES_COL_WIDTH,
-                              padding: '12px 8px',
-                              borderRight: `1px solid ${theme.palette.divider}`,
-                              borderLeft: `1px solid ${theme.palette.divider}`,
-                              textAlign: 'center',
-                            }}
-                          >
-                            <Tooltip
-                              title={notePreviews.get(lead.id!) || ''}
-                              placement="top"
-                            >
-                              <Typography variant="body2" color="primary">
-                                {notePreviews.get(lead.id!)
-                                  ? notePreviews.get(lead.id!) === '...'
-                                    ? '...'
-                                    : notePreviews.get(lead.id!)!.length > 5
-                                      ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
-                                      : notePreviews.get(lead.id!)
-                                  : '...'}
-                              </Typography>
-                            </Tooltip>
-                          </TableCell>
-                        )}
-                        {showLeadNotesAndStatus && (
-                          <TableCell
-                            sx={{
-                              position: 'sticky',
-                              right: leadStatusRightOffset,
-                              backgroundColor: theme.palette.background.paper,
-                              zIndex: 3,
-                              minWidth: STATUS_COL_WIDTH,
-                              width: STATUS_COL_WIDTH,
-                              maxWidth: STATUS_COL_WIDTH,
-                              padding: '12px 8px',
-                              borderRight: `1px solid ${theme.palette.divider}`,
-                              overflow: 'visible',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 0.5,
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Chip
-                                label={lead.status || 'Unknown'}
-                                color={getStatusColor(lead.status)}
-                                size="small"
-                              />
-                            </Box>
-                          </TableCell>
-                        )}
-                        <TableCell
-                          sx={{
-                            position: 'sticky',
-                            right: 0,
-                            backgroundColor: theme.palette.background.paper,
-                            zIndex: 3,
-                            minWidth: ACTION_COL_WIDTH,
-                            width: ACTION_COL_WIDTH,
-                            maxWidth: ACTION_COL_WIDTH,
-                            padding: '12px 8px',
-                            overflow: 'visible',
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              gap: 1,
-                              alignItems: 'center',
-                            }}
-                          >
-                            {/* Check if lead is won by another dealer */}
-                            {lead.wonByDealerId &&
-                            lead.wonByDealerId !== currentDealerId ? (
-                              <Typography
-                                variant="caption"
-                                color="error"
-                                sx={{ fontStyle: 'italic' }}
-                                title="This lead has been won by another dealer"
-                              >
-                                Won by other dealer
-                              </Typography>
-                            ) : (
-                              <>
-                                {/* Info Icon - Outside Menu */}
-                                <IconButton
-                                  size="small"
-                                  color="info"
-                                  onClick={() => {
-                                    handleActionClick('info', lead);
-                                  }}
-                                  title="View Info"
-                                >
-                                  <InfoIcon fontSize="small" />
-                                </IconButton>
-
-                                {/* Vehicle Details Icon - Outside Menu (Only if details available) */}
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  onClick={() => {
-                                    handleActionClick('vehicle-details', lead);
-                                  }}
-                                  title={
-                                    lead.moreInfoFetched
-                                      ? 'View Detailed Vehicle Information'
-                                      : 'No Detailed Information Available'
-                                  }
-                                  disabled={!lead.moreInfoFetched}
-                                >
-                                  <DashboardIcon
-                                    fontSize="small"
-                                    color={
-                                      lead.moreInfoFetched
-                                        ? 'primary'
-                                        : 'disabled'
-                                    }
-                                  />
-                                </IconButton>
-
-                                {!isAdminView && (
-                                  <>
-                                    <IconButton
-                                      size="small"
-                                      color="primary"
-                                      onClick={() => {
-                                        setSelectedLead(lead);
-                                        setOpenQuotationDialog(true);
-                                      }}
-                                      title="Send Quotation"
-                                    >
-                                      <RequestQuoteIcon fontSize="small" />
-                                    </IconButton>
-                                  </>
-                                )}
-                              </>
-                            )}
-
-                            {/* Three Dots Menu for remaining actions - always available */}
-                            <IconButton
-                              size="small"
-                              onClick={(e) => handleMenuOpen(e, lead)}
-                              title="More Actions"
-                            >
-                              <MoreVertIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {/* Pagination */}
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                p: 2,
-                borderTop: `1px solid ${theme.palette.divider}`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Rows per page:
-                </Typography>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) =>
-                    handleRowsPerPageChange(Number(e.target.value))
-                  }
-                  size="small"
-                  sx={{ minWidth: 70 }}
-                >
-                  <MenuItem value={10}>10</MenuItem>
-                  <MenuItem value={25}>25</MenuItem>
-                  <MenuItem value={50}>50</MenuItem>
-                  <MenuItem value={100}>100</MenuItem>
-                </Select>
-              </Box>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                showFirstButton
-                showLastButton
-                siblingCount={1}
-                boundaryCount={1}
-                shape="rounded"
-              />
-            </Box>
-          </Paper>
-        </AccordionDetails>
-      </Accordion>
 
       {/* HQ Leads Accordion - shown if dealer has HQ leads access (determined on initial load) */}
       {showHqSection && (
@@ -2220,6 +1611,621 @@ const LeadsTable: React.FC<LeadsTableProps> = ({ view = 'dealer' }) => {
           </AccordionDetails>
         </Accordion>
       )}
+
+      {/* Regular Leads Accordion */}
+      <Accordion
+        expanded={regularLeadsExpanded}
+        onChange={() => setRegularLeadsExpanded(!regularLeadsExpanded)}
+        sx={{ mb: 2 }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{
+            backgroundColor: theme.palette.primary.main,
+            '&:hover': {
+              backgroundColor: theme.palette.primary.dark,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              width: '100%',
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 'bold',
+                color: theme.palette.primary.contrastText,
+              }}
+            >
+              Regular Leads
+            </Typography>
+            <Chip
+                label={`${regularTotalLeads} Total`}
+                color="default"
+                size="small"
+                sx={{
+                  fontWeight: 'bold',
+                  backgroundColor: alpha(theme.palette.common.white, 0.3),
+                  color: theme.palette.common.white,
+                }}
+              />
+            <Box
+              onClick={(e) => e.stopPropagation()}
+              sx={{ ml: 'auto', mr: 2 }}
+            >
+              <InputBase
+                placeholder="Search Regular Leads..."
+                value={regularSearchTerm}
+                onChange={handleRegularSearchChange}
+                startAdornment={
+                  <SearchIcon
+                    sx={{ color: theme.palette.text.secondary, ml: 1 }}
+                    fontSize="small"
+                  />
+                }
+                sx={{
+                  width: 300,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  px: 2,
+                  py: 1,
+                  backgroundColor: theme.palette.background.paper,
+                  '& input': { padding: '0 !important' },
+                }}
+              />
+            </Box>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          <Paper elevation={0} sx={{ overflow: 'hidden' }}>
+            {/* Table */}
+            <TableContainer sx={{}}>
+              <Table
+                stickyHeader
+                aria-label="leads table"
+                sx={{
+                  minWidth: TABLE_MIN_WIDTH,
+                  tableLayout: 'auto',
+                  '& th, & td': { whiteSpace: 'nowrap' },
+                  '& th:nth-of-type(1), & td:nth-of-type(1)': { maxWidth: 100 }, // Name
+                  '& th:nth-of-type(2), & td:nth-of-type(2)': { maxWidth: 120 }, // Email
+                  '& th:nth-of-type(3), & td:nth-of-type(3)': { maxWidth: 120 }, // Phone
+                  '& th:nth-of-type(4), & td:nth-of-type(4)': {
+                    minWidth: 100,
+                    textAlign: 'center',
+                  }, // Received at
+                  '& th:nth-of-type(5), & td:nth-of-type(5)': { minWidth: 100 }, // VRM
+                  '& th:nth-of-type(6), & td:nth-of-type(6)': { minWidth: 100 }, // Post Code
+                  '& th:nth-of-type(7), & td:nth-of-type(7)': { minWidth: 100 }, // Make
+                  '& th:nth-of-type(8), & td:nth-of-type(8)': { maxWidth: 100 }, // Model
+                  '& th:nth-of-type(9), & td:nth-of-type(9)': {
+                    minWidth: 100,
+                    textAlign: 'center',
+                  }, // Year
+                  '& th:nth-of-type(10), & td:nth-of-type(10)': {
+                    maxWidth: 100,
+                  }, // Customer Notes
+                  '& th:nth-of-type(11), & td:nth-of-type(11)': {
+                    minWidth: 100,
+                    textAlign: 'center',
+                  }, // Fuel Type
+                  '& th:nth-of-type(12), & td:nth-of-type(12)': {
+                    minWidth: 100,
+                    textAlign: 'center',
+                  }, // Engine Title
+                  '& th:nth-of-type(13), & td:nth-of-type(13)': {
+                    minWidth: 90,
+                    textAlign: 'center',
+                  }, // Engine Capacity
+                }}
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Name
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Email
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Phone
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ textAlign: 'center' }}>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Received at
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        VRM
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Post Code
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Make
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Model
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Year
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Customer Notes
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Fuel Type
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Engine Title
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Engine Capacity
+                      </Typography>
+                    </TableCell>
+
+                    {showLeadNotesAndStatus && (
+                      <TableCell
+                        sx={{
+                          position: 'sticky',
+                          right: leadNotesRightOffset,
+                          backgroundColor: theme.palette.background.paper,
+                          zIndex: 4,
+                          minWidth: NOTES_COL_WIDTH,
+                          width: NOTES_COL_WIDTH,
+                          padding: '12px 8px',
+                          borderRight: `1px solid ${theme.palette.divider}`,
+                          borderLeft: `1px solid ${theme.palette.divider}`,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Notes
+                        </Typography>
+                      </TableCell>
+                    )}
+                    {showLeadNotesAndStatus && (
+                      <TableCell
+                        sx={{
+                          position: 'sticky',
+                          right: leadStatusRightOffset,
+                          backgroundColor: theme.palette.background.paper,
+                          zIndex: 4,
+                          minWidth: STATUS_COL_WIDTH,
+                          width: STATUS_COL_WIDTH,
+                          maxWidth: STATUS_COL_WIDTH,
+                          padding: '12px 8px',
+                          borderRight: `1px solid ${theme.palette.divider}`,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Status
+                        </Typography>
+                      </TableCell>
+                    )}
+                    <TableCell
+                      sx={{
+                        position: 'sticky',
+                        right: 0,
+                        backgroundColor: theme.palette.background.paper,
+                        zIndex: 4,
+                        minWidth: ACTION_COL_WIDTH,
+                        width: ACTION_COL_WIDTH,
+                        maxWidth: ACTION_COL_WIDTH,
+                        padding: '12px 8px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        Action
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leadsLoading ? (
+                    <TableSkeletonRows rows={rowsPerPage} columns={9} />
+                  ) : currentLeads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body1" color="text.secondary">
+                          {debouncedSearchTerm
+                            ? `No leads found matching "${debouncedSearchTerm}"`
+                            : 'No leads available'}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentLeads.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell>
+                          <Typography>
+                            <TruncatedCell
+                              text={lead.name || '-'}
+                              highlight={regularSearchTerm}
+                            />
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {lead.email ? (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                                <TruncatedCell
+                                  text={lead.email}
+                                  highlight={regularSearchTerm}
+                                />
+                              </Box>
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  (window.location.href = `mailto:${lead.email}`)
+                                }
+                                sx={{
+                                  color: 'info.main',
+                                  p: 0.5,
+                                  ml: 'auto',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <EmailIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {lead.number ? (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                                <TruncatedCell text={lead.number} />
+                              </Box>
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  window.open(
+                                    `https://wa.me/${lead.number.replace(/\D/g, '')}`,
+                                    '_blank',
+                                  )
+                                }
+                                sx={{
+                                  color: 'success.main',
+                                  p: 0.5,
+                                  ml: 'auto',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <WhatsAppIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          {new Date(
+                            lead.createdAt as unknown as string,
+                          ).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                          <br />
+                          {new Date(
+                            lead.createdAt as unknown as string,
+                          ).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell
+                            text={
+                              (
+                                lead.vehicle_vrm?.toUpperCase().trim() || '-'
+                              ).replace(/\s+/g, '') || '-'
+                            }
+                            highlight={regularSearchTerm}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell
+                            text={
+                              (
+                                lead.postcode?.toUpperCase().trim() || '-'
+                              ).replace(/\s+/g, '') || '-'
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.vehicle_brand || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell
+                            text={
+                              lead.vehicle_model || lead.vehicle_series || '-'
+                            }
+                            highlight={regularSearchTerm}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.vehicle_reg || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.description || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.fuelType || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell text={lead.vehicle_title || '-'} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedCell
+                            text={
+                              lead.engin_capacity
+                                ? `${lead.engin_capacity}.0L`
+                                : '-'
+                            }
+                          />
+                        </TableCell>
+                        {showLeadNotesAndStatus && (
+                          <TableCell
+                            onClick={() => {
+                              setSelectedLeadForNotes(lead);
+                              setOpenNotesDialog(true);
+                            }}
+                            sx={{
+                              cursor: 'pointer',
+                              position: 'sticky',
+                              right: leadNotesRightOffset,
+                              backgroundColor: theme.palette.background.paper,
+                              zIndex: 3,
+                              minWidth: NOTES_COL_WIDTH,
+                              width: NOTES_COL_WIDTH,
+                              padding: '12px 8px',
+                              borderRight: `1px solid ${theme.palette.divider}`,
+                              borderLeft: `1px solid ${theme.palette.divider}`,
+                              textAlign: 'center',
+                            }}
+                          >
+                            <Tooltip
+                              title={notePreviews.get(lead.id!) || ''}
+                              placement="top"
+                            >
+                              <Typography variant="body2" color="primary">
+                                {notePreviews.get(lead.id!)
+                                  ? notePreviews.get(lead.id!) === '...'
+                                    ? '...'
+                                    : notePreviews.get(lead.id!)!.length > 5
+                                      ? `${notePreviews.get(lead.id!)!.substring(0, 5)}...`
+                                      : notePreviews.get(lead.id!)
+                                  : '...'}
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                        {showLeadNotesAndStatus && (
+                          <TableCell
+                            sx={{
+                              position: 'sticky',
+                              right: leadStatusRightOffset,
+                              backgroundColor: theme.palette.background.paper,
+                              zIndex: 3,
+                              minWidth: STATUS_COL_WIDTH,
+                              width: STATUS_COL_WIDTH,
+                              maxWidth: STATUS_COL_WIDTH,
+                              padding: '12px 8px',
+                              borderRight: `1px solid ${theme.palette.divider}`,
+                              overflow: 'visible',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.5,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Chip
+                                label={lead.status || 'Unknown'}
+                                color={getStatusColor(lead.status)}
+                                size="small"
+                              />
+                            </Box>
+                          </TableCell>
+                        )}
+                        <TableCell
+                          sx={{
+                            position: 'sticky',
+                            right: 0,
+                            backgroundColor: theme.palette.background.paper,
+                            zIndex: 3,
+                            minWidth: ACTION_COL_WIDTH,
+                            width: ACTION_COL_WIDTH,
+                            maxWidth: ACTION_COL_WIDTH,
+                            padding: '12px 8px',
+                            overflow: 'visible',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              gap: 1,
+                              alignItems: 'center',
+                            }}
+                          >
+                            {/* Check if lead is won by another dealer */}
+                            {lead.wonByDealerId &&
+                            lead.wonByDealerId !== currentDealerId ? (
+                              <Typography
+                                variant="caption"
+                                color="error"
+                                sx={{ fontStyle: 'italic' }}
+                                title="This lead has been won by another dealer"
+                              >
+                                Won by other dealer
+                              </Typography>
+                            ) : (
+                              <>
+                                {/* Info Icon - Outside Menu */}
+                                <IconButton
+                                  size="small"
+                                  color="info"
+                                  onClick={() => {
+                                    handleActionClick('info', lead);
+                                  }}
+                                  title="View Info"
+                                >
+                                  <InfoIcon fontSize="small" />
+                                </IconButton>
+
+                                {/* Vehicle Details Icon - Outside Menu (Only if details available) */}
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => {
+                                    handleActionClick('vehicle-details', lead);
+                                  }}
+                                  title={
+                                    lead.moreInfoFetched
+                                      ? 'View Detailed Vehicle Information'
+                                      : 'No Detailed Information Available'
+                                  }
+                                  disabled={!lead.moreInfoFetched}
+                                >
+                                  <DashboardIcon
+                                    fontSize="small"
+                                    color={
+                                      lead.moreInfoFetched
+                                        ? 'primary'
+                                        : 'disabled'
+                                    }
+                                  />
+                                </IconButton>
+
+                                {!isAdminView && (
+                                  <>
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={() => {
+                                        setSelectedLead(lead);
+                                        setOpenQuotationDialog(true);
+                                      }}
+                                      title="Send Quotation"
+                                    >
+                                      <RequestQuoteIcon fontSize="small" />
+                                    </IconButton>
+                                  </>
+                                )}
+                              </>
+                            )}
+
+                            {/* Three Dots Menu for remaining actions - always available */}
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleMenuOpen(e, lead)}
+                              title="More Actions"
+                            >
+                              <MoreVertIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Pagination */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                p: 2,
+                borderTop: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Rows per page:
+                </Typography>
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) =>
+                    handleRowsPerPageChange(Number(e.target.value))
+                  }
+                  size="small"
+                  sx={{ minWidth: 70 }}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={25}>25</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+              </Box>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+                siblingCount={1}
+                boundaryCount={1}
+                shape="rounded"
+              />
+            </Box>
+          </Paper>
+        </AccordionDetails>
+      </Accordion>
 
       {/* Actions Menu */}
       <Menu
